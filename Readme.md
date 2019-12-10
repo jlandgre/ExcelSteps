@@ -21,7 +21,7 @@ As a basic example, this repository contains the file `Right Triangles Example.x
 <br/><br/><img src=Assets/Triangles2.png alt="Excel Steps Refresh Dialog" width=300><br/>
 
 4.  The refreshed table now has some formatting, but note that the refresh also created Names for the individual columns, the overall table and its header row.
-<br/><br/><img src=Assets/Triangles3.png alt="Refreshed Table" width=250>  <img src=Assets/NameManager.png alt="Name Manager Post-Refresh" width=300><br/>
+<br/><br/><img src=Assets/Triangles3.png alt="Refreshed Table" width=250>  <img src=Assets/NameManager.png alt="Name Manager Post-Refresh" width=400><br/>
 
 5. Notice also that the initial refresh added a blank Excel Steps worksheet.  Enter a row as shown on this sheet and repeat the refresh.
 <br/><br/><img src=Assets/Excel_steps_blank.png alt="Unmodified table" width=600>
