@@ -8,6 +8,8 @@ ExcelStepper is a VBA add-in making spreadsheet models easy to author and mainta
 * If formulas can be refreshed it's safe to build large simulations and collaborative business-platform management models with linked tables in a single workbook. New data can be simply inserted in blank, table rows without worrying about row order, which can also be specified as a sort step in ExcelStepper.
 
 **Notes on Current Release**<br/>
+January 14, 2019: added settings persistence so that the refresh dialog box's settings would not be cleared after every refresh.  This was done by adding a hidden settings sheet to the workbook (set to xlSheetVeryHidden .visible status in VBA) to remember settings from the previous refresh.
+
 As of December 2019, ExcelStepper is validated as documented in the repository. Two of the Steps options can perform multiple actions. Col_Insert inserts (or refreshes an existing version of) a column with the option to include a calculation formula.  Col_Insert can also apply number formatting, a header comment and column width to the column. The example below shows this. The Col_Format step allows specifying number formatting, header comment text and width in a single step. Additionally, the release contains steps to sort the table by multiple keys (Tbl_Sort) and a Col_CondFormat step to discourage use of merged cells. It applies borders around groups of repeated values in a column's rows.  Repeat values are conditionally formatted in white text and therefore not visible --giving an appearance similar to merged cells.<br/>
 
 **Next Steps**<br/>
