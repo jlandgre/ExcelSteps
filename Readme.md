@@ -5,7 +5,7 @@ ExcelSteps is a VBA add-in that makes spreadsheet models easy to author and main
 * If columns are named, formulas can be symbolic within and across tables in a given workbook (e.g. Excel's naming capability anticipates Pandas DataFrames and similar, modern Data Science architectures). For example, an Area formula for a right triangle can be something like, `Area = (Length * Width)/2` instead of the more typical but harder to decipher `C27 = (A27 * B27)/2`
 * If formulas are symbolic, they are just pieces of text that can be parked on a standard, "ExcelSteps" recipe sheet that functions like an input deck listing tasks to be performed on a table. This eliminates risk of corrupt formulas in calculated columns.  It also makes it easy to add formulas into newly-added data rows.
 * If formulas can be refreshed from an ExcelSteps sheet, there are numerous other routine formatting and data cleanup tasks that can be be performed whenever the workbook is refreshed. Examples include applying a drop-down list (Excel Data Validation) to a column and setting the columns' widths and number formats.
-* If formulas can be refreshed it's safe to build large simulations and collaborative business-platform management models with linked tables in a single workbook. New data can be simply inserted in blank, table rows without worrying about row order, which can also be specified as a sort step in ExcelStepper.
+* If formulas can be refreshed it's safe to build large simulations and collaborative business-platform management models with linked tables in a single workbook. New data can be simply inserted in blank, table rows without worrying about row order, which can also be specified as a sort step in ExcelSteps.
 
 **Notes on Current Release**<br/>
 March 16, 2020: Updated Triangles.xlsx case study to account for an under-publicized, significant update to Excel itself.  In January 2020, Microsoft pushed an update to Windows Excel that now requires column formula references to include an '@' character as a prefix (e.g. "=@Side_a" refers to the row-specific cell in the Side_a column --just that one cell in the same row as the formula).  While the '@' character has long worked this way, it has also long been optional. Historically, the formula "=Side_a" would produce the same result as "=@Side_a".  As of the MS update, the range name without an '@' character now refers exclusively to the entire column.  If row-specific formulas are used without the '@' character, Excel displays a '#SPILL' error.
@@ -19,7 +19,7 @@ As of December 2019, ExcelSteps is validated per the documentation in the reposi
 **Next Steps**<br/>
 * Add a DeleteColumn recipe step
 * Add capability to automatically name blank columns that are within a table's header range.  This will allow ExcelSteps to handle the use case where an imported table includes unnamed columns (such as occurs with a Pandas DataFrame whose index is unnamed).  ExcelSteps could a) name these with an indexed name such as "Unnamed_0", Unnamed_1" etc. and b) optionally delete such columns if unneeded.
-* Augment ExcelStepper with additional steps such as column Rename and Replace and to add additional table formatting steps for freezing the first row or selected columns in a table.
+* Augment ExcelSteps with additional steps such as column Rename and Replace and to add additional table formatting steps for freezing the first row or selected columns in a table.
 * Add automatic range naming on Lists worksheet to make it easy to park dropdown list values there
 * Automate re-validation by writing code that walks through all checks and compares results versus a verified standard file
 * Consider eliminating individual formatting steps in ExcelSteps --in favor of simply using Col_Format for tasks like adding a header comment
@@ -29,7 +29,7 @@ As a basic example, this repository contains the file `Right Triangles Example.x
 1. Open `Right Triangles Example.xlsx`. Note that it is a simple, unformatted data table representing the lengths of sides A and B in a few right triangles.
 <br/><br/><img src=Assets/Triangles1.png alt="Unmodified table" width=250><br/>
 
-2. Choose `Refresh Excel Tables` from the Add-ins ribbon's ExcelStepper menu.
+2. Choose `Refresh Excel Tables` from the Add-ins ribbon's ExcelSteps menu.
 <br/><br/><img src=Assets/AddinsMenu.png alt="Excel Add-ins Ribbon" width=400><br/>
 
 3. In the dialog box, select the Refresh and Replace checkboxes next to the `Triangles` worksheet name. Click OK
@@ -43,22 +43,22 @@ As a basic example, this repository contains the file `Right Triangles Example.x
 <br/><br/>
  <img src=Assets/Excel_Steps2.png alt="Unmodified table" width=625><br/>
 
-6. ExcelStepper Inserts a new column, `Side_C` with a header comment and formatting as specified in the Excel Steps row.
+6. ExcelSteps Inserts a new column, `Side_C` with a header comment and formatting as specified in the Excel Steps row.
 <br/><br/>
  <img src=Assets/Triangles4.png alt="Unmodified table" width=300><br/>
 
- **Background on ExcelStepper and History of its Approach**<br/>
- Excel's design anticipates many aspects of the current open-source revolution. It is wonderfully (and miserably?) entrenched in enterprises large and small --due to both cultural inertia and undeniable UI advantages that have proven difficult to replicate in alternate software approaches. Excel has the wonderful advantage and terrible disadvantage of allowing data to be entered and summarized anywhere on its sheets in both structured and non-structured ways.  It also includes features like Merged Cells that encourage users to format tables in aesthetically pleasing ways that make tables difficult to maintain and edit. It is likely that Excel's creators envisioned the ExcelStepper approach, and there are dozens of online courses that hint at it by teaching naming and other features. However, it has certainly never become commonplace to put these pieces together among those who use Excel in enterprises and research efforts large and small.<br/>
+ **Background on ExcelSteps and History of its Approach**<br/>
+ Excel's design anticipates many aspects of the current open-source revolution. It is wonderfully entrenched in enterprises large and small --due to both cultural inertia and undeniable UI advantages difficult to replicate in alternate software designs. Excel has the wonderful advantage and terrible disadvantage of allowing data to be entered and summarized anywhere on its sheets in both structured and non-structured ways.  It also includes features like Merged Cells that encourage users to format tables in aesthetically pleasing ways but which make tables difficult to maintain and edit.
 
- ExcelStepper automates refreshing any rows/columns Excel table that is in the simple format of headers (aka column names) in Row 1 and data in Rows 2+. It makes it easy and reliable to build models linking multiple worksheets. Without such an approach. models performing critical calculations easily become an error-prone "house of cards" especially if they are used by multiple people. This should be familiar to anyone who has ever worked in an Excel-using organization.  Here are some typical issues that crop up:
+ It is likely that Excel's creators envisioned the ExcelSteps approach. There are dozens of online courses that hint at it by teaching naming and other features. However, it has  never become commonplace to put these pieces together in enterprises and research efforts large and small. ExcelSteps automates refreshing any rows/columns table that is in the simple format of headers (aka column names) in Row 1 and data in Rows 2+. It makes it easy and reliable to build models linking multiple worksheets. Without such an approach. models performing critical calculations easily become an error-prone "house of cards" especially if they are used by multiple people. This should be familiar to anyone who has ever worked in an Excel-using organization.  Here are some typical issues that crop up:
  * Spreadsheet models get built as unstructured blobs of calculations rather than "pure" rows/columns tables.  The blobs mix data and summaries of the data.  These are difficult to error-check, link across tables and export to stats and visualization packages.
  * As models grow, it becomes difficult to know (like to really be confident in mission-critical calculations!) that column formulas are still correct in all rows. This is especially problematic with complex formulas involving multi-sheet VLOOKUPs and other advanced Excel functions.
  * As models grow, users typically apply formatting such as merged cells to enhance viewability. However, this makes it excruciating to insert new data.  It often becomes difficult to even know where to insert new data. At a minimum, it becomes necessary to reformat the table after making even simple additions.
  * When data tables are being downloaded and cleaned in Excel, it is difficult to repeatably perform the same "recipe" of cleanup and formatting steps every time (especially when multiple users are involved). In spite of this, users often resign themselves to performing these data cleanup steps manually whenever they receive data from a given source.<br/>
 
- The ExcelStepper approach overcomes these limitations. It was originally integrated in 2011 VBA code as part of non-profit volunteer work wrangling data related to a public school levy election. That code and its steps/recipe template subsequently proved useful to the author's enterprise R&D work at P&G, and it was informally disseminated there in the form of an add-in.
+ The ExcelSteps approach overcomes these limitations. It was originally integrated in 2011 VBA code for non-profit volunteer work wrangling data for a U.S. Ohio public school levy election. That code and its steps/recipe template subsequently proved useful to the author's enterprise R&D work at P&G. It was informally disseminated there in the form of an add-in.
 
- The current, open-source ExcelStepper add-in was created from the ground up in Fall 2019. The 2019 approach was based on a "cascaded function," VBA architecture. This made it possible (for the first time) to include detailed error checking and reporting. Error conditions encountered during a step are passed back to the calling function as a non-zero result and can then be dealt with appropriately by the calling function. This allows a user-friendly error-flagging approach of placing a descriptive comment on the offending step's instruction row.<br/><br/>
+ The current, open-source ExcelSteps add-in was created from the ground up in Fall 2019. The 2019 approach was based on a "cascaded function," VBA architecture. This made it possible to include detailed error checking and reporting. Error conditions encountered during a step are passed back to the calling function as a non-zero result and can then be dealt with appropriately by the calling function. This allows a user-friendly error-flagging approach of placing a descriptive comment on the offending step's instruction row.<br/><br/>
 
  J.D. Landgrebe<br/>
  December 10, 2019
