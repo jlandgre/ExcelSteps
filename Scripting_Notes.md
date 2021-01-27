@@ -2,6 +2,27 @@
 
 This document contains raw notes pertaining to code base development.  Each day's notes are in reverse chronological "rolling scroll" format. --JDL
 
+#### 1/27/21
+* [**Complete**] Additional cleanup and organization of Scenario Model.xlsm in 9:28 am commit
+* Validate rngLastCell() and rngToExtent() in separate workbook
+
+**Generic Error Code Strategy**</br>
+Noted inconsistency in CheckNames() error reporting. It needs to report back both success/failure (could be 0/1 integer but the failure 1 doesn't convey what type(s) of errors occurred).  Would like to return details about types of errors encountered (Redundant names, invalid Excel names etc.). Staying within the paradigm of returning an integer, a seemingly-good approach to try is to report the different types of errors as a decimal representing a converted "binary" (1 for error type 1, 10 for type 2, 11 for both 1 and 2 etc.).  This allows each routine to occupy a 100 integer range for its errors.  In this model, error code = 216 means a VBA error occurred in the routine assigned base error code 200.  The gross type of error is either 16 (VBA error) or a specific, non-fatal code from 1 to 15.  This allows detailed interpretation of up to four types of simultaneous error types (binary(15) = 1111).</br>
+
+The table shows how the decimal gets interpreted by top-level error handling that might be a couple of calling functions above the one where the error occurred
+
+
+| Decimal</br> (function return) | Binary</br> (for error</br> interpretation) | Error Types </br>Flagged |
+| :-: | :-: | --- |
+| 1 | 1 | Type 1 only |
+| 2 | 10 | Type 2 only |
+| 3 | 11 | Types 1 and 2 |
+| 4 | 100 | Type 3 only |
+| 5 | 101 | Types 1 and 3 |
+| 6 | 110 | Types 2 and 3 |
+| 7 | 111 | Types 1, 2 and 3 |
+| 16 | 10000 | VBA Error occurred |
+
 #### 1/26/21
 * [**Complete**] Finish initial validation of Lite Scenario Model (with and without headers, as calculator and multi-column model)
 * [**Complete**] To facilitate validation, create separate subroutines for refreshing scenario models on each wroksheet in Scenario Model.xlsm
