@@ -1,0 +1,6 @@
+**.DS_STORE
+**.Rhistory
+**.ipynb_checkpoints*
+**pytest_cache*
+**__pycache__*
+**~*
