@@ -1,0 +1,32 @@
+* We are going to write a VBA Class called PanelData that executes multistep procedures made up of several functions.
+* We will use a custom VBA unit test suite to test the class.
+* Before we start class-specific coding and testing, we need to initialize the VBA Projects for the code project and unit test workbooks.
+* We will use a rows/columns (Excel) code plan to provide describe the "tables", "procedures" and "sub-functions" for the project.
+* We will make extensive use of tbls, which is a class instance whose attributes are tblRowsCols or tblRowsColsLite class instances. These objects track  rows/columns tables within the project and have attributes like .wkbk and .wksht for the VBA workbook and worksheet objects and .rngRows and .rngHeader, which are a row range for populated data and a range of Row1 variable names at the top of the table.
+* This code plan Tables description lists the two tblRowsCols instances and one tblRowsColsLite instance for an example project that has tables callse RawData, RepData and Params.
+* Our project will use the errs instance of a custom ErrorHandling class to handle errors in the PanelData class. errs is declared as a global variable in the project, and the xxx function call at the beginning of each function instances errs if it has not been initialized by a calling function.
+
+```
+Table Name	Type of tbl instance
+RawData	tblRowsCols
+RepData	tblRowsCols
+Params	tblRowsColsLite
+```
+* Based on our PanelData code plan, we need to create a VBA class called Tables like this one.
+```
+* This is the Tables VBA class based on the code plan
+Option Explicit
+'Version 5/9/24
+Public RawData As Object
+Public RepData As Object
+Function Init(tbls) As Boolean
+    Init = True
+    Set tbls.RawData = New tblRowsCols
+    Set tbls.RepData = New tblRowsCols
+    Set tbls.Params = New tblRowsColsLite
+    Exit Function
+    
+ErrorExit:
+    Init = False
+End Function
+```

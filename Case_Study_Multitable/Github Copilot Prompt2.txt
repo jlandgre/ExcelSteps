@@ -1,0 +1,100 @@
+* We are going to write a VBA Class called PanelData that executes a multistep procedure made up of several functions.
+* All functions will be called from a single procedure that we will write at the end
+* All functions will be formatted like the following example including its 4-line comment docstring.
+
+```
+Option Explicit
+'---------------------------------------------------------------------------------------
+' PanelData Class contains procedure for running a consumer panel. It manages tables
+' containing overall data about products tested and panelists. It also manages a
+' xxx table with test order for the table.
+'
+Public wkbkPanel As Workbook ' Raw data - *.csv selected by user
+Public wkshtHome As Worksheet
+Public wkshtPanel As Worksheet
+'---------------------------------------------------------------------------------------
+' Example function to do something
+' JDL 5/1/24
+'
+Function DoSomething(panel) As Boolean
+    DoSomething = True
+
+    With panel
+
+        'Perform actions here
+
+    End With
+    Exit Function
+ErrorExit:
+    DoSomething = False
+End Function
+```
+* subsetter argument is an instance of the SalesSubsetter class
+* We will also make extensive use of tbls, which is a class instance whose attributes are tblRowsCols class instances. These keep track of rows/columns tables within the project and have attributes like .wkbk and .wksht for the VBA workbook and worksheet objects and .rngRows and .rngHeader, which are a row range for populated data and a range of Row1 variable names at the top of the table.
+* Our project uses tbls.RawData and tbls.RepData which comprise the raw data and the subsetted data tblRowsCols instances.
+* subsetter Methods are Boolean functions and return True if execution is successful. This allows us to divert to an ErrorExit label that sets the function to False if an error occurs or if we need to cancel further execution due to user actions.
+* We always initialize the method to True at the begin of the function.
+* We use a 4-line docstring stating what the function does (line 2) and "JDL 5/1/24" (line 2)
+* Do not include the function name in the docstring comment. Just give a brief description of what the function does such as "Example function to do something"
+
+We are also going to write a unit test for each function using a custom VBA test framework that resides in a separate workbook from SalesSubsetter.
+Here is an example of the driver subroutine for testing and an example test function. The driver and test function both instance the Tests class for different reasons. The driver uses its .EvalOverall method to report testing results. The test function uses its .Populate method to set up the test and its .Assert method to test the function. The .Update method is used to update the test results in the test table.
+
+```
+Option Explicit
+'-----------------------------------------------------------------------------
+'Test suite for testing SalesSubsetter VBA class
+'
+' JDL 4/30/24
+'
+Sub testDriverSubsetter()
+    Dim wkbk As Workbook, shtT As String, testsetup As New Tests
+    Set wkbk = ThisWorkbook
+    shtT = "Tests_tbl"
+    
+    'Turn off events and Screenupdataing; calculation Automatic
+    SetApplEnvir False, False, xlCalculationAutomatic
+    
+    'Clear previous test results
+    testsetup.InitTestsSheet wkbk, shtT
+    
+    'Run Tests and report results
+    test_InitRawTbl wkbk, shtT
+    
+    'Report results of testing
+    testsetup.EvalOverall wkbk, shtT, "SalesSubsetter"
+End Sub
+'-----------------------------------------------------------------------------
+'This section tests xyz
+'JDL 4/29/24
+'-----------------------------------------------------------------------------
+'Test Init Raw Table
+'
+'JDL 4/29/24
+'
+Sub test_InitRawTbl(wkbk, shtTests)
+    Dim test As New Tests
+    test.Populate test, wkbk, shtTests, "test_InitRawTbl"
+    
+    'Test that populates test.valTest (Replace True with Boolean checks)
+    dim subsetter as Object, tbls as Object
+    InitializeSubset test, subsetter, tbls
+    test.Assert test, True
+
+    test.Update test
+End Sub
+'-----------------------------------------------------------------------------
+'Helper function to initialize subsetter and tbls
+'JDL 4/30/24
+'
+Sub InitializeSubset(test, subsetter, tbls)
+    Set subsetter = RepSubsetter.New_SalesSubsetter
+    
+    'Instance tbls and initialize its tblRowsCols objects
+    Set tbls = RepSubsetter.New_tbls
+    test.Assert test, tbls.Init(tbls)
+End Sub
+```
+
+* Because the subsetter and tbls code is in a different workbook from tests, we instance those classes by calling a .New_SalesSubsetter and .New_tbls method in the other workbook whose VBA project is named RepSubsetter. 
+* This is done by calling InitializeSubset in the test function. It also calls tbls.Init to instance the tblRowsCols objects.
