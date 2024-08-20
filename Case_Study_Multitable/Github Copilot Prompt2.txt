@@ -29,7 +29,7 @@ ErrorExit:
     DoSomething = False
 End Function
 ```
-* subsetter argument is an instance of the SalesSubsetter class
+* panel argument is an instance of the PanelData class
 * We will also make extensive use of tbls, which is a class instance whose attributes are tblRowsCols class instances. These keep track of rows/columns tables within the project and have attributes like .wkbk and .wksht for the VBA workbook and worksheet objects and .rngRows and .rngHeader, which are a row range for populated data and a range of Row1 variable names at the top of the table.
 * Our project uses tbls.RawData and tbls.RepData which comprise the raw data and the subsetted data tblRowsCols instances.
 * subsetter Methods are Boolean functions and return True if execution is successful. This allows us to divert to an ErrorExit label that sets the function to False if an error occurs or if we need to cancel further execution due to user actions.
