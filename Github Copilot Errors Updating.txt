@@ -1,0 +1,31 @@
+We are going to update an errors table for a VBA code module that contains the iCode, Module, Routine, Msg_String, sVal and iMsgDevUser columns. For the code module below, I want a revised version of the table that includes the following changes:
+* Include a line with Msg_String = "Base" for each VBA subroutine or function in the code module. Make the order the same as the order in the code.
+* Add a Msg_String = "Base" line for any new VBA subroutine or functions in the code if they are not currently in the table.
+* Delete all lines where the Routine string is no longer found in the code module.
+* Start the iCode numbering at the same value as the original table.
+* Start with the iCode for the first subroutine or function in the code module.
+* Insert the Base lines for subsequent subroutines or functions incrementally.
+* Retain any secondary lines for the same Routine; if needed, adjust their iCode values to match an updated Base row iCode. For example, if Routine = "MySub" has a line with iCode = 120 and another line with iCode = 121, and the updated Base line for "MySub" has iCode = 200, then the secondary line should be updated to have iCode = 201 which is 1 plus the new Base to match the previous which was 1 plus the old base.
+* If any routines have more than 9 secondary lines, increment by 20 for the next routine's Base line.
+* The Module column should match the name I give you in the request below.
+* The iMsgDevUser column value should be FALSE for all Base lines and TRUE for all other lines unless the previous version has False for that line.
+* the sVal column should be empty for table rows
+* The output table should have a single tab character between each column. Do not use multiple consecutive tabs except to denote a blank column in a row.
+* Rename the Module column value to match the name I provide.
+
+Here is the original errors table and the code module. Generate a new table that meets the above requirements. If no changes are needed, just respond "No changes needed."
+
+
+Now build a revised version of this table for new module name "modxyz"
+```
+<table>
+```
+```
+<code>
+```
+
+For the following "modxyz" module, I need you to build the errors table from scratch with just a Msg_String="Base" row for each sub or function. Start iCode numbering at 2500 and increment by 10's
+
+```
+<code>
+```
