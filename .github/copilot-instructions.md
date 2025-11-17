@@ -1,12 +1,12 @@
 # Dashboard VBA Project - AI Coding Instructions
-updated 9/8/25
+updated 11/11/25
 ## Project Architecture
 
 Projects built in VBA have cross-platform compatibility (Windows/Mac Excel). A typical project consists of:
 - **ProjectName.xlsm** - Main project workbook (VBA Project: `VBAProject_ProjectName`)
 - **XLSteps.xlam** - ExcelSteps add-in (VBA Project: `ExcelSteps`)
 - **Tests_ProjectName.xlsm** - Unit test suite workbook (VBA Project: `VBAProject_Tests`)
-`VBAProject_ProjectName` has `ExcelSteps` as a reference.  `VBAProject_Tests` has `VBAProject_ProjectName` as a reference. We assume comprehensive unit testing in the test suite which contains one or more test modules grouped by topic.
+`VBAProject_ProjectName` has `ExcelSteps` as a reference.  `VBAProject_Tests` has `VBAProject_ProjectName` as a reference. We assume comprehensive unit testing in the test suite which contains one or more test modules grouped by topic. Within a test module, we use the VBAProject_Tests.Procedures class instance, procs to manage test groups and reporting.
 
 ## Core Data Management Pattern
 
@@ -46,7 +46,7 @@ Project workbooks typically contain a params Scenario model. It is a Calculator 
 **Every function must follow this architecture and error-handling pattern:**
 
 ```vb
-'-----------------------------------------------------------------------------------------------
+'--------------------------------------------------------------------------------------
 ' Short description of what function does (never repeat function name)
 ' JDL MM/DD/YY
 '
@@ -98,7 +98,11 @@ Driver subs (e.g. user-initiated) in VBAProject_ProjectName follow this structur
 * errs.RecordErr single argument is subroutine name as String
 
 ```vb
-Sub ImportSalesDataDriver()
+'--------------------------------------------------------------------------------------
+' Short description of what sub/use case does (never repeat sub name)
+' JDL MM/DD/YY
+'
+'Sub ImportSalesDataDriver()
     SetErrs "driver": If errs.IsHandle Then On Error GoTo ErrorExit
     Dim wHist As Object, mdls As Object
     
@@ -119,9 +123,13 @@ ErrorExit:
     SetApplEnvir True, True, xlCalculationAutomatic
 End Sub
 ```
+**Driver requirements:**
+- `SetErrs "driver"` initializes subroutine as driver
+- `SetApplEnvir` called at start and before Exit Sub to reset application environment
+- `errs.RecordErr` single argument logs error with sub name; causes reporting of nested errors from functions called within driver
 
 ## Data Object Initialization
-tblRowsCols and mdlScenario objects have `.Init()` and `.Provision()` methods. Provision is more extensive. Init is also called by Provision but can be called independently. It locates the object by setting its `.wkbk` (Workbook object), `.sht` (String sheet name) and .wksht (Worksheet object). tblRowsCols and mdlScenario have differing "Refresh" procedures that refresh/propagate specified formulas for calculated variables. mdlScenario `.Refresh` names variable (row-oriented) ranges and scenario column ranges. `tblRowsCols.Provision` names column ranges for variables based on variable names in `.rngHeader`
+tblRowsCols and mdlScenario objects have `.Init()` and `.Provision()` methods. Init sets basic wayfinding attributes. Provision is more extensive and sets all relevant intra-object locations as ranges. Init is also called by Provision but can be called independently. It locates the object by setting its `.wkbk` (Workbook object), `.sht` (String sheet name) and .wksht (Worksheet object). tblRowsCols and mdlScenario have differing "Refresh" procedures that refresh/propagate specified formulas for calculated variables. mdlScenario `.Refresh` names variable (row-oriented) ranges and scenario column ranges. `tblRowsCols.Provision` optionally names column ranges for variables based on variable names in `.rngHeader`
 
 Default objects can be initialized by just `wkbk` and `sht` argument such as
 ```vb
@@ -247,6 +255,10 @@ We declare tbls (or mdls) as Object and then call the projects .New_Tbls or .New
 
 ```vb
 'Example test; do not include explanatory comments in actual tests - just action description like "Check sht"
+'-------------------------------------------------------------------------------------
+' Verbatim copy of docstring from function being tested
+' JDL MM/DD/YY
+'
 Sub test_FunctionName(procs)
     Dim tst As New Test: tst.Init tst, "test_FunctionName"
     Dim tbls As Object, expected as String
