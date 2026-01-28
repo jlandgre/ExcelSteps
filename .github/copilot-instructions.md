@@ -5,8 +5,10 @@ updated 11/11/25
 Projects built in VBA have cross-platform compatibility (Windows/Mac Excel). A typical project consists of:
 - **ProjectName.xlsm** - Main project workbook (VBA Project: `VBAProject_ProjectName`)
 - **XLSteps.xlam** - ExcelSteps add-in (VBA Project: `ExcelSteps`)
-- **Tests_ProjectName.xlsm** - Unit test suite workbook (VBA Project: `VBAProject_Tests`)
+- **tests_ProjectName.xlsm** - Unit test suite workbook (VBA Project: `VBAProject_Tests`)
 `VBAProject_ProjectName` has `ExcelSteps` as a reference.  `VBAProject_Tests` has `VBAProject_ProjectName` as a reference. We assume comprehensive unit testing in the test suite which contains one or more test modules grouped by topic. Within a test module, we use the VBAProject_Tests.Procedures class instance, procs to manage test groups and reporting.
+
+We use the xlwings edit VBA module tool to manage code modules across platforms. Code files have typical extensions: `.bas` for standard modules, `.cls` for class modules, and `.frm` for userforms. The tool syncs code modules between Windows and Mac file system paths. Before making any code changes, always ensure that there is a VS Code Terminal running for the file being changed and that xlwings vba edit is enabled so that changes are synced. Stop and address this before making code changes if it is not enabled. 
 
 ## Core Data Management Pattern
 
@@ -350,7 +352,7 @@ dict.Add "key", "value"  ' Cross-platform compatible
 - **Parameter blocks**: Adjacent to scenario models with `InitParamBlock` pattern
 
 ## ExcelSteps and Test Suite Code Modules
-- **tblRowsCols_cls.vb**: ExcelSteps Class module for tblRowsCols object
-- **mdlScenario_cls.vb**: ExcelSteps Class module for mdlScenario object
-- **dictionary_cls.vb**: ExcelSteps Class module for cross-platform dictionary class
-- **procedures_cls.vb**: Test Suite Class module for Procedures object
+- **tblRowsCols.cls**: ExcelSteps Class module for tblRowsCols object
+- **mdlScenario.cls**: ExcelSteps Class module for mdlScenario object
+- **Dictionary.cls**: ExcelSteps Class module for cross-platform dictionary class
+- **Procedures.cls**: Test Suite Class module for Procedures object
