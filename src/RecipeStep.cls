@@ -7,8 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'ExcelSteps_RecipeStep_cls.vb
-'Version 12/2/25 Minor updates
+'Version 1/29/26
 Option Explicit
 '        7/8/25 update of .Find to FindInRange and fix bug with .rngHeader ref
 'This class describes an Excel Step as read from the ExcelSteps sheet

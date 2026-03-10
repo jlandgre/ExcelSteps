@@ -7,8 +7,8 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
+'Version '2/13/25 Mac compatibility
 'Version of 7/18/23 - add testing utility functions TestAryVals etc.
-'2/13/25 Mac compatibility
 'Utility subs/functions used: AddSheet, SheetExists, ColWidthAutoFit, ShadeYellow
 Option Explicit
 Public wkbk As Workbook 'Testing workbook

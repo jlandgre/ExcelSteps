@@ -7,8 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'tblRowsCols_cls.vb
-'Version 12/2/25
+'Version 1/29/26
 Option Explicit
 
 'Table Locator Attributes
@@ -215,7 +214,7 @@ Function Init(tbl, wkbk, Optional sht, Optional TblName, Optional Defn, Optional
         
         'Fix error cause (Excel bug) due to case sensitivity of Sheet names
         If Not IsMissing(sht) And Not .wkbk Is Nothing Then
-            If IsShtCaseErr(.wkbk, sht) Then errs.ReportWarningMsg 1, "tblInit", param:=sht
+            If IsShtCaseErr(.wkbk, sht) Then errs.ReportWarningMsg 1, "tblRowsCols.Init", param:=sht
         End If
     
         'Set flag and attr for whether custom or default/homed table
@@ -1245,6 +1244,8 @@ Public Function SetColRanges(ByRef tbl) As Boolean
 ErrorExit:
     errs.RecordErr "SetColRanges", SetColRanges
 End Function
+
+
 
 
 

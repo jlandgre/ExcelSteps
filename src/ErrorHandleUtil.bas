@@ -1,6 +1,5 @@
 Attribute VB_Name = "ErrorHandleUtil"
-'ExcelSteps_ErrorHandlUtil.vb
-'Version 9/19/25
+'Version 1/29/26
 'Import this module and ErrorHandling Class Module to install error handling in a project
 
 Option Explicit
@@ -33,10 +32,11 @@ Sub SetErrs(CallingFunction, Optional wkbkE As Workbook = Nothing)
         If wkbkE Is Nothing Then Set wkbkE = ThisWorkbook
         
         'True/False = Master switch for enabling error handling in project
-        errs.Init wkbkE, IsHandle:=False
+        errs.Init wkbkE, IsHandle:=True
     End If
     
     'Initialize Boolean calling function
     If (CallingFunction <> "driver") And (CallingFunction <> "non-bool") Then CallingFunction = True
 End Sub
+
 

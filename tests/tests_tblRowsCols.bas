@@ -28,7 +28,7 @@ Sub TestDriver_TblRowsCols()
     With procs
         
         'Initialize Procedure objects; Set up tst_Results sheet; Set Procedures attributes
-        .Init procs, ThisWorkbook, shtT_temp, "tblRowsCols"
+        .Init procs, ThisWorkbook, "tblRowsCols", "tblRowsCols"
         
         'Turn off events and Screenupdataing; calculation Automatic
         SetApplEnvir False, False, xlCalculationAutomatic
@@ -1842,6 +1842,8 @@ Sub test_PopulateTbl(procs)
     
     tst.Update tst, procs
 End Sub
+
+
 
 
 

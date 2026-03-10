@@ -1,14 +1,13 @@
 {
 	"folders": [
 		{
-			"path": "src"
-		},
-		{
-			"path": "tests"
-		},
-		{
 			"path": "."
+		},
+		{
+			"path": "../../../../../Library/Mobile Documents/iCloud~md~obsidian/Documents/JD_Obsidian/Projects/ExcelSteps_Graph"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"terminal.integrated.cwd": "."
+	}
 }

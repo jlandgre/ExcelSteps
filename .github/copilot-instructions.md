@@ -1,19 +1,24 @@
 # Dashboard VBA Project - AI Coding Instructions
-updated 11/11/25
+updated 3/4/26
 ## Project Architecture
 
 Projects built in VBA have cross-platform compatibility (Windows/Mac Excel). A typical project consists of:
-- **ProjectName.xlsm** - Main project workbook (VBA Project: `VBAProject_ProjectName`)
+- **ProjectName.xlsm** - Main project workbook (VBA Project: `ProjectName`)
 - **XLSteps.xlam** - ExcelSteps add-in (VBA Project: `ExcelSteps`)
-- **tests_ProjectName.xlsm** - Unit test suite workbook (VBA Project: `VBAProject_Tests`)
-`VBAProject_ProjectName` has `ExcelSteps` as a reference.  `VBAProject_Tests` has `VBAProject_ProjectName` as a reference. We assume comprehensive unit testing in the test suite which contains one or more test modules grouped by topic. Within a test module, we use the VBAProject_Tests.Procedures class instance, procs to manage test groups and reporting.
+- **tests_ProjectName.xlsm** - Unit test suite workbook (VBA Project: `Tests`)
+VBA Project `ProjectName` has VBA Project `ExcelSteps` as a reference. `Tests` has `ProjectName` as a reference. We assume comprehensive unit testing in the test suite which contains one or more test modules grouped by topic. Within a test module, we use the Tests.Procedures class instance, procs to manage test groups and reporting.
 
-We use the xlwings edit VBA module tool to manage code modules across platforms. Code files have typical extensions: `.bas` for standard modules, `.cls` for class modules, and `.frm` for userforms. The tool syncs code modules between Windows and Mac file system paths. Before making any code changes, always ensure that there is a VS Code Terminal running for the file being changed and that xlwings vba edit is enabled so that changes are synced. Stop and address this before making code changes if it is not enabled. 
+We use `xlwings edit VBA` tool to sync code modules between the project folder and Excel files. This allows AI to edit the code files and have the changes propagate into Excel. The `vs_code_setup.md` skill instructs on configuring VS Code for this. Code files (in the project's src and tests subfolders) have typical extensions: `.bas` for standard modules, `.cls` for class modules, and `.frm` for userforms. Before making any code changes, AI should check that there is a VS Code Terminal running in VS Code for the file being changed and that `xlwings vba edit` is enabled so that changes are synced. Stop and address this before making code changes if it is not enabled. 
 
 ## Core Data Management Pattern
 
 **Use structured data objects instead of ad hoc Excel ranges, arrays etc.:**
-Projects utilize a structured approach to data management through use of ExcelSteps addin classes for data objects. The project organizes data to be managed as tblRowsCols (rows x columns tables) and mdlScenario (alternate columns x rows format) objects.
+Projects utilize a structured approach to data management through use of ExcelSteps addin classes for data objects. The project organizes data to be managed as tblRowsCols (rows by columns tables) and mdlScenario (alternate columns by rows format) objects.
+
+Programmatically, the Project workbook's code manages Scenario Models and Tables as a group of project-specific ExcelSteps data object instances called `mdls` and `tbls` for the `mdlScenario` and `tblRowsCols` instances, respectively. `mdls` and `tbls` are instances of ProjectName `Models.cls` and `Tables.cls`. The individual mdl and tbl objects are instanced by hard-coded name as attributes in these classes. For example, `mdls.WklyHist` might refer to a sales history Scenario Model. `tbls.Calendar` might refer to a calendar lookup table etc.
+
+The `InitAllTbls` and `InitAllMdls` functions initialize, provision and refresh all or a subset of the data objects. Initialize means instancing the data objects if they don't yet exist (e.g. `If mdls.WklyHist Is Nothing`). Provision means, calling the object's `.Provision` method to set wayfinding attributes such as `.wkbk`, `.sht`, `.wksht` and relevant range attributes. Refresh means calling the object's `.Refresh` method to update named ranges and recipe-stored (Project workbook's ExcelSteps Sheet) formulas and formatting for variables within the objects. 
+
 ```vb
 ' Initialize global data objects
 Dim tbls As Object, mdls As Object
@@ -27,8 +32,10 @@ If Not InitAllMdls(mdls) Then GoTo ErrorExit  ' Models collection
 
 By default, the above example will initialize all tables and models defined in the project. By use case, you can also initialize specific tables/models by passing Boolean parameters to `InitAllTbls` and `InitAllMdls`. This example initializes just the project's params and Weekly Scenario models
 
+The functions also have an IsRefresh argument to toggle refreshing, which is performance intensive and not always needed.
+
 ```vb
-InitMdls(mdls, IsAll:=False, IsParams:=True, IsWeekly:=True)
+InitMdls(mdls, IsAll:=False, IsParams:=True, IsWeekly:=True, IsRefresh:=True)
 ```
 
 ## Table and Model Types
@@ -41,7 +48,7 @@ InitMdls(mdls, IsAll:=False, IsParams:=True, IsWeekly:=True)
 - **Calculator Scenario Model** (`.IsCalc=True`): Single scenario column model
 - **Lite Scenario Model** (`.IsLiteModel=True`): Minimal template columns; formatting instructions on ExcelSteps recipe sheet
 
-Project workbooks typically contain a params Scenario model. It is a Calculator (single-column) on the sheet, params, and is often hidden from the user. It is used for storing single-valued parameters such as filenames, configuration inputs and directory paths
+Project workbooks typically contain a `params` Scenario model on the `params` sheet. It is a Calculator (single-column) model and is generally hidden from the user. It is used for storing single-valued parameters such as configuration inputs and directory paths
 
 ## Critical Function Architecture
 
@@ -252,8 +259,24 @@ If condition Then action
 In project code, strictly use continuation `_` if line length exceeds the length of the docstring hyphens line (typically 95-100 characters). In test code, use continuation `_` more liberally for readability. Its ok to exceed hyphen line length by 10-20 characters if it improves readability
 
 ## Testing Framework
-**Unit tests use custom Test and Procedures classes:**
-We declare tbls (or mdls) as Object and then call the projects .New_Tbls or .New_Mdls function and tbls or mdls .Init() to instance tbls and the individual data objects whose hard-coded instantiation is in .Init. Note that, if multiple tests will utilize the same pattern of setting and initializing tbls, mdls or project classes, the initialization code should be placed in a helper subroutine that has `tst` and other objects as arguments
+Unit tests use custom Test and Procedures classes. Test class manages individual test cases and assertions. Procedures class manages groups of tests and reporting. Tests are organized by functional area in separate test modules. Each test module has a driver subroutine that calls the individual tests in the module and reports results to the user. A driver subroutine may contain multiple test groups by procedure (e.g. procs.TblsAndMdls) that can be toggled on/off for selective testing.
+
+**Cross-workbook class instantiation in Test Workbook:**
+Because test code resides in a separate workbook from the classes being tested, you cannot directly instantiate classes with `New` or `Dim As New`. Instead, use factory functions in the source workbook's Validation or Interface module:
+
+```vb
+' INCORRECT - Cannot access classes across workbooks
+Dim dict As New Dictionary
+Set dict = New Dictionary
+
+' CORRECT - Use factory function from source workbook
+Dim dict As Object
+Set dict = ExcelSteps.New_Dictionary  ' For ExcelSteps classes
+Set tbls = VBAProject_ProjectName.New_Tbls  ' For project classes
+```
+
+**Data object initialization pattern:**
+Declare tbls (or mdls) as Object, call the project's `New_Tbls` or `New_Mdls` factory function, then call `.Init()` to instance the collection and individual data objects whose hard-coded instantiation is in `.Init`. If multiple tests utilize the same initialization pattern for tbls, mdls, or project classes, place the initialization code in a helper subroutine that has `tst` and other objects as arguments
 
 ```vb
 'Example test; do not include explanatory comments in actual tests - just action description like "Check sht"
@@ -337,7 +360,7 @@ dict.Add "key", "value"  ' Cross-platform compatible
 - **Interface modules** (`VBAProject_projectname_Interface.vb`) - Main driver subs and initialization functions
 - **Validation modules** - Data validation and business logic
 - **Class modules** - Custom classes like `WklyHist`, `CurSnap`
-- **Test modules** (`VBAProject_Tests_*`) - Organized by functional area
+- **Test modules** (`Tests_*`) - Organized by functional area
 - **ExcelSteps classes** - Structured data management (`tblRowsCols`, `mdlScenario`)
 
 ## Naming Conventions

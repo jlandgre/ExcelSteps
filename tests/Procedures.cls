@@ -7,8 +7,8 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-Option Explicit
 'Version 5/30/24
+Option Explicit
 'This class defines project specific groups of tests to run in a tests_xxxx module
 'Build it from an Excel code plan by declaring an object for each procedure in the plan
 
@@ -34,6 +34,7 @@ Public LiteModelSpeed As Object '10/23/25
 
 Public ParseModel As Object '11/17/25
 Public mdlImportRow As Object '1/28/26
+Public dictionary As Object '1/29/26
 
 ' General attributes for all procedures in the code project
 Public wkbk_testing As Workbook
@@ -92,6 +93,10 @@ Sub Init(procs, ByVal wkbk, ByVal shtT, test_suite_name)
         ' TestDriver_mdlImportRow
         Set .mdlImportRow = New Procedure
         .mdlImportRow.Name = "mdlImportRow Class"
+        
+        ' TestDriver_Dictionary
+        Set .dictionary = New Procedure
+        .dictionary.Name = "Dictionary Class"
         
         ' Set attributes and initialize test results sheet
         .test_suite_name = test_suite_name

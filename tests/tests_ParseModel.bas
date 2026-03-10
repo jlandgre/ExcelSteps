@@ -255,3 +255,5 @@ Sub CheckValsDeleteFlag(tst)
         .CompareRangeToExpected tst, aryVals, Split("T2,Triangle2,6,8", ",")
     End With
 End Sub
+
+

@@ -7,8 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'ExcelSteps_ParamBlock_cls
-'Version 7/30/25
+'Version 1/29/26
 ' This class enables the feature of adding a parameter block in left-most columns of
 ' a scenario model's .colrngModel in columns that do not contain named scenarios.
 ' wayfinding for the block can either be by naming the entire column(s)

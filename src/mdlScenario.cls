@@ -7,8 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'ExcelSteps_mdlScenario cls.vb
-'Version 12/2/25 minor updates
+'Version 1/29/26
 '        11/17/25 Add IsCustomMdl attr to facilitate ParseMdl option detection
 Option Explicit
 Public cellHome As Range

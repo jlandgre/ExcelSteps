@@ -7,8 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'ExcelSteps_mdlRow_cls.vb
-'Version 10/29/25 Performance optimization
+'Version 1/29/26
 Option Explicit
 
 Public rngVar As Range

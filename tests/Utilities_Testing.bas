@@ -247,3 +247,97 @@ Sub Set_ExcelStepsVersion()
     Set wkbk = Application.Workbooks("XLSteps.xlam")
     wkbk.BuiltinDocumentProperties("Comments").Value = Excelsteps.Version
 End Sub
+'-----------------------------------------------------------------------------------------------
+' Consolidate code_plan.csv and ExcelSteps_Code_Plan.xlsx into Code_Plan.xlsx
+' JDL 3/9/26
+'
+Sub ExportCodePlanToExcel()
+    Dim wkbkCodePlan As Workbook, wkbkCSV As Workbook, wkbkExisting As Workbook
+    Dim pathDocs As String, pathCSV As String, pathExisting As String, pathOutput As String
+    Dim sep As String, wksht As Worksheet, rngHeaders As Range
+    Dim headers As Variant
+    
+    sep = Application.PathSeparator
+    pathDocs = ThisWorkbook.Path & sep & ".." & sep & "docs"
+    pathCSV = pathDocs & sep & "code_plan.csv"
+    pathExisting = pathDocs & sep & "ExcelSteps_code_plan.xlsx"
+    pathOutput = pathDocs & sep & "code_Plan.xlsx"
+    
+    ' Create new workbook
+    Set wkbkCodePlan = Workbooks.Add
+    
+    ' Open and copy code_plan.csv if it exists
+    If Len(Dir$(pathCSV)) > 0 Then
+        If Not ExcelSteps.OpenFile(pathCSV, wkbkCSV) Then GoTo ErrorExit
+        wkbkCSV.Sheets(1).Copy Before:=wkbkCodePlan.Sheets(1)
+        wkbkCodePlan.Sheets(1).Name = "plan"
+        wkbkCSV.Close SaveChanges:=False
+    Else
+        ' Create blank sheet with headers
+        Set wksht = wkbkCodePlan.Sheets(1)
+        wksht.Name = "plan"
+        headers = Split("Module;Use_Case;Procedure;Method;Docstring;Arguments;" & _
+                       "Code writing instructions;Testing Considerations", ";")
+        Set rngHeaders = wksht.Range("A1").Resize(1, UBound(headers) + 1)
+        rngHeaders.Value = headers
+    End If
+    
+    ' Open and copy ExcelSteps sheet from ExcelSteps_Code_Plan.xlsx
+    If Not ExcelSteps.OpenFile(pathExisting, wkbkExisting) Then GoTo ErrorExit
+    wkbkExisting.Sheets("ExcelSteps").Copy After:=wkbkCodePlan.Sheets(wkbkCodePlan.Sheets.Count)
+    wkbkExisting.Close SaveChanges:=False
+    
+    ' Delete default blank sheet if it exists
+    Application.DisplayAlerts = False
+    On Error Resume Next
+    wkbkCodePlan.Sheets("Sheet1").Delete
+    On Error GoTo ErrorExit
+    Application.DisplayAlerts = True
+    
+    ' Save as Code_Plan.xlsx
+    If Not ExcelSteps.SaveAsCloseOverwrite(wkbkCodePlan, pathOutput, _
+                                           IsSave:=True, IsClose:=True) Then GoTo ErrorExit
+    Exit Sub
+
+ErrorExit:
+    Application.DisplayAlerts = True
+    Msgbox "Error ExportCodePlanToExcel"
+End Sub
+
+'-----------------------------------------------------------------------------------------------
+' Split Code_Plan.xlsx into code_plan.csv and ExcelSteps_Code_Plan.xlsx
+' JDL 3/9/26
+'
+Sub ExportCodePlanFromExcel()
+    Dim wkbkCodePlan As Workbook, wkbkTmp As Workbook
+    Dim pathDocs As String, pathCodePlan As String, pathCSV As String, pathExisting As String
+    Dim sep As String
+
+    sep = Application.PathSeparator
+    pathDocs = ThisWorkbook.Path & sep & ".." & sep & "docs"
+    pathCodePlan = pathDocs & sep & "code_plan.xlsx"
+    pathCSV = pathDocs & sep & "code_plan.csv"
+    pathExisting = pathDocs & sep & "ExcelSteps_code_plan.xlsx"
+
+    If Not ExcelSteps.OpenFile(pathCodePlan, wkbkCodePlan) Then GoTo ErrorExit
+
+    ' Export code_plan sheet to CSV by copying the sheet into a temp workbook.
+    wkbkCodePlan.Sheets("plan").Copy
+    Set wkbkTmp = ActiveWorkbook
+    If Not ExcelSteps.SaveAsCloseOverwrite(wkbkTmp, pathCSV, _
+                                           IsSave:=True, IsClose:=True) Then GoTo ErrorExit
+
+    ' Export ExcelSteps sheet to a standalone workbook.
+    wkbkCodePlan.Sheets("ExcelSteps").Copy
+    Set wkbkTmp = ActiveWorkbook
+    If Not ExcelSteps.SaveAsCloseOverwrite(wkbkTmp, pathExisting, _
+                                           IsSave:=True, IsClose:=True) Then GoTo ErrorExit
+
+    wkbkCodePlan.Close SaveChanges:=False
+    Exit Sub
+
+ErrorExit:
+    On Error Resume Next
+    If Not wkbkCodePlan Is Nothing Then wkbkCodePlan.Close SaveChanges:=False
+    Msgbox "Error ExportCodePlanFromExcel"
+End Sub

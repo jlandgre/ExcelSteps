@@ -7,10 +7,10 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
+'Version 2/13/25 - change for Mac compatibility
 'Version 5/27/24 Add writing procedure name in results table
 'Version 5/10/24 Refactor
 'Version of 7/18/23 - add testing utility functions TestAryVals etc.
-'Version 2/13/25 - change for Mac compatibility
 'Utility subs/functions used: AddSheet, SheetExists, ColWidthAutoFit, ShadeYellow
 Option Explicit
 Public wkbk As Workbook 'Testing workbook

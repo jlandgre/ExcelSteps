@@ -7,8 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'ExcelSteps_ErrorHandling_cls.vb
-'Version 12/3/25
+'Version 1/29/26
 'Class for error handling in cascaded function architecture
 'Version 6/7/23 - Add ShowMessage and FlagError
 'Version 7/10/23 - Fix bug with ShowMessage args

@@ -7,8 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'ExcelSteps_mdlImportRow_cls.vb
-'Version 12/2/25
+'Version 1/29/26
 '         8/25/23 - Class for properties of tblImport sheet row and transfer to mdlDest
 Option Explicit
 Public HasFormula As Boolean
