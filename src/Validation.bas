@@ -1,5 +1,5 @@
 Attribute VB_Name = "Validation"
-'Version 1/29/26
+'Version 3/11/26
 Option Explicit
 '-----------------------------------------------------------------------------------------------------
 'This module contains functions used for instancing add-in objects from a
@@ -42,5 +42,8 @@ Public Function New_ParamBlock() As ParamBlock
 End Function
 Public Function New_Dictionary() As Dictionary
     Set New_Dictionary = New Dictionary
+End Function
+Public Function New_ErrorMeta() As ErrorMeta
+    Set New_ErrorMeta = New ErrorMeta
 End Function
 

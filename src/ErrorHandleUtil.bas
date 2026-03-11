@@ -1,5 +1,5 @@
 Attribute VB_Name = "ErrorHandleUtil"
-'Version 1/29/26
+'Version 3/11/26
 'Import this module and ErrorHandling Class Module to install error handling in a project
 
 Option Explicit
@@ -12,6 +12,7 @@ Public Const sVBAErr As String = "Unknown VBA Error"
 Public Const iErrNotFound As Integer = 10000
 Public Const sFileErrs As String = "Warnings_and_Errors.txt"
 Public Const sSettingErrs As String = "Warnings_Errors"
+Public Const sErrorsHeadings As String = "iCode,Module,Routine,sMsg_String,sVal,iMsgDevUser,VBAProject"
 '-----------------------------------------------------------------------------------------------------
 'Initialize errs Class and Boolean calling function return value for project error handling
 'JDL 3/8/23; Modified 3/11/26

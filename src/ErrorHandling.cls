@@ -121,25 +121,23 @@ End Sub
 ' Created:   2/17/21 JDL      Modified: 11/21/23 Modify logic for IsUserFacing elim vbCrLf
 '
 Function AppendErrMsg(sMsgSuffix) As Boolean
-    Dim aryMetaData As Variant, sMsgNew As String
+    Dim sMsgNew As String, meta As ErrorMeta
 
     With errs
     
         'If new (root) error, look it up and populate its message
         If .IsNewErr Then
-    
-            'Look up Error table metadata by iCodeReport
-            aryMetaData = .aryErrLookup()
-            If Len(aryMetaData(3)) > 0 Then .IsUserFacing = aryMetaData(3)
-            
-            'If Base error code, set string denoting VBA Error
-            If aryMetaData(2) = sErrBase Then aryMetaData(2) = sVBAErr
+
+            Set meta = New ErrorMeta
+            If Not meta.LoadFromLookup(errs) Then Exit Function
+            If Not meta.Validate(.Locn) Then Exit Function
             
             'Add additional line feed to message if there are already accumulated warning(s)
             If Len(.ErrMsg) > 0 Then .ErrMsg = .ErrMsg & vbCrLf
     
             'If code is found, message string is iCode + Routine + sMsg + sVal
-            If aryMetaData(0) = iErrNotFound Then
+            If Not meta.IsFound Then
+                .IsUserFacing = False
                 If .iCodeBase <> iErrNotFound Then
                     sMsgNew = .Locn & " Error code not found: " & .iCodeBase
                 Else
@@ -148,13 +146,11 @@ Function AppendErrMsg(sMsgSuffix) As Boolean
             
             'Assign custom message based on either developer or user-facing
             Else
-                If Not .IsUserFacing Then
-                    sMsgNew = "Error " & .iCodeReport & "; in sub or function, "
-                    If Len(aryMetaData(1)) > 0 Then sMsgNew = sMsgNew & aryMetaData(1) & vbCrLf
-                    If Len(aryMetaData(2)) > 0 Then sMsgNew = sMsgNew & aryMetaData(2) & .ErrParam & vbCrLf
-                ElseIf Len(aryMetaData(2)) > 0 Then
-                    sMsgNew = aryMetaData(2)
-                    If Len(.ErrParam) > 0 Then sMsgNew = sMsgNew & .ErrParam
+                .IsUserFacing = meta.IsUserFacing
+                If .IsUserFacing Then
+                    sMsgNew = meta.ToUserMessage(.ErrParam)
+                Else
+                    sMsgNew = meta.ToDeveloperMessage(.iCodeReport, .ErrParam)
                 End If
             End If
             .ErrMsg = .ErrMsg & sMsgNew
