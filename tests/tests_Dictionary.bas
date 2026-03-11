@@ -1,6 +1,6 @@
 Attribute VB_Name = "tests_Dictionary"
 Option Explicit
-'Version 1/29/26
+'Version 3/10/26
 '--------------------------------------------------------------------------------------
 ' Dictionary Class Testing
 Sub TestDriver_Dictionary()
@@ -29,12 +29,12 @@ Sub TestDriver_Dictionary()
             test_ObjectValues procs
             test_ExpandCapacity procs
             test_NestedHelperAccess procs
-            test_ParseStringToDictProcedure procs
             test_ValidateAndStripBraces procs
             test_SplitIntoPairs procs
             test_ParsePair procs
             test_DetectValueType procs
             test_AddParsedValue procs
+            test_ParseStringToDictProcedure procs
         End If
     End With
     
@@ -52,6 +52,7 @@ End Sub
 '
 Sub test_Add(procs)
     Dim tst As New Test: tst.Init tst, "test_Add"
+    Set ExcelSteps.errs = Nothing
     Dim dict As Object
     
     Set dict = ExcelSteps.New_Dictionary
@@ -80,6 +81,7 @@ End Sub
 '
 Sub test_Item(procs)
     Dim tst As New Test: tst.Init tst, "test_Item"
+    Set ExcelSteps.errs = Nothing
     Dim dict As Object
     
     Set dict = ExcelSteps.New_Dictionary
@@ -105,6 +107,7 @@ End Sub
 '
 Sub test_Exists(procs)
     Dim tst As New Test: tst.Init tst, "test_Exists"
+    Set ExcelSteps.errs = Nothing
     Dim dict As Object
     
     Set dict = ExcelSteps.New_Dictionary
@@ -130,6 +133,7 @@ End Sub
 '
 Sub test_Remove(procs)
     Dim tst As New Test: tst.Init tst, "test_Remove"
+    Set ExcelSteps.errs = Nothing
     Dim dict As Object
     
     Set dict = ExcelSteps.New_Dictionary
@@ -165,6 +169,7 @@ End Sub
 '
 Sub test_Size(procs)
     Dim tst As New Test: tst.Init tst, "test_Size"
+    Set ExcelSteps.errs = Nothing
     Dim dict As Object
     
     Set dict = ExcelSteps.New_Dictionary
@@ -194,6 +199,7 @@ End Sub
 '
 Sub test_GetKeys(procs)
     Dim tst As New Test: tst.Init tst, "test_GetKeys"
+    Set ExcelSteps.errs = Nothing
     Dim dict As Object, keys() As String, i As Long
     
     Set dict = ExcelSteps.New_Dictionary
@@ -218,6 +224,7 @@ End Sub
 '
 Sub test_Clear(procs)
     Dim tst As New Test: tst.Init tst, "test_Clear"
+    Set ExcelSteps.errs = Nothing
     Dim dict As Object
     
     Set dict = ExcelSteps.New_Dictionary
@@ -248,6 +255,7 @@ End Sub
 '
 Sub test_UpdateValue(procs)
     Dim tst As New Test: tst.Init tst, "test_UpdateValue"
+    Set ExcelSteps.errs = Nothing
     Dim dict As Object
     
     Set dict = ExcelSteps.New_Dictionary
@@ -276,6 +284,7 @@ End Sub
 '
 Sub test_ObjectValues(procs)
     Dim tst As New Test: tst.Init tst, "test_ObjectValues"
+    Set ExcelSteps.errs = Nothing
     Dim dict As Object, rng As Range, wksht As Worksheet
     
     Set dict = ExcelSteps.New_Dictionary
@@ -305,6 +314,7 @@ End Sub
 '
 Sub test_ExpandCapacity(procs)
     Dim tst As New Test: tst.Init tst, "test_ExpandCapacity"
+    Set ExcelSteps.errs = Nothing
     Dim dict As Object, i As Long, sKey As String
     
     Set dict = ExcelSteps.New_Dictionary
@@ -339,6 +349,7 @@ End Sub
 '
 Sub test_NestedHelperAccess(procs)
     Dim tst As New Test: tst.Init tst, "test_NestedHelperAccess"
+    Set ExcelSteps.errs = Nothing
     Dim dict As Object
     
     Set dict = ExcelSteps.New_Dictionary
@@ -394,6 +405,8 @@ End Sub
 '
 Sub test_ParseStringToDictProcedure(procs)
     Dim tst As New Test: tst.Init tst, "test_ParseStringToDictProcedure"
+    Set ExcelSteps.errs = Nothing
+
     Dim dict As Object, jsonStr As String
 
     Set dict = ExcelSteps.New_Dictionary
@@ -419,6 +432,7 @@ End Sub
 '
 Sub test_ValidateAndStripBraces(procs)
     Dim tst As New Test: tst.Init tst, "test_ValidateAndStripBraces"
+    Set ExcelSteps.errs = Nothing
     Dim dict As Object, innerStr As String
 
     Set dict = ExcelSteps.New_Dictionary
@@ -442,6 +456,7 @@ End Sub
 '
 Sub test_SplitIntoPairs(procs)
     Dim tst As New Test: tst.Init tst, "test_SplitIntoPairs"
+    Set ExcelSteps.errs = Nothing
     Dim dict As Object, pairs As Variant
 
     Set dict = ExcelSteps.New_Dictionary
@@ -466,6 +481,7 @@ End Sub
 '
 Sub test_ParsePair(procs)
     Dim tst As New Test: tst.Init tst, "test_ParsePair"
+    Set ExcelSteps.errs = Nothing
     Dim dict As Object, key As String, valParsed As Variant
 
     Set dict = ExcelSteps.New_Dictionary
@@ -490,6 +506,7 @@ End Sub
 '
 Sub test_DetectValueType(procs)
     Dim tst As New Test: tst.Init tst, "test_DetectValueType"
+    Set ExcelSteps.errs = Nothing
     Dim dict As Object, valParsed As Variant
 
     Set dict = ExcelSteps.New_Dictionary
@@ -518,6 +535,7 @@ End Sub
 '
 Sub test_AddParsedValue(procs)
     Dim tst As New Test: tst.Init tst, "test_AddParsedValue"
+    Set ExcelSteps.errs = Nothing
     Dim dict As Object
 
     Set dict = ExcelSteps.New_Dictionary
@@ -532,3 +550,4 @@ Sub test_AddParsedValue(procs)
         .Update tst, procs
     End With
 End Sub
+

@@ -7,7 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'Version 1/29/26
+'Version 3/11/26
 'High-performance cross-platform dictionary class (Claude Sonnet generated to have
 'cross-platform dictionary accessible in client-facing project)
 
@@ -172,44 +172,49 @@ End Sub
 ' JDL 3/10/26
 '
 Public Function ParseStringToDictProcedure(ByVal jsonStr As String) As Boolean
+    SetErrs ParseStringToDictProcedure: If errs.IsHandle Then On Error GoTo ErrorExit
     Dim innerStr As String, pairs As Variant, i As Long
     Dim key As String, valParsed As Variant
     Dim lb As Long, ub As Long
 
-    If Not ValidateAndStripBraces(jsonStr, innerStr) Then Exit Function
-    If Not SplitIntoPairs(innerStr, pairs) Then Exit Function
+    If Not ValidateAndStripBraces(jsonStr, innerStr) Then GoTo ErrorExit
+    If Not SplitIntoPairs(innerStr, pairs) Then GoTo ErrorExit
 
     If IsArray(pairs) Then
         On Error Resume Next
         lb = LBound(pairs)
         ub = UBound(pairs)
-        If Err.Number <> 0 Then
-            Err.Clear
+        If err.Number <> 0 Then
+            err.Clear
             On Error GoTo 0
-            ParseStringToDictProcedure = True
             Exit Function
         End If
         On Error GoTo 0
 
         For i = lb To ub
-            If Not ParsePair(CStr(pairs(i)), key, valParsed) Then Exit Function
-            If Not AddParsedValue(key, valParsed) Then Exit Function
+            If Not ParsePair(CStr(pairs(i)), key, valParsed) Then GoTo ErrorExit
+            If Not AddParsedValue(key, valParsed) Then GoTo ErrorExit
         Next i
     End If
 
-    ParseStringToDictProcedure = True
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "ParseStringToDictProcedure", ParseStringToDictProcedure
 End Function
 '-----------------------------------------------------------------------------------------------
 ' Validate outer braces and return inner string
 ' JDL 3/10/26
 '
 Public Function ValidateAndStripBraces(ByVal jsonStr As String, ByRef innerStr As String) As Boolean
+    SetErrs ValidateAndStripBraces: If errs.IsHandle Then On Error GoTo ErrorExit
     Dim sTrim As String
 
     sTrim = Trim$(jsonStr)
-    If Len(sTrim) < 2 Then Exit Function
-    If Left$(sTrim, 1) <> "{" Then Exit Function
-    If Right$(sTrim, 1) <> "}" Then Exit Function
+
+    ' Check for missing or misplaced braces
+    If errs.IsFail(Left$(sTrim, 1) <> "{", 1) Then GoTo ErrorExit
+    If errs.IsFail(Right$(sTrim, 1) <> "}", 2) Then GoTo ErrorExit
 
     If Len(sTrim) = 2 Then
         innerStr = ""
@@ -217,20 +222,23 @@ Public Function ValidateAndStripBraces(ByVal jsonStr As String, ByRef innerStr A
         innerStr = Mid$(sTrim, 2, Len(sTrim) - 2)
     End If
 
-    ValidateAndStripBraces = True
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "ValidateAndStripBraces", ValidateAndStripBraces
 End Function
 '-----------------------------------------------------------------------------------------------
 ' Split inner string into key:value tokens while respecting quoted strings
 ' JDL 3/10/26
 '
 Public Function SplitIntoPairs(ByVal innerStr As String, ByRef pairs As Variant) As Boolean
+    SetErrs SplitIntoPairs: If errs.IsHandle Then On Error GoTo ErrorExit
     Dim colPairs As Collection
     Dim i As Long, ch As String, cur As String
     Dim inQuotes As Boolean
 
     If Len(innerStr) = 0 Then
         pairs = Array()
-        SplitIntoPairs = True
         Exit Function
     End If
 
@@ -245,7 +253,9 @@ Public Function SplitIntoPairs(ByVal innerStr As String, ByRef pairs As Variant)
             cur = cur & ch
         ElseIf ch = "," And Not inQuotes Then
             cur = Trim$(cur)
-            If Len(cur) = 0 Then Exit Function
+            
+            ' Missing key:value pair between commas (for example, double commas).
+            If errs.IsFail(Len(cur) = 0, 1, innerStr) Then GoTo ErrorExit
             colPairs.Add cur
             cur = ""
         Else
@@ -253,10 +263,12 @@ Public Function SplitIntoPairs(ByVal innerStr As String, ByRef pairs As Variant)
         End If
     Next i
 
-    If inQuotes Then Exit Function
+    ' Unterminated quote: pair splitting by commas may be incorrect.
+    If errs.IsFail(inQuotes, 2, innerStr) Then GoTo ErrorExit
 
     cur = Trim$(cur)
-    If Len(cur) = 0 Then Exit Function
+    ' Blank final token: string ended with a comma (missing last key:value pair).
+    If errs.IsFail(Len(cur) = 0, 3, innerStr) Then GoTo ErrorExit
     colPairs.Add cur
 
     ReDim pairs(0 To colPairs.Count - 1)
@@ -264,13 +276,17 @@ Public Function SplitIntoPairs(ByVal innerStr As String, ByRef pairs As Variant)
         pairs(i - 1) = colPairs(i)
     Next i
 
-    SplitIntoPairs = True
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "SplitIntoPairs", SplitIntoPairs
 End Function
 '-----------------------------------------------------------------------------------------------
 ' Parse single key:value token into key and typed value
 ' JDL 3/10/26
 '
 Public Function ParsePair(ByVal pairStr As String, ByRef key As String, ByRef valParsed As Variant) As Boolean
+    SetErrs ParsePair: If errs.IsHandle Then On Error GoTo ErrorExit
     Dim i As Long, ch As String, inQuotes As Boolean
     Dim colonPos As Long, keyRaw As String, valRaw As String
 
@@ -284,74 +300,89 @@ Public Function ParsePair(ByVal pairStr As String, ByRef key As String, ByRef va
         End If
     Next i
 
-    If colonPos = 0 Then Exit Function
+    ' Missing colon/invalid key:value pair
+    If errs.IsFail(colonPos = 0, 1, pairStr) Then GoTo ErrorExit
 
     keyRaw = Trim$(Left$(pairStr, colonPos - 1))
     valRaw = Trim$(Mid$(pairStr, colonPos + 1))
-    If Len(keyRaw) = 0 Then Exit Function
+
+    ' key:value pair starts with a colon
+    If errs.IsFail(Len(keyRaw) = 0, 2, pairStr) Then GoTo ErrorExit
 
     If Left$(keyRaw, 1) = Chr$(34) And Right$(keyRaw, 1) = Chr$(34) Then
-        If Len(keyRaw) < 2 Then Exit Function
+
+        ' Quoted key must include opening and closing quote characters
+        If errs.IsFail(Len(keyRaw) < 2, 3, pairStr) Then GoTo ErrorExit
         key = Mid$(keyRaw, 2, Len(keyRaw) - 2)
     Else
         key = keyRaw
     End If
 
-    If Len(key) = 0 Then Exit Function
-    If Not DetectValueType(valRaw, valParsed) Then Exit Function
+    ' Key cannot be blank after quote removal
+    If errs.IsFail(Len(key) = 0, 4, pairStr) Then GoTo ErrorExit
+    If Not DetectValueType(valRaw, valParsed) Then GoTo ErrorExit
 
-    ParsePair = True
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "ParsePair", ParsePair
 End Function
 '-----------------------------------------------------------------------------------------------
 ' Detect String, Boolean, Double or Empty from value text
 ' JDL 3/10/26
 '
 Public Function DetectValueType(ByVal valueStr As String, ByRef valParsed As Variant) As Boolean
+    SetErrs DetectValueType: If errs.IsHandle Then On Error GoTo ErrorExit
     Dim sTrim As String
 
     sTrim = Trim$(valueStr)
 
     If Len(sTrim) = 0 Then
         valParsed = Empty
-        DetectValueType = True
         Exit Function
     End If
 
+    ' valueStr is a quoted string
     If Len(sTrim) >= 2 And Left$(sTrim, 1) = Chr$(34) And Right$(sTrim, 1) = Chr$(34) Then
         valParsed = Mid$(sTrim, 2, Len(sTrim) - 2)
-        DetectValueType = True
         Exit Function
     End If
 
+    ' Boolean value (case-insensitive)
     Select Case UCase$(sTrim)
         Case "TRUE"
             valParsed = True
-            DetectValueType = True
             Exit Function
         Case "FALSE"
             valParsed = False
-            DetectValueType = True
             Exit Function
     End Select
 
+    ' Numeric value
     If IsNumeric(sTrim) Then
         valParsed = CDbl(sTrim)
-        DetectValueType = True
         Exit Function
     End If
+
+    ' valueStr is invalid: not a recognized type (string, boolean, double or empty)
+    If errs.IsFail(True, 1) Then GoTo ErrorExit
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "DetectValueType", DetectValueType
 End Function
 '-----------------------------------------------------------------------------------------------
 ' Add parsed key/value to Dictionary using Add
 ' JDL 3/10/26
 '
 Public Function AddParsedValue(ByVal key As String, ByVal valParsed As Variant) As Boolean
-    On Error GoTo ErrorExit
+    SetErrs AddParsedValue: If errs.IsHandle Then On Error GoTo ErrorExit
 
     Add key, valParsed
-    AddParsedValue = True
     Exit Function
 
 ErrorExit:
-    AddParsedValue = False
+    errs.RecordErr "AddParsedValue", AddParsedValue
 End Function
+
 
