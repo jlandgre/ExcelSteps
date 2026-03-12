@@ -36,6 +36,7 @@ Public ParseModel As Object '11/17/25
 Public mdlImportRow As Object '1/28/26
 Public dictionary As Object '1/29/26
 Public ErrorHandling As Object '3/11/26
+Public RecordErr As Object '3/12/26
 
 ' General attributes for all procedures in the code project
 Public wkbk_testing As Workbook
@@ -102,6 +103,8 @@ Sub Init(procs, ByVal wkbk, ByVal shtT, test_suite_name)
         ' TestDriver_ErrorHandling
         Set .ErrorHandling = New Procedure
         .ErrorHandling.Name = "ErrorHandling Class"
+        Set .RecordErr = New Procedure
+        .RecordErr.Name = "ErrorHandling.RecordErr"
         
         ' Set attributes and initialize test results sheet
         .test_suite_name = test_suite_name

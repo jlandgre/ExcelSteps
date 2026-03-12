@@ -13,6 +13,7 @@ Sub TestDriver_ErrorHandling()
 
 		AllEnabled = True
 		.ErrorHandling.Enabled = True
+		.RecordErr.Enabled = True
 	End With
 
 	With procs.ErrorHandling
@@ -24,6 +25,15 @@ Sub TestDriver_ErrorHandling()
 			test_ErrorMeta_MessageBuilders procs
 			test_AppendErrMsg_RootPaths procs
 			test_AppendErrMsg_NestedTrace procs
+		End If
+	End With
+
+	With procs.RecordErr
+		If .Enabled Or AllEnabled Then
+			procs.curProcedure = .Name
+			test_RecordErr_SetsCallingFunctionFalse procs
+			test_RecordErr_RootPaths procs
+			test_RecordErr_NestedTrace procs
 		End If
 	End With
 
@@ -50,7 +60,7 @@ Sub test_ErrorMeta_LoadFromLookup_Found(procs)
 		ExcelSteps.errs.iCodeBase = 2000
 		ExcelSteps.errs.iCodeLocal = 1
 
-		.Assert tst, meta.LoadFromLookup(ExcelSteps.errs)
+		.Assert tst, meta.LoadFromLookup(meta, ExcelSteps.errs)
 		.Assert tst, meta.IsFound
 		.Assert tst, meta.Code = 2001
 		.Assert tst, meta.Routine = "TestProc"
@@ -75,7 +85,7 @@ Sub test_ErrorMeta_LoadFromLookup_NotFound(procs)
 		ExcelSteps.errs.iCodeBase = 2000
 		ExcelSteps.errs.iCodeLocal = 99
 
-		.Assert tst, meta.LoadFromLookup(ExcelSteps.errs)
+		.Assert tst, meta.LoadFromLookup(meta, ExcelSteps.errs)
 		.Assert tst, Not meta.IsFound
 		.Assert tst, meta.Message = "Msg Not Found"
 		.Update tst, procs
@@ -97,8 +107,8 @@ Sub test_ErrorMeta_Validate_Malformed(procs)
 		ExcelSteps.errs.iCodeBase = 3000
 		ExcelSteps.errs.iCodeLocal = 1
 
-		.Assert tst, meta.LoadFromLookup(ExcelSteps.errs)
-		.Assert tst, meta.Validate("BadProc")
+		.Assert tst, meta.LoadFromLookup(meta, ExcelSteps.errs)
+		.Assert tst, meta.Validate(meta, "BadProc")
 		.Assert tst, meta.Message = "Malformed Errors_ Row for BadProc"
 		.Assert tst, meta.IsUserFacing = False
 		.Update tst, procs
@@ -120,17 +130,17 @@ Sub test_ErrorMeta_MessageBuilders(procs)
 		ExcelSteps.errs.iCodeBase = 4000
 		ExcelSteps.errs.iCodeLocal = 1
 
-		.Assert tst, meta.LoadFromLookup(ExcelSteps.errs)
-		.Assert tst, meta.Validate("UserProc")
+		.Assert tst, meta.LoadFromLookup(meta, ExcelSteps.errs)
+		.Assert tst, meta.Validate(meta, "UserProc")
 
-		sUser = meta.ToUserMessage("X")
+		sUser = meta.ToUserMessage(meta, "X")
 		.Assert tst, sUser = "User visible: X"
 
 		ExcelSteps.errs.Locn = "TestProc"
 		ExcelSteps.errs.iCodeBase = 2000
 		ExcelSteps.errs.iCodeLocal = 2
-		.Assert tst, meta.LoadFromLookup(ExcelSteps.errs)
-		sDev = meta.ToDeveloperMessage(2002, "Y")
+		.Assert tst, meta.LoadFromLookup(meta, ExcelSteps.errs)
+		sDev = meta.ToDeveloperMessage(meta, 2002, "Y")
 		.Assert tst, InStr(1, sDev, "Error 2002; in sub or function, ") > 0
 		.Assert tst, InStr(1, sDev, "TestProc") > 0
 		.Assert tst, InStr(1, sDev, "Developer detail: Y") > 0
@@ -196,6 +206,97 @@ Sub test_AppendErrMsg_NestedTrace(procs)
 		ExcelSteps.errs.AppendErrMsg "Called by CallerProc"
 		.Assert tst, InStr(1, ExcelSteps.errs.ErrMsg, "Called by CallerProc") = 0
 
+		.Update tst, procs
+	End With
+End Sub
+'--------------------------------------------------------------------------------------
+'--------------------------------------------------------------------------------------
+' procs.RecordErr
+'--------------------------------------------------------------------------------------
+'--------------------------------------------------------------------------------------
+' Verify RecordErr sets Boolean caller return to False
+' JDL 3/12/26
+'
+Sub test_RecordErr_SetsCallingFunctionFalse(procs)
+	Dim tst As New Test: tst.Init tst, "test_RecordErr_SetsCallingFunctionFalse"
+	Dim IsCallerOk As Boolean
+
+	SetupErrorsFixture tst
+
+	With tst
+		IsCallerOk = True
+		ExcelSteps.errs.iCodeLocal = 2
+		ExcelSteps.errs.ErrParam = ""
+		ExcelSteps.errs.ErrMsg = ""
+		ExcelSteps.errs.IsNewErr = True
+		ExcelSteps.errs.RecordErr "TestProc", IsCallerOk
+
+		.Assert tst, Not IsCallerOk
+		.Assert tst, InStr(1, ExcelSteps.errs.ErrMsg, "Error 2002; in sub or function,") > 0
+		.Update tst, procs
+	End With
+End Sub
+'--------------------------------------------------------------------------------------
+' Verify RecordErr root path for developer and user-facing branches
+' JDL 3/12/26
+'
+Sub test_RecordErr_RootPaths(procs)
+	Dim tst As New Test: tst.Init tst, "test_RecordErr_RootPaths"
+	Dim IsCallerOk As Boolean
+
+	SetupErrorsFixture tst
+
+	With tst
+		IsCallerOk = True
+		ExcelSteps.errs.iCodeLocal = 2
+		ExcelSteps.errs.ErrParam = "ABC"
+		ExcelSteps.errs.ErrMsg = ""
+		ExcelSteps.errs.IsNewErr = True
+		ExcelSteps.errs.RecordErr "TestProc", IsCallerOk
+		.Assert tst, Not ExcelSteps.errs.IsUserFacing
+		.Assert tst, InStr(1, ExcelSteps.errs.ErrMsg, "Error 2002; in sub or function,") > 0
+		.Assert tst, InStr(1, ExcelSteps.errs.ErrMsg, "TestProc") > 0
+		.Assert tst, InStr(1, ExcelSteps.errs.ErrMsg, "Developer detail: ABC") > 0
+
+		IsCallerOk = True
+		ExcelSteps.errs.iCodeLocal = 1
+		ExcelSteps.errs.ErrParam = "XYZ"
+		ExcelSteps.errs.ErrMsg = ""
+		ExcelSteps.errs.IsNewErr = True
+		ExcelSteps.errs.RecordErr "UserProc", IsCallerOk
+		.Assert tst, ExcelSteps.errs.IsUserFacing
+		.Assert tst, ExcelSteps.errs.ErrMsg = "User visible: XYZ"
+		.Update tst, procs
+	End With
+End Sub
+'--------------------------------------------------------------------------------------
+' Verify RecordErr nested trace behavior for non-user-facing path
+' JDL 3/12/26
+'
+Sub test_RecordErr_NestedTrace(procs)
+	Dim tst As New Test: tst.Init tst, "test_RecordErr_NestedTrace"
+	Dim IsCallerOk As Boolean
+
+	SetupErrorsFixture tst
+
+	With tst
+		IsCallerOk = True
+		ExcelSteps.errs.iCodeLocal = 2
+		ExcelSteps.errs.ErrParam = ""
+		ExcelSteps.errs.ErrMsg = ""
+		ExcelSteps.errs.IsNewErr = True
+		ExcelSteps.errs.RecordErr "TestProc", IsCallerOk
+		ExcelSteps.errs.RecordErr "CallerProc", IsCallerOk
+		.Assert tst, InStr(1, ExcelSteps.errs.ErrMsg, "Called by CallerProc") > 0
+
+		IsCallerOk = True
+		ExcelSteps.errs.iCodeLocal = 1
+		ExcelSteps.errs.ErrParam = ""
+		ExcelSteps.errs.ErrMsg = ""
+		ExcelSteps.errs.IsNewErr = True
+		ExcelSteps.errs.RecordErr "UserProc", IsCallerOk
+		ExcelSteps.errs.RecordErr "CallerProc", IsCallerOk
+		.Assert tst, InStr(1, ExcelSteps.errs.ErrMsg, "Called by CallerProc") = 0
 		.Update tst, procs
 	End With
 End Sub

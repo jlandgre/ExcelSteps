@@ -7,7 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'Version 3/11/26
+'Version 3/12/26
 'Class for error handling in cascaded function architecture
 'Version 6/7/23 - Add ShowMessage and FlagError
 'Version 7/10/23 - Fix bug with ShowMessage args
@@ -86,7 +86,7 @@ End Sub
 ' Created:  2/17/21 JDL      Modified: 3/11/26
 '
 Sub RecordErr(Locn, Optional ByRef CallingFunction)
-    Dim sMsgSuffix As String, IsDriverCall As Boolean
+    Dim IsDriverCall As Boolean, sMsgSuffix As String
 
     IsDriverCall = IsMissing(CallingFunction)
 
@@ -96,18 +96,9 @@ Sub RecordErr(Locn, Optional ByRef CallingFunction)
     With errs
         'Set calling routine's location
         .Locn = Locn
-        
-        'If new error (e.g. occurs in calling function) set .iCodeReport
-        If .IsNewErr Then
-            If GetBaseErrCode() Then .iCodeReport = .iCodeBase + .iCodeLocal
-            
-        'Record tracing for non user-facing message
-        ElseIf Not .IsUserFacing Then
-            sMsgSuffix = "Called by " & Locn
-        End If
-    
-        'Append to the error message
-        AppendErrMsg sMsgSuffix
+        If Not .IsNewErr And Not .IsUserFacing Then sMsgSuffix = "Called by " & Locn
+
+        If Not AppendErrMsg(sMsgSuffix) Then Exit Sub
         
         'IsShowMsgs gates reporting for both driver and testing flows.
         If .IsShowMsgs And (IsDriverCall Or .IsTesting) Then .ReportMsg
@@ -121,100 +112,59 @@ End Sub
 ' Created:   2/17/21 JDL      Modified: 11/21/23 Modify logic for IsUserFacing elim vbCrLf
 '
 Function AppendErrMsg(sMsgSuffix) As Boolean
+    With errs
+        If .IsNewErr Then
+            AppendErrMsg = ProcessRootErrMsg()
+            Exit Function
+        ElseIf Not .IsUserFacing Then
+            .ErrMsg = .ErrMsg & sMsgSuffix & vbCrLf
+        End If
+    End With
+    AppendErrMsg = True
+End Function
+
+'-----------------------------------------------------------------------------------------------------
+' Build and append root error message using ErrorMeta lookup state
+' JDL 3/12/26
+'
+Private Function ProcessRootErrMsg() As Boolean
     Dim sMsgNew As String, meta As ErrorMeta
 
-    With errs
-    
-        'If new (root) error, look it up and populate its message
-        If .IsNewErr Then
-
-            Set meta = New ErrorMeta
-            If Not meta.LoadFromLookup(errs) Then Exit Function
-            If Not meta.Validate(.Locn) Then Exit Function
-            
-            'Add additional line feed to message if there are already accumulated warning(s)
-            If Len(.ErrMsg) > 0 Then .ErrMsg = .ErrMsg & vbCrLf
-    
-            'If code is found, message string is iCode + Routine + sMsg + sVal
-            If Not meta.IsFound Then
-                .IsUserFacing = False
-                If .iCodeBase <> iErrNotFound Then
-                    sMsgNew = .Locn & " Error code not found: " & .iCodeBase
-                Else
-                    sMsgNew = "Base error code not found for routine: " & .Locn
-                End If
-            
-            'Assign custom message based on either developer or user-facing
-            Else
-                .IsUserFacing = meta.IsUserFacing
-                If .IsUserFacing Then
-                    sMsgNew = meta.ToUserMessage(.ErrParam)
-                Else
-                    sMsgNew = meta.ToDeveloperMessage(.iCodeReport, .ErrParam)
-                End If
-            End If
-            .ErrMsg = .ErrMsg & sMsgNew
-            .IsNewErr = False
-    
-        'If Not a new error and not a driver error, append calling routine name
-        ElseIf Not .IsUserFacing Then
-            .ErrMsg = .ErrMsg & sMsgSuffix & vbCrLf
-        End If
-    End With
-End Function
-'-----------------------------------------------------------------------------------------------------
-' xxx previous 3/11/26 version
-' Append error message updates onto ErrMsg
-'
-'Inputs:    sMsgSuffix [String] Name of calling routine - to trace stack if non user-facing
-'
-' Created:   2/17/21 JDL      Modified: 11/21/23 Modify logic for IsUserFacing elim vbCrLf
-'
-Function AppendErrMsg_prev(sMsgSuffix) As Boolean
-    Dim aryMetaData As Variant, sMsgNew As String
+    ProcessRootErrMsg = False
 
     With errs
-    
-        'If new (root) error, look it up and populate its message
-        If .IsNewErr Then
-    
-            'Look up Error table metadata by iCodeReport
-            aryMetaData = .aryErrLookup()
-            If Len(aryMetaData(3)) > 0 Then .IsUserFacing = aryMetaData(3)
-            
-            'If Base error code, set string denoting VBA Error
-            If aryMetaData(2) = sErrBase Then aryMetaData(2) = sVBAErr
-            
-            'Add additional line feed to message if there are already accumulated warning(s)
-            If Len(.ErrMsg) > 0 Then .ErrMsg = .ErrMsg & vbCrLf
-    
-            'If code is found, message string is iCode + Routine + sMsg + sVal
-            If aryMetaData(0) = iErrNotFound Then
-                If .iCodeBase <> iErrNotFound Then
-                    sMsgNew = .Locn & " Error code not found: " & .iCodeBase
-                Else
-                    sMsgNew = "Base error code not found for routine: " & .Locn
-                End If
-            
-            'Assign custom message based on either developer or user-facing
+        'Set base/report code for root lookup
+        GetBaseErrCode
+        .iCodeReport = .iCodeBase + .iCodeLocal
+
+        Set meta = New ErrorMeta
+        If Not meta.LoadFromLookup(meta, errs) Then Exit Function
+        If Not meta.Validate(meta, .Locn) Then Exit Function
+
+        'Add additional line feed if there are already accumulated warning(s)
+        If Len(.ErrMsg) > 0 Then .ErrMsg = .ErrMsg & vbCrLf
+
+        If Not meta.IsFound Then
+            .IsUserFacing = False
+            If .iCodeBase <> iErrNotFound Then
+                sMsgNew = .Locn & " Error code not found: " & .iCodeBase
             Else
-                If Not .IsUserFacing Then
-                    sMsgNew = "Error " & .iCodeReport & "; in sub or function, "
-                    If Len(aryMetaData(1)) > 0 Then sMsgNew = sMsgNew & aryMetaData(1) & vbCrLf
-                    If Len(aryMetaData(2)) > 0 Then sMsgNew = sMsgNew & aryMetaData(2) & .ErrParam & vbCrLf
-                ElseIf Len(aryMetaData(2)) > 0 Then
-                    sMsgNew = aryMetaData(2)
-                    If Len(.ErrParam) > 0 Then sMsgNew = sMsgNew & .ErrParam
-                End If
+                sMsgNew = "Base error code not found for routine: " & .Locn
             End If
-            .ErrMsg = .ErrMsg & sMsgNew
-            .IsNewErr = False
-    
-        'If Not a new error and not a driver error, append calling routine name
-        ElseIf Not .IsUserFacing Then
-            .ErrMsg = .ErrMsg & sMsgSuffix & vbCrLf
+        Else
+            .IsUserFacing = meta.IsUserFacing
+            If .IsUserFacing Then
+                sMsgNew = meta.ToUserMessage(meta, .ErrParam)
+            Else
+                sMsgNew = meta.ToDeveloperMessage(meta, .iCodeReport, .ErrParam)
+            End If
         End If
+
+        .ErrMsg = .ErrMsg & sMsgNew
+        .IsNewErr = False
     End With
+
+    ProcessRootErrMsg = True
 End Function
 '-----------------------------------------------------------------------------------------------------
 ' Lookup metadata from Errors table
