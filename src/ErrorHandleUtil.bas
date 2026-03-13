@@ -1,5 +1,5 @@
 Attribute VB_Name = "ErrorHandleUtil"
-'Version 3/11/26
+'Version 3/13/26
 'Import this module and ErrorHandling Class Module to install error handling in a project
 
 Option Explicit

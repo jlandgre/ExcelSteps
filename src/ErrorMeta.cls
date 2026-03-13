@@ -34,42 +34,113 @@ Private Sub Class_Initialize()
   End With
 End Sub
 '--------------------------------------------------------------------------------------
+' Set Errors_ table column ranges and data row extent
+' JDL 3/12/26
+'
+Public Function SetTblELocations(meta, errs, colrngFunc, colrngMsg, colrngCode, colrngIMsg, rngRows) As Boolean
+  On Error GoTo ErrorExit
+  Dim c As Range
+
+  SetTblELocations = False
+  If errs Is Nothing Then GoTo ErrorExit
+
+  With errs.wkbkE.Sheets(shtErrors)
+    Set colrngCode = .Columns(1)
+    Set colrngFunc = .Columns(3)
+    Set colrngMsg = .Columns(4)
+    Set colrngIMsg = .Columns(6)
+  End With
+
+  With errs.wkbkE.Sheets(shtErrors).Columns(1)
+    Set c = .Cells(.Cells.Count).End(xlUp)
+  End With
+  Set rngRows = errs.wkbkE.Sheets(shtErrors).Range(errs.wkbkE.Sheets(shtErrors).Rows(2), c.EntireRow)
+
+  SetTblELocations = True
+  Exit Function
+
+ErrorExit:
+  SetTblELocations = False
+End Function
+'--------------------------------------------------------------------------------------
+' Resolve and set base error code for a routine
+' JDL 3/12/26
+'
+Public Function GetBaseErrCode(meta, errs, ByVal Locn As String) As Boolean
+  On Error GoTo ErrorExit
+  Dim r As Range, rngRows As Range
+  Dim colrngCode As Range, colrngFunc As Range, colrngMsg As Range, colrngIMsg As Range
+
+  GetBaseErrCode = False
+  If errs Is Nothing Then GoTo ErrorExit
+
+  errs.Locn = Locn
+  If Not SetTblELocations(meta, errs, colrngFunc, colrngMsg, colrngCode, colrngIMsg, rngRows) Then GoTo ErrorExit
+
+  Set r = rngMultiKeyBasic(rngRows, Array(colrngFunc, colrngMsg), Array(Locn, sErrBase))
+  errs.iCodeBase = iErrNotFound
+  If Not r Is Nothing Then
+    errs.iCodeBase = CLng(Intersect(r, colrngCode).Value)
+    GetBaseErrCode = True
+  End If
+
+  Exit Function
+
+ErrorExit:
+  GetBaseErrCode = False
+End Function
+'--------------------------------------------------------------------------------------
+' Set explicit not-found state
+' JDL 3/13/26
+'
+Private Sub SetNotFound(meta, Optional ByVal Routine As String = "")
+  With meta
+    .Code = 0
+    .Routine = Routine
+    .Message = "Msg Not Found"
+    .IsUserFacing = False
+    .IsFound = False
+    .IsBaseMessage = False
+    .IsMalformed = False
+  End With
+End Sub
+'--------------------------------------------------------------------------------------
+' Parse user-facing Boolean-like field and malformed status
+' JDL 3/12/26
+'
+Private Function ParseIsUserFacing(ByVal valRaw As Variant, ByRef IsMalformed As Boolean) As Boolean
+  Dim sBool As String
+
+  IsMalformed = False
+  sBool = LCase(Trim(CStr(valRaw)))
+  If Len(sBool) = 0 Then Exit Function
+
+  If sBool = "true" Or sBool = "false" Then
+    ParseIsUserFacing = CBool(sBool)
+  Else
+    ParseIsUserFacing = False
+    IsMalformed = True
+  End If
+End Function
+'--------------------------------------------------------------------------------------
 ' Load metadata for current error context
 ' JDL 3/11/26
 '
 Public Function LoadFromLookup(meta, errs) As Boolean
   On Error GoTo ErrorExit
-  Dim sBool As String, rng As Range, rngRows As Range, c As Range
+  Dim rng As Range, rngRows As Range
   Dim colrngCode As Range, colrngFunc As Range, colrngMsg As Range, colrngIMsg As Range
-  Dim wksht As Worksheet
 
   LoadFromLookup = True
   If errs Is Nothing Then GoTo ErrorExit
 
-  Set wksht = errs.wkbkE.Sheets(shtErrors)
-  Set colrngCode = wksht.Columns(1)
-  Set colrngFunc = wksht.Columns(3)
-  Set colrngMsg = wksht.Columns(4)
-  Set colrngIMsg = wksht.Columns(6)
-
-  With wksht.Columns(1)
-    Set c = .Cells(.Cells.Count).End(xlUp)
-  End With
-  Set rngRows = wksht.Range(wksht.Rows(2), c.EntireRow)
+  If Not SetTblELocations(meta, errs, colrngFunc, colrngMsg, colrngCode, colrngIMsg, rngRows) Then GoTo ErrorExit
 
   errs.iCodeReport = errs.iCodeBase + errs.iCodeLocal
   Set rng = rngMultiKeyBasic(rngRows, Array(colrngCode), Array(errs.iCodeReport))
 
   If rng Is Nothing Then
-    With meta
-      .Code = iErrNotFound
-      .Routine = ""
-      .Message = "Msg Not Found"
-      .IsUserFacing = False
-      .IsFound = False
-      .IsBaseMessage = False
-      .IsMalformed = False
-    End With
+    SetNotFound meta
     Exit Function
   End If
 
@@ -79,17 +150,7 @@ Public Function LoadFromLookup(meta, errs) As Boolean
     .Message = Intersect(rng, colrngMsg).Value
     .IsFound = True
     .IsBaseMessage = (.Message = sErrBase)
-    .IsMalformed = False
-
-    sBool = LCase(Trim(CStr(Intersect(rng, colrngIMsg).Value)))
-    If Len(sBool) = 0 Then
-      .IsUserFacing = False
-    ElseIf sBool = "true" Or sBool = "false" Then
-      .IsUserFacing = CBool(sBool)
-    Else
-      .IsUserFacing = False
-      .IsMalformed = True
-    End If
+    .IsUserFacing = ParseIsUserFacing(Intersect(rng, colrngIMsg).Value, .IsMalformed)
   End With
 
   Exit Function
@@ -101,7 +162,7 @@ End Function
 ' Validate loaded metadata and normalize malformed message
 ' JDL 3/11/26
 '
-Public Function Validate(meta, Optional Locn As String = "") As Boolean
+Public Function Validate(meta, Optional ByVal Locn As String = "") As Boolean
   On Error GoTo ErrorExit
 
   Validate = True

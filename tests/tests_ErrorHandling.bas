@@ -23,6 +23,9 @@ Sub TestDriver_ErrorHandling()
 			test_ErrorMeta_LoadFromLookup_NotFound procs
 			test_ErrorMeta_Validate_Malformed procs
 			test_ErrorMeta_MessageBuilders procs
+			test_ReportWarningMsg_Normal procs
+			test_ReportWarningMsg_RowNotFound procs
+			test_ReportWarningMsg_Malformed procs
 			test_AppendErrMsg_RootPaths procs
 			test_AppendErrMsg_NestedTrace procs
 		End If
@@ -49,6 +52,7 @@ End Sub
 ' JDL 3/11/26
 '
 Sub test_ErrorMeta_LoadFromLookup_Found(procs)
+    Set ExcelSteps.errs = Nothing
 	Dim tst As New Test: tst.Init tst, "test_ErrorMeta_LoadFromLookup_Found"
 	Dim meta As Object
 
@@ -74,6 +78,7 @@ End Sub
 ' JDL 3/11/26
 '
 Sub test_ErrorMeta_LoadFromLookup_NotFound(procs)
+    Set ExcelSteps.errs = Nothing
 	Dim tst As New Test: tst.Init tst, "test_ErrorMeta_LoadFromLookup_NotFound"
 	Dim meta As Object
 
@@ -96,6 +101,7 @@ End Sub
 ' JDL 3/11/26
 '
 Sub test_ErrorMeta_Validate_Malformed(procs)
+    Set ExcelSteps.errs = Nothing
 	Dim tst As New Test: tst.Init tst, "test_ErrorMeta_Validate_Malformed"
 	Dim meta As Object
 
@@ -119,6 +125,7 @@ End Sub
 ' JDL 3/11/26
 '
 Sub test_ErrorMeta_MessageBuilders(procs)
+    Set ExcelSteps.errs = Nothing
 	Dim tst As New Test: tst.Init tst, "test_ErrorMeta_MessageBuilders"
 	Dim meta As Object, sUser As String, sDev As String
 
@@ -148,10 +155,68 @@ Sub test_ErrorMeta_MessageBuilders(procs)
 	End With
 End Sub
 '--------------------------------------------------------------------------------------
+' Verify warning path uses looked-up message and appends params
+' JDL 3/12/26
+'
+Sub test_ReportWarningMsg_Normal(procs)
+    Set ExcelSteps.errs = Nothing
+	Dim tst As New Test: tst.Init tst, "test_ReportWarningMsg_Normal"
+
+	SetupErrorsFixture tst
+
+	With tst
+		ExcelSteps.errs.Msgs_accum = ""
+		ExcelSteps.errs.ErrParam = "E1"
+		ExcelSteps.errs.ReportWarningMsg 2, "TestProc", "P1"
+
+		.Assert tst, InStr(1, ExcelSteps.errs.Msgs_accum, "Developer detail: E1P1") > 0
+		.Update tst, procs
+	End With
+End Sub
+'--------------------------------------------------------------------------------------
+' Verify warning path reports informative message when warning row is missing
+' JDL 3/12/26
+'
+Sub test_ReportWarningMsg_RowNotFound(procs)
+    Set ExcelSteps.errs = Nothing
+	Dim tst As New Test: tst.Init tst, "test_ReportWarningMsg_RowNotFound"
+
+	SetupErrorsFixture tst
+
+	With tst
+		ExcelSteps.errs.Msgs_accum = ""
+		ExcelSteps.errs.ErrParam = ""
+		ExcelSteps.errs.ReportWarningMsg 99, "TestProc"
+
+		.Assert tst, InStr(1, ExcelSteps.errs.Msgs_accum, "Warning message not found for code 2099 in routine: TestProc") > 0
+		.Update tst, procs
+	End With
+End Sub
+'--------------------------------------------------------------------------------------
+' Verify warning path reports malformed row via Validate normalization
+' JDL 3/12/26
+'
+Sub test_ReportWarningMsg_Malformed(procs)
+    Set ExcelSteps.errs = Nothing
+	Dim tst As New Test: tst.Init tst, "test_ReportWarningMsg_Malformed"
+
+	SetupErrorsFixture tst
+
+	With tst
+		ExcelSteps.errs.Msgs_accum = ""
+		ExcelSteps.errs.ErrParam = ""
+		ExcelSteps.errs.ReportWarningMsg 1, "BadProc"
+
+		.Assert tst, InStr(1, ExcelSteps.errs.Msgs_accum, "Malformed Errors_ Row for BadProc") > 0
+		.Update tst, procs
+	End With
+End Sub
+'--------------------------------------------------------------------------------------
 ' Verify root error message behavior for developer and user-facing branches
 ' JDL 3/11/26
 '
 Sub test_AppendErrMsg_RootPaths(procs)
+    Set ExcelSteps.errs = Nothing
 	Dim tst As New Test: tst.Init tst, "test_AppendErrMsg_RootPaths"
 
 	SetupErrorsFixture tst
@@ -189,6 +254,7 @@ End Sub
 ' JDL 3/11/26
 '
 Sub test_AppendErrMsg_NestedTrace(procs)
+    Set ExcelSteps.errs = Nothing
 	Dim tst As New Test: tst.Init tst, "test_AppendErrMsg_NestedTrace"
 
 	SetupErrorsFixture tst
@@ -218,6 +284,7 @@ End Sub
 ' JDL 3/12/26
 '
 Sub test_RecordErr_SetsCallingFunctionFalse(procs)
+    Set ExcelSteps.errs = Nothing
 	Dim tst As New Test: tst.Init tst, "test_RecordErr_SetsCallingFunctionFalse"
 	Dim IsCallerOk As Boolean
 
@@ -241,6 +308,7 @@ End Sub
 ' JDL 3/12/26
 '
 Sub test_RecordErr_RootPaths(procs)
+    Set ExcelSteps.errs = Nothing
 	Dim tst As New Test: tst.Init tst, "test_RecordErr_RootPaths"
 	Dim IsCallerOk As Boolean
 
@@ -274,6 +342,7 @@ End Sub
 ' JDL 3/12/26
 '
 Sub test_RecordErr_NestedTrace(procs)
+    Set ExcelSteps.errs = Nothing
 	Dim tst As New Test: tst.Init tst, "test_RecordErr_NestedTrace"
 	Dim IsCallerOk As Boolean
 
