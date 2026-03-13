@@ -78,4 +78,5 @@ Attribute VB_Name = "VersionHistory"
 '12/3/25 Code review/minor updates to many modules; ErrorHandling update; Errors table updated
 '12/16/25 minor docstring updates - Add SetExcelStepsVersion to tests Utilities_Testing module
 '1/29/26 Cosmetic changes for consistency with use of xlwings vba edit; clean up module names
+'3/10/26 Add Dictionary.ParseStringToDictProcedure; update Errors_ table
 

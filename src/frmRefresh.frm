@@ -595,6 +595,3 @@ Private Sub CkBoxRepl_8_Click()
     End If
 End Sub
 
-Private Sub UserForm_Click()
-
-End Sub

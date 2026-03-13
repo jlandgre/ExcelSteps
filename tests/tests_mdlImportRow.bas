@@ -44,7 +44,7 @@ End Sub
 '
 Sub test_Init(procs)
     Dim tst As New Test: tst.Init tst, "test_Init"
-    Dim R_MI As Object: Set R_MI = Excelsteps.New_mdlImportRow
+    Dim R_MI As Object: Set R_MI = ExcelSteps.New_mdlImportRow
 
     With tst
         R_MI.Grp = "xxx"
@@ -66,10 +66,10 @@ End Sub
 '
 Sub test_ReadMdlDestRow(procs)
     Dim tst As New Test: tst.Init tst, "test_ReadMdlDestRow"
-    Dim tblImp As Object: Set tblImp = Excelsteps.New_tbl
-    Dim tbls As Object: Set tbls = Excelsteps.New_tbl
-    Dim mdlDest As Object: Set mdlDest = Excelsteps.New_mdl
-    Dim R_MI As Object: Set R_MI = Excelsteps.New_mdlImportRow
+    Dim tblImp As Object: Set tblImp = ExcelSteps.New_tbl
+    Dim tbls As Object: Set tbls = ExcelSteps.New_tbl
+    Dim mdlDest As Object: Set mdlDest = ExcelSteps.New_mdl
+    Dim R_MI As Object: Set R_MI = ExcelSteps.New_mdlImportRow
     Dim aryExpect As Variant
 
     'Populate the Scenario model to mdlDest
@@ -120,10 +120,10 @@ End Sub
 '
 Sub test_ReadStepsRow(procs)
     Dim tst As New Test: tst.Init tst, "test_ReadStepsRow"
-    Dim tblImp As Object: Set tblImp = Excelsteps.New_tbl
-    Dim tbls As Object: Set tbls = Excelsteps.New_tbl
-    Dim mdlDest As Object: Set mdlDest = Excelsteps.New_mdl
-    Dim R_MI As Object: Set R_MI = Excelsteps.New_mdlImportRow
+    Dim tblImp As Object: Set tblImp = ExcelSteps.New_tbl
+    Dim tbls As Object: Set tbls = ExcelSteps.New_tbl
+    Dim mdlDest As Object: Set mdlDest = ExcelSteps.New_mdl
+    Dim R_MI As Object: Set R_MI = ExcelSteps.New_mdlImportRow
 
     'Populate the Scenario model to mdlDest
     PopulateForMdlImportRow tst, mdlDest, tblImp
@@ -147,10 +147,10 @@ End Sub
 '
 Sub test_SetBooleanFlags(procs)
     Dim tst As New Test: tst.Init tst, "test_SetBooleanFlags"
-    Dim tblImp As Object: Set tblImp = Excelsteps.New_tbl
-    Dim tbls As Object: Set tbls = Excelsteps.New_tbl
-    Dim mdlDest As Object: Set mdlDest = Excelsteps.New_mdl
-    Dim R_MI As Object: Set R_MI = Excelsteps.New_mdlImportRow
+    Dim tblImp As Object: Set tblImp = ExcelSteps.New_tbl
+    Dim tbls As Object: Set tbls = ExcelSteps.New_tbl
+    Dim mdlDest As Object: Set mdlDest = ExcelSteps.New_mdl
+    Dim R_MI As Object: Set R_MI = ExcelSteps.New_mdlImportRow
 
     'Populate the Scenario model to mdlDest
     PopulateForMdlImportRow tst, mdlDest, tblImp
@@ -201,10 +201,10 @@ End Sub
 '
 Sub test_ToTblWriteRow(procs)
     Dim tst As New Test: tst.Init tst, "test_ToTblWriteRow"
-    Dim tblImp As Object: Set tblImp = Excelsteps.New_tbl
-    Dim tbls As Object: Set tbls = Excelsteps.New_tbl
-    Dim mdlDest As Object: Set mdlDest = Excelsteps.New_mdl
-    Dim R_MI As Object: Set R_MI = Excelsteps.New_mdlImportRow
+    Dim tblImp As Object: Set tblImp = ExcelSteps.New_tbl
+    Dim tbls As Object: Set tbls = ExcelSteps.New_tbl
+    Dim mdlDest As Object: Set mdlDest = ExcelSteps.New_mdl
+    Dim R_MI As Object: Set R_MI = ExcelSteps.New_mdlImportRow
     Dim aryExpect As Variant, rng As Range
 
     'Populate the Scenario model to mdlDest

@@ -7,10 +7,25 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-Option Explicit
-'Version 3/12/26
+'Version 1/29/26
 'Class for error handling in cascaded function architecture
+'Version 6/7/23 - Add ShowMessage and FlagError
+'Version 7/10/23 - Fix bug with ShowMessage args
+'Version 8/29/23 - Refactor to eliminate errs as argument; Modify LookupCommentMsg args
+'Version 11/21/23 - Mods to .RecordErr(), .AppendErrMsg() to clean up user-facing msgs
+'Version 5/22/24 - Add Msgs_accum and IsShowMsgs attributes to enable passing messages to
+'                  unit tests as alternative to Msgbox display during automated testing
+'Version 9/19/25 Modify SetErrs and .Init method for wkbkE different from ThisWorkbook
+'                add IsTesting attribute and logic to .ReportMsg
+'Version 10/16/25 - update ShowMessage
+'Version 10/30/25 - update .Init arg LookupCommentMsg
+'Version 11/24/25 - update to .setMsgTitleAndText
+'Version 12/3/25 - updates to .RecordMsg and .ReportWarningMsg
+
+Option Explicit
+
 Public IsHandle As Boolean 'Toggle error handling on/off
+Public IsDriver As Boolean 'Trigger stack tracing messaging for nested functions
 Public IsNewErr As Boolean 'Trigger handling of new error versus stack tracing
 Public IsUserFacing As Boolean 'True for user-facing error messaging (versus VBA stack
                                'tracing reporting)
@@ -25,7 +40,9 @@ Public ErrMsg As String 'Error message string --constructed by AppendErrMsg() cl
 Public Msgs_accum As String 'Accumulated error and warning messages
 Public IsShowMsgs As Boolean 'Flag to turn off showing MsgBox messages (for unit testing etc.)
 
+Public wkbk As Workbook 'Application workbook; same as wkbkE if contains shtErrors lookup table
 Public wkbkE As Workbook 'Workbook containing shtErrors lookup table (optionally can be add-in)
+Public wkshtActive As Worksheet 'Initial active sheet - to reset at end of execution
 '------------------------------------------------------------------------------------------------------
 'Initialize errs Class
 ' Declare errs as global prior to first, user-initiated procedure sub (Public errs as Object)
@@ -40,7 +57,10 @@ Public Sub Init(wkbkE, Optional IsHandle)
         Else
             .IsHandle = IsHandle
         End If
-                
+        
+        'Not used anywhere? JDL 9/19/25 - delete attr if no issues found
+        'Set .wkbk = ThisWorkbook
+        
         'If shtErrors resides in a different wkbk (e.g. in project wkbk) than ErrorHandling class
         Set .wkbkE = ThisWorkbook
         If Not IsMissing(wkbkE) Then Set .wkbkE = wkbkE
@@ -52,102 +72,131 @@ Public Sub Init(wkbkE, Optional IsHandle)
         .ErrMsg = ""
         .IsUserFacing = False
         .IsNewErr = True
+        .IsDriver = False
         .IsShowMsgs = True
     End With
 End Sub
 '-----------------------------------------------------------------------------------------------------
 ' Record new error or append stack track message
-' * Call with Boolean CallingFunction argument to set that to False in case of error
-' * Call without CallingFunction arg if driver routine; triggers reporting of error that 
-'   occurred either in driver or nested functions (i.e. stack tracing) 
-' * error message will be reported if .IsShowMsgs = True (SetErrs sets True by default when errs
-'   initialized by driver sub; sets to False by default when errs initialized by calling SetErrs
-'   directly from non-driver Boolean function as in call from unit test)
 '
-' Created:  2/17/21 JDL      Modified: 3/12/26
+' Inputs:   Locn [String] sub or function where error occurred
+'         IsDriver [Boolean] True if Locn is a driver sub
+'
+' Created:  2/17/21 JDL      Modified: 9/19/25 add .IsTesting attribute
+'                                     12/2/25 set .Locn with each call/outside of If .IsNewErr
 '
 Sub RecordErr(Locn, Optional ByRef CallingFunction)
-    Dim IsDriverCall As Boolean, sMsgSuffix As String
-
-    IsDriverCall = IsMissing(CallingFunction)
-    If Not IsDriverCall Then CallingFunction = False
-    
+    Dim sMsgSuffix As String, IsDriver As Boolean
     With errs
-        .Locn = Locn
-
-        'Add trace for calling function's location for previous error in nested function
-        If Not .IsNewErr And Not .IsUserFacing Then sMsgSuffix = "Called by " & Locn
-
-        If Not AppendErrMsg(sMsgSuffix) Then Exit Sub
+    
+        If IsMissing(CallingFunction) Then
+            errs.IsDriver = True
         
-        'IsShowMsgs gates reporting for both driver and testing flows.
-        If .IsShowMsgs And (IsDriverCall Or .IsTesting) Then .ReportMsg
+        'Return False for Boolean calling function (to signify error)
+        Else
+            CallingFunction = False
+        End If
+    
+        'Set error location
+        .Locn = Locn
+        
+        'If new error (e.g. occurs in calling function) lookup codes
+        If .IsNewErr Then
+            If GetBaseErrCode() Then .iCodeReport = .iCodeBase + .iCodeLocal
+            
+        'Record tracing for possible non user-facing message
+        ElseIf Not .IsUserFacing Then
+            sMsgSuffix = "Called by " & Locn
+        End If
+    
+        'Append to the error message
+        AppendErrMsg sMsgSuffix
+        
+        'report error if called by a driver sub
+        If (.IsDriver Or .IsTesting) Then .ReportMsg
     End With
 End Sub
 '-----------------------------------------------------------------------------------------------------
-' Append error message updates onto ErrMsg'
-' Created:   2/17/21 JDL      Modified: 3/12/26
+' Append error message updates onto ErrMsg
+'
+'Inputs:    sMsgSuffix [String] Name of calling routine - to trace stack if non user-facing
+'
+' Created:   2/17/21 JDL      Modified: 11/21/23 Modify logic for IsUserFacing elim vbCrLf
 '
 Function AppendErrMsg(sMsgSuffix) As Boolean
+    Dim aryMetaData As Variant, sMsgNew As String
+
     With errs
+    
+        'If new (root) error, look it up and populate its message
         If .IsNewErr Then
-            AppendErrMsg = ProcessRootErrMsg()
-            Exit Function
+    
+            'Look up Error table metadata by iCodeReport
+            aryMetaData = .aryErrLookup()
+            If Len(aryMetaData(3)) > 0 Then .IsUserFacing = aryMetaData(3)
+            
+            'If Base error code, set string denoting VBA Error
+            If aryMetaData(2) = sErrBase Then aryMetaData(2) = sVBAErr
+            
+            'Add additional line feed to message if there are already accumulated warning(s)
+            If Len(.ErrMsg) > 0 Then .ErrMsg = .ErrMsg & vbCrLf
+    
+            'If code is found, message string is iCode + Routine + sMsg + sVal
+            If aryMetaData(0) = iErrNotFound Then
+                If .iCodeBase <> iErrNotFound Then
+                    sMsgNew = .Locn & " Error code not found: " & .iCodeBase
+                Else
+                    sMsgNew = "Base error code not found for routine: " & .Locn
+                End If
+            
+            'Assign custom message based on either developer or user-facing
+            Else
+                If Not .IsUserFacing Then
+                    sMsgNew = "Error " & .iCodeReport & "; in sub or function, "
+                    If Len(aryMetaData(1)) > 0 Then sMsgNew = sMsgNew & aryMetaData(1) & vbCrLf
+                    If Len(aryMetaData(2)) > 0 Then sMsgNew = sMsgNew & aryMetaData(2) & .ErrParam & vbCrLf
+                ElseIf Len(aryMetaData(2)) > 0 Then
+                    sMsgNew = aryMetaData(2)
+                    If Len(.ErrParam) > 0 Then sMsgNew = sMsgNew & .ErrParam
+                End If
+            End If
+            .ErrMsg = .ErrMsg & sMsgNew
+            .IsNewErr = False
+    
+        'If Not a new error and not a driver error, append calling routine name
         ElseIf Not .IsUserFacing Then
             .ErrMsg = .ErrMsg & sMsgSuffix & vbCrLf
         End If
     End With
-    AppendErrMsg = True
-End Function
-
-'-----------------------------------------------------------------------------------------------------
-' Build and append root error message using ErrorMeta lookup state
-' JDL 3/12/26
-'
-Private Function ProcessRootErrMsg() As Boolean
-    Dim sMsgNew As String, meta As ErrorMeta
-
-    ProcessRootErrMsg = False
-
-    With errs
-        'Set base/report code for root lookup
-        Set meta = New ErrorMeta
-        If Not meta.GetBaseErrCode(meta, errs, .Locn) Then .iCodeBase = iErrNotFound
-        .iCodeReport = .iCodeBase + .iCodeLocal
-
-        If Not meta.LoadFromLookup(meta, errs) Then Exit Function
-        If Not meta.Validate(meta, .Locn) Then Exit Function
-
-        'Add additional line feed if there are already accumulated warning(s)
-        If Len(.ErrMsg) > 0 Then .ErrMsg = .ErrMsg & vbCrLf
-
-        If Not meta.IsFound Then
-            .IsUserFacing = False
-            If .iCodeBase <> iErrNotFound Then
-                sMsgNew = .Locn & " Error code not found: " & .iCodeBase
-            Else
-                sMsgNew = "Base error code not found for routine: " & .Locn
-            End If
-        Else
-            .IsUserFacing = meta.IsUserFacing
-            If .IsUserFacing Then
-                sMsgNew = meta.ToUserMessage(meta, .ErrParam)
-            Else
-                sMsgNew = meta.ToDeveloperMessage(meta, .iCodeReport, .ErrParam)
-            End If
-        End If
-
-        .ErrMsg = .ErrMsg & sMsgNew
-        .IsNewErr = False
-    End With
-
-    ProcessRootErrMsg = True
 End Function
 '-----------------------------------------------------------------------------------------------------
 ' Lookup metadata from Errors table
 '
 ' Created:  2/17/21 JDL      Modified: 12/20/22 for ErrorHandling Class
 '
+Function aryErrLookup() As Variant
+    Dim ary As Variant, rng As Range, rngRows As Range
+    Dim colrngCode As Range, colrngFunc As Range, colrngMsg As Range, colrngIMsg As Range
+
+    SetTblELocations colrngFunc, colrngMsg, colrngCode, colrngIMsg, rngRows
+
+    'Look up the Error code
+    With errs
+        .iCodeReport = .iCodeBase + errs.iCodeLocal
+        Set rng = rngMultiKeyBasic(rngRows, Array(colrngCode), Array(.iCodeReport))
+
+        'Default - Code not found
+        ary = Array(iErrNotFound, "", "Msg Not Found", "", "", False)
+
+        'Populate the Code's metadata into returned array
+        If Not rng Is Nothing Then
+            ary = Array(Intersect(rng, colrngCode).value, Intersect(rng, colrngFunc).value, _
+                Intersect(rng, colrngMsg).value, Intersect(rng, colrngIMsg).value)
+        End If
+    End With
+    aryErrLookup = ary
+End Function
+'------------------------------------------------------------------------------------------------------
 ' Report Errors to user (Call from ErrorExit at end of first, user-initiated procedural routine)
 '
 ' Modified JDL 5/22/24 add .Msgs_accum and .IsShowMsgs
@@ -165,6 +214,9 @@ Public Function ReportMsg() As Long
             sTitle = "Execution Error"
             i = MsgBox(errs.ErrMsg, vbOKOnly + vbCritical, sTitle)
         End If
+        
+        'Reset (global) IsDriver for next usage
+        'Set errs = Nothing
     End With
 End Function
 
@@ -177,30 +229,20 @@ End Function
 '                                    12/3/25 Fix bug; add .wkbkE arg to .Init call at end
 '
 Sub ReportWarningMsg(iCode, Locn, Optional param)
-    Dim sMsg As String, sTitle As String, i As Integer, meta As ErrorMeta
+    Dim sMsg As String, sTitle As String, i As Integer
     With errs
+    
+        'Set errs params to enable looking up message to display
         .Locn = Locn
         .iCodeLocal = iCode
-        Set meta = New ErrorMeta
-
-        If Not meta.GetBaseErrCode(meta, errs, Locn) Then
-            sMsg = "Warning msg lookup failed; base row not found for routine: " & Locn
-            GoTo ReportAndReset
-        End If
-
-        If Not meta.LoadFromLookup(meta, errs) Then Exit Sub
-        If Not meta.Validate(meta, Locn) Then Exit Sub
-
-        If Not meta.IsFound Then
-            sMsg = "Warning message not found for code " & .iCodeReport & " in routine: " & Locn
-        Else
-            sMsg = meta.Message
-        End If
-
-        sMsg = sMsg & errs.ErrParam
+        
+        'Look up and display the message
+        If Not .GetBaseErrCode() Then Exit Sub
+        If .iCodeBase = iErrNotFound Then Exit Sub
+        
+        sMsg = .aryErrLookup()(2) & errs.ErrParam
         If Not IsMissing(param) Then sMsg = sMsg & param
-
-ReportAndReset:
+        
         'Add the message to accumulated error/warning string
         .UpdateMsgsAccum sMsg
         
@@ -230,28 +272,51 @@ End Sub
 '                                       and add IsReinitialize arg; 10/30/25 add wkbkE Init arg
 '
 Sub LookupCommentMsg(rng, Locn, Optional IsReinitialize = True)
-    Dim sMsg As String, meta As ErrorMeta
+    Dim sMsg As String
     With errs
         .Locn = Locn
-        Set meta = New ErrorMeta
-        sMsg = "Comment msg lookup failed for routine: " & Locn
         
-        'Get base and message metadata for comment text
-        If meta.GetBaseErrCode(meta, errs, Locn) Then
-            If Not meta.LoadFromLookup(meta, errs) Then
-                Exit Sub
-            End If
-            If Not meta.Validate(meta, Locn) Then
-                sMsg = "Comment msg validation failed for routine: " & Locn
-            ElseIf meta.IsFound Then
-                sMsg = meta.Message
-            End If
+        'Get the Base Error code for .LocnReport; use for Msg lookup
+        If Not .GetBaseErrCode() Then Exit Sub
+        If .iCodeBase <> iErrNotFound Then
+            AddComment rng, .aryErrLookup()(2)
         End If
-        AddComment rng, sMsg
-
+        
         'Re-initialize to be ready for a new error
         If IsReinitialize Then .Init wkbkE:=errs.wkbkE, IsHandle:=.IsHandle
     End With
+End Sub
+'-----------------------------------------------------------------------------------------------------
+' Get the base error code for a specified routine
+'
+' Created:  2/17/21 JDL      Modified: 12/21/22 for ErrorHandling Class and non tblRowsCols
+'                                       8/29/23 eliminate errs argument
+'
+Function GetBaseErrCode() As Boolean
+    Dim r As Range, rngRows As Range
+    Dim colrngCode As Range, colrngFunc As Range, colrngMsg As Range, colrngIMsg As Range
+
+    With errs
+        SetTblELocations colrngFunc, colrngMsg, colrngCode, colrngIMsg, rngRows
+        Set r = rngMultiKeyBasic(rngRows, Array(colrngFunc, colrngMsg), Array(.Locn, sErrBase))
+        .iCodeBase = iErrNotFound
+        If Not r Is Nothing Then .iCodeBase = Intersect(r, colrngCode)
+            If .iCodeBase <> iErrNotFound Then GetBaseErrCode = True
+    End With
+End Function
+'-----------------------------------------------------------------------------------------------------
+Sub SetTblELocations(colrngFunc, colrngMsg, colrngCode, colrngIMsg, rngRows)
+    Dim c As Range
+    With errs.wkbkE.Sheets(shtErrors)
+        Set colrngCode = .Columns(1)
+        Set colrngFunc = .Columns(3)
+        Set colrngMsg = .Columns(4)
+        Set colrngIMsg = .Columns(6)
+    End With
+    With errs.wkbkE.Sheets(shtErrors).Columns(1)
+        Set c = .Cells(.Cells.Count).End(xlUp)
+    End With
+    Set rngRows = Range(errs.wkbkE.Sheets(shtErrors).Rows(2), c.EntireRow)
 End Sub
 '-----------------------------------------------------------------------------------------------------
 'Assign error code based on Boolean argument and set ErrorHandling attributes
@@ -283,7 +348,7 @@ End Function
 '         vbType [Integer] VBA MsgBox function buttons argument (e.g. vbCritical + vbOK = 17)
 '
 Function ShowMessage(Locn As String, iCode As Integer, vbType As Integer, Optional param) As Long
-    Dim iMsg As Integer, sMsg As String, sTitle As String, meta As ErrorMeta
+    Dim iMsg As Integer, sMsg As String, sTitle As String, aryMsg As Variant, ary As Variant
     
     'Default message and title
     sMsg = "Base Error Code Not Found: " & Locn
@@ -292,18 +357,9 @@ Function ShowMessage(Locn As String, iCode As Integer, vbType As Integer, Option
     'Look up message based on Locn and iCode
     With errs
         .Locn = Locn
-        .iCodeLocal = iCode
-        Set meta = New ErrorMeta
-
-        If meta.GetBaseErrCode(meta, errs, Locn) Then
-            If Not meta.LoadFromLookup(meta, errs) Then GoTo ShowExit
-            If Not meta.Validate(meta, Locn) Then GoTo ShowExit
-
-            If meta.IsFound Then
-                sMsg = meta.Message
-            Else
-                sMsg = "Message not found for code " & .iCodeReport & " in routine: " & Locn
-            End If
+        If .GetBaseErrCode() <> iErrNotFound Then
+            .iCodeLocal = iCode
+            sMsg = .aryErrLookup()(2)
             
             'Set Title and Msg based by splitting
             .setMsgTitleAndText sMsg, sTitle
@@ -315,7 +371,6 @@ Function ShowMessage(Locn As String, iCode As Integer, vbType As Integer, Option
             sMsg = ConvertVbCrLfToConcat(sMsg)
         End If
     End With
-ShowExit:
     ShowMessage = MsgBox(sMsg, vbType, sTitle)
 End Function
 '-----------------------------------------------------------------------------------------------------

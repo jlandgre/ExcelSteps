@@ -383,7 +383,7 @@ Sub test_Search2(procs)
                 sVar = "var_" & i
                 
                 'Search for variable in Column B within tgt_sheet rows
-                Set r = Excelsteps.FindInRange(colrngVarNames, sVar)
+                Set r = ExcelSteps.FindInRange(colrngVarNames, sVar)
                 
                 If Not r Is Nothing Then
                     'Ensure formula displayed as text (not evaluated formula/error etc.)
@@ -446,7 +446,7 @@ Sub helper_SetSimRecipeTbl(tst, tbl, rngStepsVars, colrngVarNames)
         PopulateSimRecipe .wkbkTest, shtTesting
         
         'Initialize and provision tbl
-        Set tbl = Excelsteps.New_tbl
+        Set tbl = ExcelSteps.New_tbl
         Set tbl.wksht = .wkbkTest.Sheets(shtTesting)
         tbl.sht = shtTesting
         
@@ -482,7 +482,7 @@ Sub test_LastPopulatedCell1(procs)
         .Assert tst, ListFromArray(rng) = "a,b,,c,,d"
                            
         'Check last populated cell
-        Set rng = Excelsteps.rngLastPopCell(wksht.Rows(1), xlToRight)
+        Set rng = ExcelSteps.rngLastPopCell(wksht.Rows(1), xlToRight)
         .Assert tst, (rng.Column = 7)
         
         .Update tst, procs
@@ -512,7 +512,7 @@ Sub test_LastPopulatedCell2(procs)
         End With
                            
         'Check last populated cell
-        Set rng = Excelsteps.rngLastPopCell(wksht.Rows(1), xlToRight)
+        Set rng = ExcelSteps.rngLastPopCell(wksht.Rows(1), xlToRight)
         .Assert tst, (rng.Column = 7)
         .Update tst, procs
     End With
@@ -541,7 +541,7 @@ Sub test_LastPopulatedCell3(procs)
         End With
                            
         'Check last populated cell
-        Set rng = Excelsteps.rngLastPopCell(wksht.Rows(1), xlToRight)
+        Set rng = ExcelSteps.rngLastPopCell(wksht.Rows(1), xlToRight)
         .Assert tst, (rng.Column = 6)
         
         .Update tst, procs
@@ -567,7 +567,7 @@ Sub test_LastPopulatedCell4(procs)
         Range(wksht.Rows(6), wksht.Rows(8)).EntireRow.Hidden = True
                            
         'Check last populated cell
-        Set rng = Excelsteps.rngLastPopCell(wksht.Columns(2), xlDown)
+        Set rng = ExcelSteps.rngLastPopCell(wksht.Columns(2), xlDown)
         .Assert tst, (rng.Row = 7)
         
         .Update tst, procs
@@ -590,7 +590,7 @@ Sub test_LastPopulatedCell5(procs)
         .Assert tst, ListFromArray(rng) = "a,b,,c,,d"
                            
         'Check last populated cell
-        Set rng = Excelsteps.rngLastPopCell(wksht.Columns(2), xlDown)
+        Set rng = ExcelSteps.rngLastPopCell(wksht.Columns(2), xlDown)
         .Assert tst, (rng.Row = 7)
         .Update tst, procs
     End With
@@ -1165,7 +1165,7 @@ Sub test_ConvertValToNumeric(procs)
 End Sub
 '-------------------------------------------------------------------------------------------------------
 Sub Helper_SetTestSht(tst, tbl, wksht, cellHome)
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     Set wksht = tst.wkbkTest.Sheets(shtTesting)
     Set cellHome = wksht.Cells(1, 1)
 End Sub

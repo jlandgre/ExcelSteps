@@ -1,5 +1,5 @@
 Attribute VB_Name = "ErrorHandleUtil"
-'Version 3/13/26
+'Version 1/29/26
 'Import this module and ErrorHandling Class Module to install error handling in a project
 
 Option Explicit
@@ -12,39 +12,31 @@ Public Const sVBAErr As String = "Unknown VBA Error"
 Public Const iErrNotFound As Integer = 10000
 Public Const sFileErrs As String = "Warnings_and_Errors.txt"
 Public Const sSettingErrs As String = "Warnings_Errors"
-Public Const sErrorsHeadings As String = "iCode,Module,Routine,sMsg_String,sVal,iMsgDevUser,VBAProject"
 '-----------------------------------------------------------------------------------------------------
-'Initialize errs Class and Boolean calling function return value for project error handling
-'JDL 3/8/23; Modified 3/11/26
-' * CallingFunction is either a Boolean function return variable or String mode flag.
-' * CallingFunction = "driver" for driver subs and "non-bool" for non-Boolean procedures.
-' * Boolean function return variables are initialized to True; "driver" and "non-bool" are not.
-' * errs is initialized when missing, and always reinitialized for a driver call.
-' * Defaults by call context after init:
-'      - Driver call: IsTesting=False, IsShowMsgs=True
-'      - Direct Boolean or "non-bool" call: IsTesting=True, IsShowMsgs=False
-' * In tests/demos, you can pre-initialize errs and explicitly override IsShowMsgs as needed.
+'Initialize local error handling and errs Class
+'
+''JDL 3/8/23; Modified 10/16/25
 '
 Sub SetErrs(CallingFunction, Optional wkbkE As Workbook = Nothing)
-    Dim IsDriverCall As Boolean, IsNonBoolCall As Boolean, IsFunctionCall As Boolean
+    Dim Msgs_accum As String
 
-    IsDriverCall = (CallingFunction = "driver")
-    IsNonBoolCall = (CallingFunction = "non-bool")
-    IsFunctionCall = (Not IsDriverCall) And (Not IsNonBoolCall)
-
-    If IsFunctionCall Then CallingFunction = True
-
-    If (errs Is Nothing) Or IsDriverCall Then
+    'Initialize errs (In case CallingFunction called directly instead of by local driver sub)
+    If (errs Is Nothing) Or (CallingFunction = "driver") Then
         Set errs = New ErrorHandling
+        
+        ' If errs not instanced by driver, assume CallingFunction is being tested (for errs.ReportMsg)
+        errs.IsTesting = True
+        If CallingFunction = "driver" Then errs.IsTesting = False
+        
+        'Default Errors_ sheet location
         If wkbkE Is Nothing Then Set wkbkE = ThisWorkbook
+        
+        'True/False = Master switch for enabling error handling in project
         errs.Init wkbkE, IsHandle:=True
-
-        If IsDriverCall Then
-            errs.IsTesting = False
-            errs.IsShowMsgs = True
-        Else
-            errs.IsTesting = True
-            errs.IsShowMsgs = False
-        End If
     End If
+    
+    'Initialize Boolean calling function
+    If (CallingFunction <> "driver") And (CallingFunction <> "non-bool") Then CallingFunction = True
 End Sub
+
+

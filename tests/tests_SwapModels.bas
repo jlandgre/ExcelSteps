@@ -74,9 +74,9 @@ Function test_SwapModels4(wkbk, shtTests)
     SetApplEnvir False, False, xlCalculationAutomatic
     
     'Test that populates test.valTest with True or False
-    Dim tblImp As Object: Set tblImp = Excelsteps.New_tbl
-    Dim tbls As Object: Set tbls = Excelsteps.New_tbl
-    Dim mdlDest As Object: Set mdlDest = Excelsteps.New_mdl
+    Dim tblImp As Object: Set tblImp = ExcelSteps.New_tbl
+    Dim tbls As Object: Set tbls = ExcelSteps.New_tbl
+    Dim mdlDest As Object: Set mdlDest = ExcelSteps.New_mdl
 
     With Test
     
@@ -102,7 +102,7 @@ Function test_SwapModels3(wkbk, shtTests)
     SetApplEnvir False, False, xlCalculationAutomatic
     
     'Test that populates test.valTest with True or False
-    Dim mdlDest As Object: Set mdlDest = Excelsteps.New_mdl
+    Dim mdlDest As Object: Set mdlDest = ExcelSteps.New_mdl
 
     With Test
     
@@ -177,17 +177,17 @@ End Sub
 Sub InstanceValClass(Test, Optional mdlDest_val, Optional tblImp_val, Optional tblS_val)
     With Test
     If Not IsMissing(mdlDest_val) Then
-        Set mdlDest_val = Excelsteps.New_mdl
+        Set mdlDest_val = ExcelSteps.New_mdl
         .Assert Test, mdlDest_val.Provision(mdlDest_val, .wkbkTest, defn:=defn_dest)
     End If
     
     If Not IsMissing(tblImp_val) Then
-        Set tblImp_val = Excelsteps.New_tbl
+        Set tblImp_val = ExcelSteps.New_tbl
         .Assert Test, tblImp_val.Provision(tblImp_val, .wkbkTest, False, shtTblImp, nCols:=10, IsSetColRngs:=True)
     End If
     
     If Not IsMissing(tblS_val) Then
-        Set tblS_val = Excelsteps.New_tbl
+        Set tblS_val = ExcelSteps.New_tbl
         .Assert Test, tblS_val.Provision(tblS_val, .wkbkTest, False, shtSteps)
     End If
     
@@ -203,9 +203,9 @@ Function test_SwapModels2(wkbk, shtTests)
     SetApplEnvir False, False, xlCalculationAutomatic
     
     'Test that populates test.valTest with True or False
-    Dim tblImp As Object: Set tblImp = Excelsteps.New_tbl
-    Dim tbls As Object: Set tbls = Excelsteps.New_tbl
-    Dim mdlDest As Object: Set mdlDest = Excelsteps.New_mdl
+    Dim tblImp As Object: Set tblImp = ExcelSteps.New_tbl
+    Dim tbls As Object: Set tbls = ExcelSteps.New_tbl
+    Dim mdlDest As Object: Set mdlDest = ExcelSteps.New_mdl
 
     With Test
     
@@ -231,9 +231,9 @@ Function test_SwapModels1(wkbk, shtTests)
     SetApplEnvir False, False, xlCalculationAutomatic
     
     'Test that populates test.valTest with True or False
-    Dim tblImp As Object: Set tblImp = Excelsteps.New_tbl
-    Dim tbls As Object: Set tbls = Excelsteps.New_tbl
-    Dim mdlDest As Object: Set mdlDest = Excelsteps.New_mdl
+    Dim tblImp As Object: Set tblImp = ExcelSteps.New_tbl
+    Dim tbls As Object: Set tbls = ExcelSteps.New_tbl
+    Dim mdlDest As Object: Set mdlDest = ExcelSteps.New_mdl
 
     With Test
     
@@ -262,9 +262,9 @@ Sub test_InitSwapModels(wkbk, shtTests)
     SetApplEnvir False, False, xlCalculationAutomatic
 
     'Test that populates test.valTest
-    Dim tblImp As Object: Set tblImp = Excelsteps.New_tbl
-    Dim tbls As Object: Set tbls = Excelsteps.New_tbl
-    Dim mdlDest As Object: Set mdlDest = Excelsteps.New_mdl
+    Dim tblImp As Object: Set tblImp = ExcelSteps.New_tbl
+    Dim tbls As Object: Set tbls = ExcelSteps.New_tbl
+    Dim mdlDest As Object: Set mdlDest = ExcelSteps.New_mdl
     
     With Test
     
@@ -348,7 +348,7 @@ Sub test_FormatMdlImport(wkbk, shtTests)
     SetApplEnvir False, False, xlCalculationAutomatic
 
     'Test that populates test.valTest
-    Dim tblImp As Object: Set tblImp = Excelsteps.New_tbl
+    Dim tblImp As Object: Set tblImp = ExcelSteps.New_tbl
         
     'DeleteSheet wkbk, shtTblImp
     wkbk.Sheets(shtTblImp).Cells.Clear
@@ -377,9 +377,9 @@ Function test_TransferToTblImport(wkbk, shtTests)
     SetApplEnvir False, False, xlCalculationAutomatic
     
     'Test that populates test.valTest with True or False
-    Dim tblImp As Object: Set tblImp = Excelsteps.New_tbl
-    Dim tbls As Object: Set tbls = Excelsteps.New_tbl
-    Dim mdlDest As Object: Set mdlDest = Excelsteps.New_mdl
+    Dim tblImp As Object: Set tblImp = ExcelSteps.New_tbl
+    Dim tbls As Object: Set tbls = ExcelSteps.New_tbl
+    Dim mdlDest As Object: Set mdlDest = ExcelSteps.New_mdl
 
     With Test
         PopulateSMdlType2ToMdlDest Test, mdlDest, tblImp, tbls
@@ -415,10 +415,10 @@ Function test_DeleteTblImpTrailingBlankRows(wkbk, shtTests)
     SetApplEnvir False, False, xlCalculationAutomatic
     
     'Test that populates test.valTest with True or False
-    Dim tblImp As Object: Set tblImp = Excelsteps.New_tbl
-    Dim tbls As Object: Set tbls = Excelsteps.New_tbl
-    Dim mdlDest As Object: Set mdlDest = Excelsteps.New_mdl
-    Dim R_MI As Object: Set R_MI = Excelsteps.New_mdlImportRow
+    Dim tblImp As Object: Set tblImp = ExcelSteps.New_tbl
+    Dim tbls As Object: Set tbls = ExcelSteps.New_tbl
+    Dim mdlDest As Object: Set mdlDest = ExcelSteps.New_mdl
+    Dim R_MI As Object: Set R_MI = ExcelSteps.New_mdlImportRow
         Dim ModelPrev As String, aryExpect As Variant, defn_extra_rows As String, rng As Range
 
     With Test
@@ -427,7 +427,7 @@ Function test_DeleteTblImpTrailingBlankRows(wkbk, shtTests)
         'Transfer mdlDest (SMdlType2) to tblImport sheet
         
         defn_extra_rows = "SMdl:10,9:10:T:T:T:F:T:SMdlDest"
-        Set mdlDest = Excelsteps.New_mdl
+        Set mdlDest = ExcelSteps.New_mdl
         .Assert Test, mdlDest.InitSwapModels(mdlDest, tblImp, tbls, .wkbkTest, defn_extra_rows)
         .Assert Test, mdlDest.rngrows.Address = "$10:$19"
         .Assert Test, mdlDest.ReadModelName(mdlDest, tbls, ModelPrev)
@@ -458,16 +458,16 @@ Function test_TransferMdlDestRows(wkbk, shtTests)
     SetApplEnvir False, False, xlCalculationAutomatic
     
     'Test that populates test.valTest
-    Dim tblImp As Object: Set tblImp = Excelsteps.New_tbl
-    Dim tbls As Object: Set tbls = Excelsteps.New_tbl
-    Dim mdlDest As Object: Set mdlDest = Excelsteps.New_mdl
+    Dim tblImp As Object: Set tblImp = ExcelSteps.New_tbl
+    Dim tbls As Object: Set tbls = ExcelSteps.New_tbl
+    Dim mdlDest As Object: Set mdlDest = ExcelSteps.New_mdl
     Dim ModelPrev As String, aryExpect As Variant
     
     With Test
         PopulateSMdlType2ToMdlDest Test, mdlDest, tblImp, tbls
         
         'Transfer mdlDest (SMdlType2) to tblImport sheet
-        Set mdlDest = Excelsteps.New_mdl
+        Set mdlDest = ExcelSteps.New_mdl
         .Assert Test, mdlDest.InitSwapModels(mdlDest, tblImp, tbls, .wkbkTest, defn_dest)
         .Assert Test, mdlDest.ReadModelName(mdlDest, tbls, ModelPrev)
         .Assert Test, mdlDest.TransferMdlDestRows(mdlDest, tblImp, tbls, ModelPrev)
@@ -497,9 +497,9 @@ Function test_TblImportDeleteModel(wkbk, shtTests)
     SetApplEnvir False, False, xlCalculationAutomatic
     
     'Test that populates test.valTest
-    Dim tblImp As Object: Set tblImp = Excelsteps.New_tbl
-    Dim tbls As Object: Set tbls = Excelsteps.New_tbl
-    Dim mdlDest As Object: Set mdlDest = Excelsteps.New_mdl
+    Dim tblImp As Object: Set tblImp = ExcelSteps.New_tbl
+    Dim tbls As Object: Set tbls = ExcelSteps.New_tbl
+    Dim mdlDest As Object: Set mdlDest = ExcelSteps.New_mdl
     
     With Test
         PopulateSMdlType2ToMdlDest Test, mdlDest, tblImp, tbls
@@ -526,9 +526,9 @@ Function test_ReadModelName(wkbk, shtTests)
     SetApplEnvir False, False, xlCalculationAutomatic
     
     'Test that populates test.valTest
-    Dim tblImp As Object: Set tblImp = Excelsteps.New_tbl
-    Dim tbls As Object: Set tbls = Excelsteps.New_tbl
-    Dim mdlDest As Object: Set mdlDest = Excelsteps.New_mdl
+    Dim tblImp As Object: Set tblImp = ExcelSteps.New_tbl
+    Dim tbls As Object: Set tbls = ExcelSteps.New_tbl
+    Dim mdlDest As Object: Set mdlDest = ExcelSteps.New_mdl
     Dim ModelPrev As String
     
     With Test
@@ -576,9 +576,9 @@ Sub test_TransferToMdlDest(wkbk, shtTests)
     SetApplEnvir False, False, xlCalculationAutomatic
 
     'Test that populates test.valTest
-    Dim tblImp As Object: Set tblImp = Excelsteps.New_tbl
-    Dim tbls As Object: Set tbls = Excelsteps.New_tbl
-    Dim mdlDest As Object: Set mdlDest = Excelsteps.New_mdl
+    Dim tblImp As Object: Set tblImp = ExcelSteps.New_tbl
+    Dim tbls As Object: Set tbls = ExcelSteps.New_tbl
+    Dim mdlDest As Object: Set mdlDest = ExcelSteps.New_mdl
     
     With Test
     
@@ -603,10 +603,10 @@ Sub test_InitTransferToMdl(wkbk, shtTests)
     SetApplEnvir False, False, xlCalculationAutomatic
 
     'Test that populates test.valTest
-    Dim tblImp As Object: Set tblImp = Excelsteps.New_tbl
-    Dim tbls As Object: Set tbls = Excelsteps.New_tbl
-    Dim mdlDest As Object: Set mdlDest = Excelsteps.New_mdl
-    Dim R_MI As Object: Set R_MI = Excelsteps.New_mdlImportRow
+    Dim tblImp As Object: Set tblImp = ExcelSteps.New_tbl
+    Dim tbls As Object: Set tbls = ExcelSteps.New_tbl
+    Dim mdlDest As Object: Set mdlDest = ExcelSteps.New_mdl
+    Dim R_MI As Object: Set R_MI = ExcelSteps.New_mdlImportRow
     Dim rngMdl As Range
     
     With Test
@@ -638,10 +638,10 @@ Sub test_TransferTblImportRows1(wkbk, shtTests)
     SetApplEnvir False, False, xlCalculationAutomatic
 
     'Test that populates test.valTest
-    Dim tblImp As Object: Set tblImp = Excelsteps.New_tbl
-    Dim tbls As Object: Set tbls = Excelsteps.New_tbl
-    Dim mdlDest As Object: Set mdlDest = Excelsteps.New_mdl
-    Dim R_MI As Object: Set R_MI = Excelsteps.New_mdlImportRow
+    Dim tblImp As Object: Set tblImp = ExcelSteps.New_tbl
+    Dim tbls As Object: Set tbls = ExcelSteps.New_tbl
+    Dim mdlDest As Object: Set mdlDest = ExcelSteps.New_mdl
+    Dim R_MI As Object: Set R_MI = ExcelSteps.New_mdlImportRow
     Dim aryExpect() As Variant, ncols_mdl As Integer, nrows_mdl As Integer
     
     'Helper sub to initialize and call Transfer method
@@ -674,10 +674,10 @@ Sub test_TransferTblImportRows2(wkbk, shtTests)
     SetApplEnvir False, False, xlCalculationAutomatic
 
     'Test that populates test.valTest
-    Dim tblImp As Object: Set tblImp = Excelsteps.New_tbl
-    Dim tbls As Object: Set tbls = Excelsteps.New_tbl
-    Dim mdlDest As Object: Set mdlDest = Excelsteps.New_mdl
-    Dim R_MI As Object: Set R_MI = Excelsteps.New_mdlImportRow
+    Dim tblImp As Object: Set tblImp = ExcelSteps.New_tbl
+    Dim tbls As Object: Set tbls = ExcelSteps.New_tbl
+    Dim mdlDest As Object: Set mdlDest = ExcelSteps.New_mdl
+    Dim R_MI As Object: Set R_MI = ExcelSteps.New_mdlImportRow
     Dim aryExpect() As Variant, aryExpectSteps As Variant
     Dim rngMdl As Range, ncols_mdl As Integer, nrows_mdl As Integer
     
@@ -748,10 +748,10 @@ Sub test_ResetPostTransfer(wkbk, shtTests)
     SetApplEnvir False, False, xlCalculationAutomatic
 
     'Test that populates test.valTest
-    Dim tblImp As Object: Set tblImp = Excelsteps.New_tbl
-    Dim tbls As Object: Set tbls = Excelsteps.New_tbl
-    Dim mdlDest As Object: Set mdlDest = Excelsteps.New_mdl
-    Dim R_MI As Object: Set R_MI = Excelsteps.New_mdlImportRow
+    Dim tblImp As Object: Set tblImp = ExcelSteps.New_tbl
+    Dim tbls As Object: Set tbls = ExcelSteps.New_tbl
+    Dim mdlDest As Object: Set mdlDest = ExcelSteps.New_mdl
+    Dim R_MI As Object: Set R_MI = ExcelSteps.New_mdlImportRow
     Dim aryExpect() As Variant
     
     With Test

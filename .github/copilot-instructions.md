@@ -1,5 +1,6 @@
 # Dashboard VBA Project - AI Coding Instructions
-updated 3/4/26
+updated 3/13/26 J.D. Landgrebe Data Delve LLC licensed under MIT License (ExcelSteps repository)
+
 ## Project Architecture
 
 Projects built in VBA have cross-platform compatibility (Windows/Mac Excel). A typical project consists of:
@@ -99,6 +100,9 @@ Dim tempAttr As Object
 If Not SomeFunctionSetsAttr(tempAttr) Then GoTo ErrorExit
 Set obj.attr = tempAttr
 ```
+
+## VBA Class Usage Patterns
+We use direct public attributes not Property Get/Let. Do not use Property Get/Let in code
 
 ## Key Driver Patterns
 Driver subs (e.g. user-initiated) in VBAProject_ProjectName follow this structure. 

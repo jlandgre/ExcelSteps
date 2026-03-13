@@ -5,7 +5,6 @@ Option Explicit
 ' Run all validations in workbook
 '-----------------------------------------------------------------------------------------------
 Sub a_RunAllTests()
-    TestDriver_ErrorHandling
     TestDriver_Utilities
     TestDriver_mdlScenario
     TestDriver_ParseModel
@@ -15,5 +14,6 @@ Sub a_RunAllTests()
     'TestDriver_SwapModels
 ThisWorkbook.Sheets("SMdl").Activate
 End Sub
+
 
 

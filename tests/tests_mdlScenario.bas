@@ -127,7 +127,7 @@ End Sub
 ' JDL 7/17/25
 Sub test_UpdateWriteFormulaRng(procs)
     Dim tst As New Test: tst.Init tst, "test_UpdateWriteFormulaRng"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim r As Object, rngRow As Range
     Dim aryFormulas As Variant, rngFormulas As Range, f1 As String, f2 As String, f3 As String
     Dim tStart As Double, tEnd As Double, i As Integer
@@ -145,7 +145,7 @@ Sub test_UpdateWriteFormulaRng(procs)
         f3 = "=(@side_a_3^2 + @side_b_3^2)^0.5"
     
         'Instance mdlRow for first formula-containing row
-        Set r = Excelsteps.New_mdlRow()
+        Set r = ExcelSteps.New_mdlRow()
         Set rngRow = .wkbkTest.Sheets(shtMdl).Cells(15, 4)
         r.Init r, mdl, rngRow
         .Assert tst, r.rngVarRow.Address = "$15:$15"
@@ -158,7 +158,7 @@ Sub test_UpdateWriteFormulaRng(procs)
         .Assert tst, rngFormulas.Address = "$15:$15"
         
         'Second row - contiguous with first
-        Set r = Excelsteps.New_mdlRow()
+        Set r = ExcelSteps.New_mdlRow()
         Set rngRow = .wkbkTest.Sheets(shtMdl).Cells(16, 4)
         r.Init r, mdl, rngRow
         .Assert tst, r.rngVarRow.Address = "$16:$16"
@@ -172,7 +172,7 @@ Sub test_UpdateWriteFormulaRng(procs)
         .Assert tst, rngFormulas.Address = "$15:$16"
         
         'Third row - not contiguous with first two
-        Set r = Excelsteps.New_mdlRow()
+        Set r = ExcelSteps.New_mdlRow()
         Set rngRow = .wkbkTest.Sheets(shtMdl).Cells(18, 4)
         r.Init r, mdl, rngRow
         .Assert tst, r.rngVarRow.Address = "$18:$18"
@@ -202,7 +202,7 @@ End Sub
 ' JDL 7/17/25
 Sub test_WriteRngFormulas(procs)
     Dim tst As New Test: tst.Init tst, "test_WriteRngFormulas"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim aryFormulas As Variant, rngFormulas As Range, f1 As String, f2 As String
     Dim tStart As Double, tEnd As Double, i As Integer
     With tst
@@ -259,7 +259,7 @@ End Sub
 '
 Sub test_RefreshSpeedup(procs)
     Dim tst As New Test: tst.Init tst, "test_RefreshSpeedup"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim aryVals As Variant, aryExpected As Variant, rng As Range, s As String
     Dim f1 As String, f2 As String, f3 As String, f4 As String
     Dim tStart As Double, tEnd As Double, i As Integer
@@ -315,7 +315,7 @@ End Sub
 '
 Sub test_LegacyRefresh(procs)
     Dim tst As New Test: tst.Init tst, "test_LegacyRefresh"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim aryVals As Variant, aryExpected As Variant, rng As Range, s As String
     Dim tStart As Double, tEnd As Double, i As Integer
     
@@ -352,8 +352,8 @@ End Sub
 '
 Sub test_PrepExcelSteps1(procs)
     Dim tst As New Test: tst.Init tst, "test_PrepExcelSteps1"
-    Dim tblSteps As Object: Set tblSteps = Excelsteps.New_tbl
-    Dim refr As Object: Set refr = Excelsteps.New_Refresh
+    Dim tblSteps As Object: Set tblSteps = ExcelSteps.New_tbl
+    Dim refr As Object: Set refr = ExcelSteps.New_Refresh
     
     'Arrays for checking results
     Dim aryVals As Variant, aryExpected As Variant
@@ -392,8 +392,8 @@ End Sub
 '
 Sub test_PrepExcelSteps2(procs)
     Dim tst As New Test: tst.Init tst, "test_PrepExcelSteps2"
-    Dim tblSteps As Object: Set tblSteps = Excelsteps.New_tbl
-    Dim refr As Object: Set refr = Excelsteps.New_Refresh
+    Dim tblSteps As Object: Set tblSteps = ExcelSteps.New_tbl
+    Dim refr As Object: Set refr = ExcelSteps.New_Refresh
     Dim aryVals As Variant, aryExpected As Variant
     
     With tst
@@ -435,7 +435,7 @@ End Sub
 '
 Sub test_ParseMdlScenDefn1(procs)
     Dim tst As New Test: tst.Init tst, "test_ParseMdlScenDefn1"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     
     'Default - sht as mdlName; Defn not Missing
     With tst
@@ -463,7 +463,7 @@ End Sub
 '
 Sub test_ParseMdlScenDefn2(procs)
     Dim tst As New Test: tst.Init tst, "test_ParseMdlScenDefn2"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     
     'MdlName specified in Defn overrides using .sht
     With tst
@@ -481,12 +481,12 @@ End Sub
 '
 Sub test_mdl_Init1(procs)
     Dim tst As New Test: tst.Init tst, "test_mdl_Init1"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
 
     With tst
     
         'Default model (only sht arg specified)
-        Set mdl = Excelsteps.New_mdl
+        Set mdl = ExcelSteps.New_mdl
         .Assert tst, mdl.Init(mdl, .wkbkTest, sht:=shtMdl)
         .Assert tst, mdl.wkbk.Name = ThisWorkbook.Name
         .Assert tst, mdl.sht = shtMdl
@@ -506,12 +506,12 @@ End Sub
 '
 Sub test_mdl_Init2(procs)
     Dim tst As New Test: tst.Init tst, "test_mdl_Init2"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
 
     With tst
     
         'Default Model with Suppress header
-        Set mdl = Excelsteps.New_mdl
+        Set mdl = ExcelSteps.New_mdl
         .Assert tst, mdl.Init(mdl, .wkbkTest, sht:=shtMdl, IsSuppHeader:=True)
         .Assert tst, mdl.IsSuppHeader = True
         .Update tst, procs
@@ -523,7 +523,7 @@ End Sub
 '
 Sub test_mdl_Init3(procs)
     Dim tst As New Test: tst.Init tst, "test_mdl_Init3"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
 
     With tst
     
@@ -545,7 +545,7 @@ End Sub
 '
 Sub test_mdl_Init4(procs)
     Dim tst As New Test: tst.Init tst, "test_mdl_Init4"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
 
     With tst
     
@@ -574,25 +574,25 @@ Sub test_mdl_Init5(procs)
     With tst
     
         'sht arg overrides sht name in parsed Defn
-        Set mdl = Excelsteps.New_mdl
+        Set mdl = ExcelSteps.New_mdl
         .Assert tst, mdl.Init(mdl, .wkbkTest, sht:="SMdl2", defn:=defn_val)
         .Assert tst, mdl.sht = "SMdl2"
         .Assert tst, mdl.MdlName = "SMdl2"
         
         'mdlName arg overrides sht name as mdlName in parsed Defn (no mdlName in defn)
-        Set mdl = Excelsteps.New_mdl
+        Set mdl = ExcelSteps.New_mdl
         .Assert tst, mdl.Init(mdl, .wkbkTest, defn:=defn_val, MdlName:="SMdl2")
         .Assert tst, mdl.sht = shtMdl
         .Assert tst, mdl.MdlName = "SMdl2"
 
         'mdlName arg overrides mdlName name in parsed Defn (no mdlName in defn)
-        Set mdl = Excelsteps.New_mdl
+        Set mdl = ExcelSteps.New_mdl
         .Assert tst, mdl.Init(mdl, .wkbkTest, defn:=defn_val_mdlName, MdlName:="SMdl2")
         .Assert tst, mdl.sht = shtMdl
         .Assert tst, mdl.MdlName = "SMdl2"
 
         'both sht and mdlName args specified; override defn values
-        Set mdl = Excelsteps.New_mdl
+        Set mdl = ExcelSteps.New_mdl
         .Assert tst, mdl.Init(mdl, .wkbkTest, sht:="SMdl3", defn:=defn_val_mdlName, MdlName:="SMdl2")
         .Assert tst, mdl.sht = "SMdl3"
         .Assert tst, mdl.MdlName = "SMdl2"
@@ -614,14 +614,14 @@ Sub test_mdl_Init6(procs)
     With tst
     
         'default model; sht arg is not valid rng name
-        Set mdl = Excelsteps.New_mdl
+        Set mdl = ExcelSteps.New_mdl
         .Assert tst, mdl.Init(mdl, .wkbkTest, sht:="SMdl 2")
         .Assert tst, mdl.sht = "SMdl 2"
         .Assert tst, mdl.MdlName = "SMdl2"
         
         'sht arg override is not valid rng name; overrides name in parsed Defn
         'mdlName based on xlName(.sht)
-        Set mdl = Excelsteps.New_mdl
+        Set mdl = ExcelSteps.New_mdl
         .Assert tst, mdl.Init(mdl, .wkbkTest, sht:="SMdl 2", defn:=defn_val)
         .Assert tst, mdl.sht = "SMdl 2"
         .Assert tst, mdl.MdlName = "SMdl2"
@@ -634,7 +634,7 @@ End Sub
 '
 Sub test_ClearModel(procs)
     Dim tst As New Test: tst.Init tst, "test_ClearModel"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim IsBlank As Boolean, w As Variant, xlEdge As Variant
     
     With tst
@@ -675,7 +675,7 @@ End Sub
 '
 Sub test_mdlRowDefaultModel(procs)
     Dim tst As New Test: tst.Init tst, "test_mdlRowDefaultModel"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim r As Object, tblSteps As Object
     
     'Arrays for checking results
@@ -687,7 +687,7 @@ Sub test_mdlRowDefaultModel(procs)
         .Assert tst, mdl.rngFormulaRows.Address = "$D$6"
     
         'Instance mdlRow for "side_a" row
-        Set r = Excelsteps.New_mdlRow
+        Set r = ExcelSteps.New_mdlRow
         r.Init r, mdl, mdl.wksht.Cells(3, 4)
     
         aryVals = Array(r.rngVar.Address, _
@@ -707,7 +707,7 @@ Sub test_mdlRowDefaultModel(procs)
         .TestAryVals tst, aryVals, aryExpected
         
         'Instance mdlRow for "side_c" (e.g. formula-containing) row
-        Set r = Excelsteps.New_mdlRow
+        Set r = ExcelSteps.New_mdlRow
         r.Init r, mdl, mdl.wksht.Cells(6, 4)
                                     
         aryVals = Array(r.rngVar.Address, _
@@ -733,7 +733,7 @@ End Sub
 '
 Sub test_mdlRowDefaultModel2(procs)
     Dim tst As New Test: tst.Init tst, "test_mdlRowDefaultModel"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim r As Object
     
     'Arrays for checking results
@@ -753,8 +753,8 @@ End Sub
 '
 Sub test_mdlRowLiteModel(procs)
     Dim tst As New Test: tst.Init tst, "test_mdlRowLiteModel"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
-    Dim refr As Object: Set refr = Excelsteps.New_Refresh
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
+    Dim refr As Object: Set refr = ExcelSteps.New_Refresh
     Dim r As Object, tblSteps As Object
     
     'Array for checking results and temp variables
@@ -775,13 +775,13 @@ Sub test_mdlRowLiteModel(procs)
         .Assert tst, mdl.rngFormulaRows.Address = "$H$15"
     
         'Instance mdlRow for "side_a" row
-        Set r = Excelsteps.New_mdlRow
+        Set r = ExcelSteps.New_mdlRow
         r.Init r, mdl, mdl.wksht.Cells(12, 8)
 
         .TestAryVals tst, Array("x_" & r.NumFmt, r.HasFormula), Array("x_0.000", False)
     
         'Instance mdlRow for "side_c" row
-        Set r = Excelsteps.New_mdlRow
+        Set r = ExcelSteps.New_mdlRow
         r.Init r, mdl, mdl.wksht.Cells(15, 8)
     
         aryExpected = Array("x_0.00", "=(side_a^2 + side_b^2)^0.5")
@@ -814,7 +814,7 @@ End Sub
 '
 Sub test_ProvisionSMdl1(procs)
     Dim tst As New Test: tst.Init tst, "test_ProvisionSMdl1"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim aryVals As Variant, aryExpected As Variant, rng As Range
     
     With tst
@@ -864,7 +864,7 @@ End Sub
 '
 Sub test_RefreshSMdl1(procs)
     Dim tst As New Test: tst.Init tst, "test_RefreshSMdl1"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim aryVals As Variant, aryExpected As Variant, rng As Range, s As String
     
     With tst
@@ -895,7 +895,7 @@ End Sub
 '
 Sub test_ProvisionSMdl2(procs)
     Dim tst As New Test: tst.Init tst, "test_ProvisionSMdl2"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim aryVals As Variant, aryExpected As Variant
     
     With tst
@@ -923,7 +923,7 @@ End Sub
 '
 Sub test_RefreshSMdl2(procs)
     Dim tst As New Test: tst.Init tst, "test_RefreshSMdl2"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim aryVals As Variant, aryExpected As Variant
     
     With tst
@@ -957,7 +957,7 @@ End Sub
 '
 Sub test_RefreshSMdl2a(procs)
     Dim tst As New Test: tst.Init tst, "test_RefreshSMdl2a"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim aryVals As Variant, aryExpected As Variant
     
     With tst
@@ -983,7 +983,7 @@ End Sub
 '
 Sub test_ProvisionSMdl3(procs)
     Dim tst As New Test: tst.Init tst, "test_ProvisionSMdl3"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim aryVals As Variant, aryExpected As Variant
     
     With tst
@@ -1034,7 +1034,7 @@ End Sub
 '
 Sub test_RefreshSMdl3(procs)
     Dim tst As New Test: tst.Init tst, "test_RefreshSMdl3"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim aryVals As Variant, aryExpected As Variant
     
     With tst
@@ -1067,7 +1067,7 @@ End Sub
 '
 Sub test_RefreshSMdl4(procs)
     Dim tst As New Test: tst.Init tst, "test_RefreshSMdl4"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     
     With tst
         
@@ -1098,7 +1098,7 @@ End Sub
 '
 Sub test_RefreshSMdl4a(procs)
     Dim tst As New Test: tst.Init tst, "test_RefreshSMdl4a"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim aryVals As Variant, aryExpected As Variant
     
     With tst
@@ -1151,7 +1151,7 @@ Sub test_RefreshSMdl5(procs)
         n = 50
         timeStart = Timer
         For j = 1 To n
-            Set mdl = Excelsteps.New_mdl
+            Set mdl = ExcelSteps.New_mdl
         
             
             'Provision the model
@@ -1194,7 +1194,7 @@ End Sub
 '
 Sub test_RefreshSMdl6(procs)
     Dim tst As New Test: tst.Init tst, "test_RefreshSMdl6"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim aryVals As Variant, rng As Range
     
     With tst
@@ -1239,7 +1239,7 @@ End Sub
 '
 Sub test_RefreshSMdl6_HiddenVars(procs)
     Dim tst As New Test: tst.Init tst, "test_RefreshSMdl6_HiddenVars"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim aryVals As Variant, rng As Range
     
     With tst
@@ -1316,7 +1316,7 @@ End Sub
 '
 Sub test_ProvisionSMdl7(procs)
     Dim tst As New Test: tst.Init tst, "test_ProvisionSMdl7"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim aryVals As Variant, aryExpected As Variant
     
     With tst
@@ -1348,7 +1348,7 @@ End Sub
 '
 Sub test_RefreshSMdl7(procs)
     Dim tst As New Test: tst.Init tst, "test_RefreshSMdl7"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim aryVals As Variant
     
     With tst
@@ -1414,7 +1414,7 @@ End Sub
 '
 Sub test_AddDropdownSMdl4a(procs)
     Dim tst As New Test: tst.Init tst, "test_AddDropdownSMdl4a"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     
     With tst
     
@@ -1439,7 +1439,7 @@ End Sub
 Sub test_AddDropdownSMdl2(procs)
     
     Dim tst As New Test: tst.Init tst, "test_AddDropdownSMdl2"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim rng As Range
     
     With tst
@@ -1465,7 +1465,7 @@ End Sub
 '
 Sub test_AddDropdownSMdl5(procs)
     Dim tst As New Test: tst.Init tst, "test_AddDropdownSMdl5"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim rng As Range, rngValCells As Range
     
     With tst

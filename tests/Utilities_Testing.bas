@@ -245,7 +245,7 @@ Sub Set_ExcelStepsVersion()
     Dim wkbk As Workbook
     
     Set wkbk = Application.Workbooks("XLSteps.xlam")
-    wkbk.BuiltinDocumentProperties("Comments").Value = Excelsteps.Version
+    wkbk.BuiltinDocumentProperties("Comments").Value = ExcelSteps.Version
 End Sub
 '-----------------------------------------------------------------------------------------------
 ' Consolidate code_plan.csv and ExcelSteps_Code_Plan.xlsx into Code_Plan.xlsx
@@ -301,7 +301,7 @@ Sub ExportCodePlanToExcel()
 
 ErrorExit:
     Application.DisplayAlerts = True
-    Msgbox "Error ExportCodePlanToExcel"
+    MsgBox "Error ExportCodePlanToExcel"
 End Sub
 
 '-----------------------------------------------------------------------------------------------
@@ -339,5 +339,7 @@ Sub ExportCodePlanFromExcel()
 ErrorExit:
     On Error Resume Next
     If Not wkbkCodePlan Is Nothing Then wkbkCodePlan.Close SaveChanges:=False
-    Msgbox "Error ExportCodePlanFromExcel"
+    MsgBox "Error ExportCodePlanFromExcel"
 End Sub
+
+

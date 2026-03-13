@@ -163,7 +163,7 @@ Sub test_RefreshTblAPI4(procs)
     
         'Just Defn specified (tblName is same as sht)
         defn_test2 = "SMdl:5,3:T:T:F:F:F:F:0:-1:0:0"
-        .Assert tst, Excelsteps.RefreshTblAPI(.wkbkTest, IsReplace:=True, IsTblFormat:=True, _
+        .Assert tst, ExcelSteps.RefreshTblAPI(.wkbkTest, IsReplace:=True, IsTblFormat:=True, _
             defn:=defn_test2)
         
         .Assert tst, (tst.wkbkTest.Names("Desc").RefersToRange.Parent.Name = shtTbl)
@@ -186,7 +186,7 @@ Sub test_RefreshTblAPI4(procs)
         End With
         
         'Refresh the table
-        .Assert tst, Excelsteps.RefreshTblAPI(.wkbkTest, IsReplace:=True, IsTblFormat:=True, _
+        .Assert tst, ExcelSteps.RefreshTblAPI(.wkbkTest, IsReplace:=True, IsTblFormat:=True, _
             TblName:="Custom", defn:=defn_test2)
 
         .Assert tst, (tst.wkbkTest.Names("Custom_Desc").RefersToRange.Parent.Name = shtTbl)
@@ -212,15 +212,15 @@ Sub test_RefreshTblAPI3(procs)
     PopulateTbl2 tst.wkbkTest, shtTbl
     
     'Initialize error handling to allow checking warning and error message(s)
-    Set Excelsteps.errs = Excelsteps.New_ErrorHandling
-    Excelsteps.errs.Init wkbkE:=Excelsteps.ThisWorkbook
-    Excelsteps.errs.IsShowMsgs = False
+    Set ExcelSteps.errs = ExcelSteps.New_ErrorHandling
+    ExcelSteps.errs.Init wkbkE:=ExcelSteps.ThisWorkbook
+    ExcelSteps.errs.IsShowMsgs = False
 
     With tst
-        .Assert tst, Excelsteps.RefreshTblAPI(.wkbkTest, IsReplace:=True, IsTblFormat:=True, _
+        .Assert tst, ExcelSteps.RefreshTblAPI(.wkbkTest, IsReplace:=True, IsTblFormat:=True, _
             IsSetTblNames:=True)
         
-        msg = Excelsteps.errs.Msgs_accum
+        msg = ExcelSteps.errs.Msgs_accum
         tst.Assert tst, Left(msg, 51) = "The following tblRowsCols object is underspecified."
     
         tst.Update tst, procs
@@ -241,7 +241,7 @@ Sub test_RefreshTblAPI2(procs)
     PopulateStepsTblRefresh tst.wkbkTest, shtTbl
 
     With tst
-        .Assert tst, Excelsteps.RefreshTblAPI(.wkbkTest, IsReplace:=True, IsTblFormat:=True, _
+        .Assert tst, ExcelSteps.RefreshTblAPI(.wkbkTest, IsReplace:=True, IsTblFormat:=True, _
             sht:=shtTbl, IsSetTblNames:=True)
         CheckRefreshedTable tst
         CheckHomedTableRefreshed tst, rowHome:=2, colHome:=1
@@ -268,7 +268,7 @@ Sub test_RefreshTblAPI1(procs)
     PopulateStepsTblRefresh tst.wkbkTest, shtTbl
     
     'Default table
-    tst.Assert tst, Excelsteps.RefreshTblAPI(tst.wkbkTest, IsReplace:=True, IsTblFormat:=True, sht:=shtTbl)
+    tst.Assert tst, ExcelSteps.RefreshTblAPI(tst.wkbkTest, IsReplace:=True, IsTblFormat:=True, sht:=shtTbl)
     CheckRefreshedTable tst
     CheckHomedTableRefreshed tst
 
@@ -315,7 +315,7 @@ End Sub
 '
 Sub test_SetAllColNames(procs)
     Dim tst As New Test: tst.Init tst, "test_SetAllColNames"
-    Dim tbl As Object: Set tbl = Excelsteps.New_tbl
+    Dim tbl As Object: Set tbl = ExcelSteps.New_tbl
     
     With tst
         'Run the method being tested and precursors
@@ -338,7 +338,7 @@ End Sub
 '
 Sub test_NameColumn(procs)
     Dim tst As New Test: tst.Init tst, "test_NameColumn"
-    Dim tbl As Object: Set tbl = Excelsteps.New_tbl
+    Dim tbl As Object: Set tbl = ExcelSteps.New_tbl
     
     With tst
         'Run the method being tested and precursors
@@ -358,7 +358,7 @@ End Sub
 '
 Sub test_SetTblNames(procs)
     Dim tst As New Test: tst.Init tst, "test_SetTblNames"
-    Dim tbl As Object: Set tbl = Excelsteps.New_tbl
+    Dim tbl As Object: Set tbl = ExcelSteps.New_tbl
     
     With tst
         'Run the method being tested and precursor methods
@@ -382,7 +382,7 @@ End Sub
 Sub test_SetAryColRngs(procs)
     Dim tst As New Test: tst.Init tst, "test_SetAryColRngs"
     Dim i As Integer, myArray As Variant, aryExpected As Variant
-    Dim tbl As Object: Set tbl = Excelsteps.New_tbl
+    Dim tbl As Object: Set tbl = ExcelSteps.New_tbl
     
     With tst
 
@@ -424,7 +424,7 @@ End Sub
 '
 Sub test_SetDimensions1(procs)
     Dim tst As New Test: tst.Init tst, "test_SetDimensions1"
-    Dim tbl As Object: Set tbl = Excelsteps.New_tbl
+    Dim tbl As Object: Set tbl = ExcelSteps.New_tbl
     
     With tst
         InitializeHomedTbl tbl, .wkbkTest
@@ -440,7 +440,7 @@ Sub test_SetDimensions1(procs)
     End With
     
     'tst with header-only sheet
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     With tst
         InitializeHomedTbl tbl, .wkbkTest
         PopulateTbl .wkbkTest, shtTbl
@@ -465,7 +465,7 @@ End Sub
 '
 Sub test_SetDimensions2(procs)
     Dim tst As New Test: tst.Init tst, "test_SetDimensions2"
-    Dim tbl As Object: Set tbl = Excelsteps.New_tbl
+    Dim tbl As Object: Set tbl = ExcelSteps.New_tbl
     
     With tst
         InitializeHomedTbl tbl, .wkbkTest
@@ -488,7 +488,7 @@ End Sub
 '
 Sub test_SetDimensions3(procs)
     Dim tst As New Test: tst.Init tst, "test_SetDimensions3"
-    Dim tbl As Object: Set tbl = Excelsteps.New_tbl
+    Dim tbl As Object: Set tbl = ExcelSteps.New_tbl
     
     'Populate a 3-row table - offset the data an extra row from header
     With tst
@@ -507,7 +507,7 @@ Sub test_SetDimensions3(procs)
         .Assert tst, tbl.rngrows.Address = "$3:$5"
 
         'Populate a 3-row table - offset the data one column (Blank col A)
-        Set tbl = Excelsteps.New_tbl
+        Set tbl = ExcelSteps.New_tbl
         
         InitializeHomedTbl tbl, .wkbkTest
         
@@ -535,7 +535,7 @@ End Sub
 '
 Sub test_InitializeWkshtAndRanges1(procs)
     Dim tst As New Test: tst.Init tst, "test_InitializeWkshtAndRanges1"
-    Dim tbl As Object: Set tbl = Excelsteps.New_tbl
+    Dim tbl As Object: Set tbl = ExcelSteps.New_tbl
     
     With tst
         InitializeHomedTbl tbl, tst.wkbkTest
@@ -558,7 +558,7 @@ End Sub
 '
 Sub test_InitializeWkshtAndRanges2(procs)
     Dim tst As New Test: tst.Init tst, "test_InitializeWkshtAndRanges2"
-    Dim tbl As Object: Set tbl = Excelsteps.New_tbl
+    Dim tbl As Object: Set tbl = ExcelSteps.New_tbl
     
     With tst
         InitializeHomedTbl tbl, .wkbkTest
@@ -581,7 +581,7 @@ End Sub
 '
 Sub test_SetIsBlankSheet1(procs)
     Dim tst As New Test: tst.Init tst, "test_SetIsBlankSheet1"
-    Dim tbl As Object: Set tbl = Excelsteps.New_tbl
+    Dim tbl As Object: Set tbl = ExcelSteps.New_tbl
     
     With tst
         InitializeHomedTbl tbl, .wkbkTest
@@ -604,7 +604,7 @@ End Sub
 '
 Sub test_SetIsBlankSheet2(procs)
     Dim tst As New Test: tst.Init tst, "test_SetIsBlankSheet2"
-    Dim tbl As Object: Set tbl = Excelsteps.New_tbl
+    Dim tbl As Object: Set tbl = ExcelSteps.New_tbl
     
     With tst
         InitializeHomedTbl tbl, .wkbkTest
@@ -625,7 +625,7 @@ End Sub
 '
 Sub test_SetIsNoData1(procs)
     Dim tst As New Test: tst.Init tst, "test_SetIsNoData1"
-    Dim tbl As Object: Set tbl = Excelsteps.New_tbl
+    Dim tbl As Object: Set tbl = ExcelSteps.New_tbl
     
     With tst
         InitializeHomedTbl tbl, .wkbkTest
@@ -645,7 +645,7 @@ End Sub
 '
 Sub test_SetIsNoData2(procs)
     Dim tst As New Test: tst.Init tst, "test_SetIsNoData2"
-    Dim tbl As Object: Set tbl = Excelsteps.New_tbl
+    Dim tbl As Object: Set tbl = ExcelSteps.New_tbl
     
     With tst
         InitializeHomedTbl tbl, .wkbkTest
@@ -668,7 +668,7 @@ End Sub
 '
 Sub test_SetIsNoData3(procs)
     Dim tst As New Test: tst.Init tst, "test_SetIsNoData3"
-    Dim tbl As Object: Set tbl = Excelsteps.New_tbl
+    Dim tbl As Object: Set tbl = ExcelSteps.New_tbl
     
     With tst
         InitializeHomedTbl tbl, .wkbkTest
@@ -691,7 +691,7 @@ End Sub
 '
 Sub test_SetIsNoData4(procs)
     Dim tst As New Test: tst.Init tst, "test_SetIsNoData4"
-    Dim tbl As Object: Set tbl = Excelsteps.New_tbl
+    Dim tbl As Object: Set tbl = ExcelSteps.New_tbl
     
     With tst
         InitializeHomedTbl tbl, .wkbkTest
@@ -715,7 +715,7 @@ End Sub
 '
 Sub test_SetNRows1(procs)
     Dim tst As New Test: tst.Init tst, "test_SetNRows1"
-    Dim tbl As Object: Set tbl = Excelsteps.New_tbl
+    Dim tbl As Object: Set tbl = ExcelSteps.New_tbl
     
     With tst
         InitializeHomedTbl tbl, .wkbkTest
@@ -731,7 +731,7 @@ Sub test_SetNRows1(procs)
         .Assert tst, tbl.lastrow = 0
     
         'tst with header-only sheet
-        Set tbl = Excelsteps.New_tbl
+        Set tbl = ExcelSteps.New_tbl
         
         InitializeHomedTbl tbl, tst.wkbkTest
 
@@ -754,7 +754,7 @@ End Sub
 '
 Sub test_SetNRows2(procs)
     Dim tst As New Test: tst.Init tst, "test_SetNRows2"
-    Dim tbl As Object: Set tbl = Excelsteps.New_tbl
+    Dim tbl As Object: Set tbl = ExcelSteps.New_tbl
     
     With tst
         InitializeHomedTbl tbl, .wkbkTest
@@ -779,7 +779,7 @@ End Sub
 '
 Sub test_SetNRows3(procs)
     Dim tst As New Test: tst.Init tst, "test_SetNRows3"
-    Dim tbl As Object: Set tbl = Excelsteps.New_tbl
+    Dim tbl As Object: Set tbl = ExcelSteps.New_tbl
     
     With tst
         InitializeHomedTbl tbl, tst.wkbkTest
@@ -809,7 +809,7 @@ End Sub
 '
 Sub test_SetNCols1(procs)
     Dim tst As New Test: tst.Init tst, "test_SetNCols1"
-    Dim tbl As Object: Set tbl = Excelsteps.New_tbl
+    Dim tbl As Object: Set tbl = ExcelSteps.New_tbl
     
     With tst
         InitializeHomedTbl tbl, .wkbkTest
@@ -825,7 +825,7 @@ Sub test_SetNCols1(procs)
         .Assert tst, tbl.lastcol = 0
     
         'tst with header-only sheet
-        Set tbl = Excelsteps.New_tbl
+        Set tbl = ExcelSteps.New_tbl
         
         InitializeHomedTbl tbl, tst.wkbkTest
         PopulateTbl .wkbkTest, shtTbl
@@ -850,7 +850,7 @@ End Sub
 '
 Sub test_SetNCols2(procs)
     Dim tst As New Test: tst.Init tst, "test_SetNCols2"
-    Dim tbl As Object: Set tbl = Excelsteps.New_tbl
+    Dim tbl As Object: Set tbl = ExcelSteps.New_tbl
     
     With tst
         InitializeHomedTbl tbl, tst.wkbkTest
@@ -874,7 +874,7 @@ End Sub
 '
 Sub test_SetNCols3(procs)
     Dim tst As New Test: tst.Init tst, "test_SetNCols3"
-    Dim tbl As Object: Set tbl = Excelsteps.New_tbl
+    Dim tbl As Object: Set tbl = ExcelSteps.New_tbl
     
     With tst
         InitializeHomedTbl tbl, .wkbkTest
@@ -893,7 +893,7 @@ Sub test_SetNCols3(procs)
         .Assert tst, tbl.lastcol = 3
 
         'Populate a 3-row table - offset the data one column (Blank col A)
-        Set tbl = Excelsteps.New_tbl
+        Set tbl = ExcelSteps.New_tbl
         
         InitializeHomedTbl tbl, .wkbkTest
         
@@ -930,7 +930,7 @@ Sub test_SetNCols4(procs)
     'Test-specific code
     '------------------
     Dim tbl As Object
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     With tbl
         InitializeHomedTbl tbl, tst.wkbkTest
         PopulateTbl tst.wkbkTest, shtTbl
@@ -965,7 +965,7 @@ Sub test_SetRngTable1(procs)
     Dim tbl As Object
     
     'tst with blank sheet
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     With tbl
         InitializeHomedTbl tbl, tst.wkbkTest
 
@@ -981,7 +981,7 @@ Sub test_SetRngTable1(procs)
     End With
     
     'tst with header-only sheet
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     With tbl
         InitializeHomedTbl tbl, tst.wkbkTest
         PopulateTbl tst.wkbkTest, shtTbl
@@ -1011,7 +1011,7 @@ Sub test_SetRngTable2(procs)
     'Test-specific code
     '------------------
     Dim tbl As Object
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     With tbl
         InitializeHomedTbl tbl, tst.wkbkTest
         PopulateTbl tst.wkbkTest, shtTbl
@@ -1041,7 +1041,7 @@ Sub test_SetRngTable3(procs)
     Dim tbl As Object
     
     'Populate a 3-row table - offset the data an extra row from header
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     With tbl
         InitializeHomedTbl tbl, tst.wkbkTest
         
@@ -1060,7 +1060,7 @@ Sub test_SetRngTable3(procs)
     End With
 
     'Populate a 3-row table - offset the data one column (Blank col A)
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     With tbl
         InitializeHomedTbl tbl, tst.wkbkTest
         
@@ -1122,7 +1122,7 @@ Sub test_tblInitProcedure1(procs)
     'tst-specific code
     '------------------
     Dim tbl As Object
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     
     'A default table (only sht is specified)
     PopulateTbl2 procs.wkbk_testing, shtTbl
@@ -1151,12 +1151,12 @@ Sub test_tblInitProcedure_sht_CaseError(procs)
     'Test-specific code
     '------------------
     Dim tbl As Object, i As Integer, msg As String
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
         
     'Initialize error handling to allow checking warning and error message(s)
-    Set Excelsteps.errs = Excelsteps.New_ErrorHandling
-    Excelsteps.errs.Init wkbkE:=Excelsteps.ThisWorkbook
-    Excelsteps.errs.IsShowMsgs = False
+    Set ExcelSteps.errs = ExcelSteps.New_ErrorHandling
+    ExcelSteps.errs.Init wkbkE:=ExcelSteps.ThisWorkbook
+    ExcelSteps.errs.IsShowMsgs = False
     
     PopulateTbl tst.wkbkTest, shtTbl
         
@@ -1164,7 +1164,7 @@ Sub test_tblInitProcedure_sht_CaseError(procs)
     tst.Assert tst, tbl.Init(tbl, tst.wkbkTest, sht:=LCase(shtTbl))
     
     'Check that warning message was created (not shown if .IsShowMsgs=False)
-    msg = Excelsteps.errs.Msgs_accum
+    msg = ExcelSteps.errs.Msgs_accum
     tst.Assert tst, Left(msg, 87) = "A tblRowsCols Definition's sht argument " & _
         "does not match the case of the workbook's sheet"
     
@@ -1185,7 +1185,7 @@ Sub test_SetIsCustomTbl(procs)
     Dim tbl As Object
     
     'A default table (only sht is specified)
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     With tbl
         tst.Assert tst, tbl.SetIsCustomTbl(tbl, sht:="SMdl")
         tst.Assert tst, (Not .IsCustomTbl)
@@ -1194,7 +1194,7 @@ Sub test_SetIsCustomTbl(procs)
     End With
     
     'A default table (only sht and override TblName are specified)
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     With tbl
         tst.Assert tst, tbl.SetIsCustomTbl(tbl, sht:="SMdl", TblName:="AltTableName")
         tst.Assert tst, (Not .IsCustomTbl)
@@ -1203,7 +1203,7 @@ Sub test_SetIsCustomTbl(procs)
     End With
     
     'A custom table (TblName specified)
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     With tbl
         tst.Assert tst, .SetIsCustomTbl(tbl, TblName:="test_table")
         tst.Assert tst, .IsCustomTbl
@@ -1211,21 +1211,21 @@ Sub test_SetIsCustomTbl(procs)
     End With
 
     'A custom table (Defn specified)
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     With tbl
         tst.Assert tst, .SetIsCustomTbl(tbl, defn:=defn_test)
         tst.Assert tst, .IsCustomTbl
     End With
 
     'A custom table (Both specified)
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     With tbl
         tst.Assert tst, .SetIsCustomTbl(tbl, TblName:="test_table", defn:=defn_test)
         tst.Assert tst, .IsCustomTbl
     End With
 
     'A custom table (Defn specified but sht arg overrides default sheet name)
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     With tbl
         tst.Assert tst, .SetIsCustomTbl(tbl, defn:="Dummy:xxx", sht:="SMdl")
         tst.Assert tst, .IsCustomTbl
@@ -1248,11 +1248,11 @@ Sub test_PopulateCustomTblParams1(procs)
     'Test-specific code
     '------------------
     Dim setting_name As String, tbl As Object
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     
     'Write the definition to the workbook as a setting and check that it exists
     setting_name = "tbl_test_table"
-    Excelsteps.UpdateSetting tst.wkbkTest, setting_name, defn_test
+    ExcelSteps.UpdateSetting tst.wkbkTest, setting_name, defn_test
     
     'Set .IsCustomTbl=True and set .TblName
     With tbl
@@ -1269,7 +1269,7 @@ Sub test_PopulateCustomTblParams1(procs)
     End With
     
     'Delete Setting after checks
-    Excelsteps.DeleteSetting tst.wkbkTest, setting_name
+    ExcelSteps.DeleteSetting tst.wkbkTest, setting_name
     
     tst.Update tst, procs
 End Sub
@@ -1283,10 +1283,10 @@ Sub test_PopulateCustomTblParams2(procs)
     tst.Init tst, "test_PopulateCustomTblParams2"
     
     Dim tbl As Object
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     
     'Ensure no setting that could be confused as having priority over defn
-    Excelsteps.DeleteSetting tst.wkbkTest, "tbl_test_table"
+    ExcelSteps.DeleteSetting tst.wkbkTest, "tbl_test_table"
     
     'Set .IsCustomTbl=True and set .TblName
     With tbl
@@ -1313,10 +1313,10 @@ Sub test_PopulateCustomTblParams3(procs)
     tst.Init tst, "test_PopulateCustomTblParams3"
     
     Dim tbl As Object
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     
     'Ensure no setting that could be confused as having priority over defn
-    Excelsteps.DeleteSetting tst.wkbkTest, "tbl_test_table"
+    ExcelSteps.DeleteSetting tst.wkbkTest, "tbl_test_table"
     
     'Set .IsCustomTbl=True and set .TblName
     With tbl
@@ -1365,11 +1365,11 @@ Sub test_ReadDefnSetting(procs)
     'Test-specific code
     '------------------
     Dim setting_name As String, tbl As Object
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     
     'Write the definition to the workbook as a setting and check that it exists
     setting_name = "tbl_test_table"
-    Excelsteps.UpdateSetting tst.wkbkTest, setting_name, defn_test
+    ExcelSteps.UpdateSetting tst.wkbkTest, setting_name, defn_test
     
     'Set .IsCustomTbl=True and set .TblName
     Set tbl.wkbk = tst.wkbkTest
@@ -1380,7 +1380,7 @@ Sub test_ReadDefnSetting(procs)
     tst.Assert tst, tbl.defn = defn_test
     
     'Delete after check
-    Excelsteps.DeleteSetting tst.wkbkTest, setting_name
+    ExcelSteps.DeleteSetting tst.wkbkTest, setting_name
 
     'Repeat with
     tst.Update tst, procs
@@ -1397,7 +1397,7 @@ Sub test_SetHomedTblParams(procs)
     'Test-specific code
     '------------------
     Dim tbl As Object
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     
     With tbl
         Set .wkbk = tst.wkbkTest
@@ -1431,7 +1431,7 @@ Sub test_OverrideWithArgs(procs)
     'Test-specific code
     '------------------
     Dim tbl As Object
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     
     With tbl
         Set .wkbk = tst.wkbkTest
@@ -1592,8 +1592,8 @@ Sub test_PrepExcelStepsSht(procs)
     'Test-specific code
     '------------------
     Dim tbl As Object, refr As Object, tblSteps As Object
-    Set refr = Excelsteps.New_Refresh
-    Set tblSteps = Excelsteps.New_tbl
+    Set refr = ExcelSteps.New_Refresh
+    Set tblSteps = ExcelSteps.New_tbl
     
     With refr
         tst.Assert tst, .InitTbl(refr, wkbk:=tst.wkbkTest, IsReplace:=True, IsTblFormat:=True)
@@ -1629,7 +1629,7 @@ Sub test_ProvisionTbl2EmptySpec(procs)
     'Test-specific code
     '------------------
     Dim tbl As Object
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     PopulateTbl2 tst.wkbkTest, shtTbl, IsHeader:=False, IsData:=False
     
     'Empty table but with pre-defined nrows and ncols
@@ -1660,7 +1660,7 @@ Sub test_ProvisionTbl2EmptyTbl(procs)
     'Test-specific code
     '------------------
     Dim tbl As Object
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     PopulateTbl2 tst.wkbkTest, shtTbl, IsHeader:=False, IsData:=False
     tbl.Provision tbl, tst.wkbkTest, False, sht:=shtTbl
     
@@ -1689,7 +1689,7 @@ Sub test_ProvisionTbl2HeaderOnly(procs)
     'Test-specific code
     '------------------
     Dim tbl As Object
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     PopulateTbl2 tst.wkbkTest, shtTbl, IsData:=False
     tbl.Provision tbl, tst.wkbkTest, False, sht:=shtTbl
     
@@ -1717,7 +1717,7 @@ Sub test_ProvisionTbl2(procs)
     'Test-specific code
     '------------------
     Dim tbl As Object
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     
     PopulateTbl2 tst.wkbkTest, shtTbl
     tbl.Provision tbl, tst.wkbkTest, False, sht:=shtTbl
@@ -1798,7 +1798,7 @@ Sub test_ProvisionTbl(procs)
     'Test-specific code
     '------------------
     Dim tbl As Object
-    Set tbl = Excelsteps.New_tbl
+    Set tbl = ExcelSteps.New_tbl
     
     'Default - no range naming
     PopulateTbl tst.wkbkTest, shtTbl
@@ -1842,6 +1842,8 @@ Sub test_PopulateTbl(procs)
     
     tst.Update tst, procs
 End Sub
+
+
 
 
 

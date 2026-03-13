@@ -7,7 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'Version 1/29/26
+'Version 3/13/26
 Option Explicit
 
 'Table Locator Attributes
@@ -60,10 +60,11 @@ Public IsNameColRows As Boolean '(7/30/25) Name .rngRows col block instead of wh
 'shtErrors col ranges
 Public colrngCode As Range
 Public colrngMod As Range
-Public colrngFunc As Range
-Public colrngSMsg As Range
+Public colrngRoutine As Range
+Public colrngMsg As Range
 Public colrngSVal As Range
-Public colrngIMsg As Range
+Public colrngUserFace As Range
+Public colrngProj As Range
 
 'shtSteps col ranges
 Public colrngSht As Range
@@ -96,37 +97,6 @@ Public colrngVarUnits As Range
 Public colrngVarXlwidth As Range
 Public colrngVarXlFormat As Range
 Public colrngOrder_Errors As Range
-
-'Add project-specific attributes for project's tables
-'Trts, Stains, Substrates, Graders, Protocols
-Public colrngID As Range
-Public colrngName As Range
-Public colrngLot As Range
-Public colrngStainID As Range
-Public colrngSubstID As Range
-
-'Swatches
-Public colrngStain As Range
-Public colrngSubstrate As Range
-Public colrngRep As Range
-Public colrngDup As Range
-Public colrngProtocol As Range
-Public colrngTrt As Range
-
-'Color
-Public colrng_L_Cleaned As Range
-Public colrng_a_Cleaned As Range
-Public colrng_b_Cleaned As Range
-
-'ColorUnstained
-Public colrng_LColor As Range
-Public colrng_aColor As Range
-Public colrng_bColor As Range
-
-'ColorSummary validation
-Public colrngGroup As Range
-Public colrngCMCDE As Range
-
 
 'Array of column ranges - requires Get/Let Properties to work (VBA bug/arch. flaw)
 Private pAryColRngs() As Variant
@@ -1210,10 +1180,11 @@ Public Function SetColRanges(ByRef tbl) As Boolean
         If .TblName = shtErrors Then
             Set .colrngCode = .cellHome.Offset(0, 0).EntireColumn
             Set .colrngMod = cellHome.Offset(0, 1).EntireColumn
-            Set .colrngFunc = cellHome.Offset(0, 2).EntireColumn
-            Set .colrngSMsg = cellHome.Offset(0, 3).EntireColumn
+            Set .colrngRoutine = cellHome.Offset(0, 2).EntireColumn
+            Set .colrngMsg = cellHome.Offset(0, 3).EntireColumn
             Set .colrngSVal = cellHome.Offset(0, 4).EntireColumn
-            Set .colrngIMsg = cellHome.Offset(0, 5).EntireColumn
+            Set .colrngUserFace = cellHome.Offset(0, 5).EntireColumn
+            Set .colrngProj = cellHome.Offset(0, 6).EntireColumn
 
         ElseIf .TblName = shtSteps Then
             Set .colrngSht = .cellHome.Offset(0, 0).EntireColumn

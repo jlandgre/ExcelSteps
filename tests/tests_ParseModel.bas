@@ -45,7 +45,7 @@ End Sub
 '
 Sub test_ParseDefaultModel(procs)
     Dim tst As New Test: tst.Init tst, "test_ParseDefaultModel"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     Dim aryVals As Variant, wkshtrc As Worksheet
     
     With tst
@@ -57,7 +57,7 @@ Sub test_ParseDefaultModel(procs)
         Application.Calculate
         
         'Call Parse function and check values
-        Excelsteps.ParseMdl mdl
+        ExcelSteps.ParseMdl mdl
         CheckValsWithDescColumn tst
         
         If Not mdl.wkbkParsed Is Nothing Then mdl.wkbkParsed.Close False
@@ -70,7 +70,7 @@ End Sub
 '
 Sub test_ParseDefaultCalcModel(procs)
     Dim tst As New Test: tst.Init tst, "test_ParseDefaultCalcModel"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     
     With tst
     
@@ -81,7 +81,7 @@ Sub test_ParseDefaultCalcModel(procs)
         Application.Calculate
         
         'Call Parse function and check values
-        Excelsteps.ParseMdl mdl
+        ExcelSteps.ParseMdl mdl
         CheckValsCalcWithDesc tst
                 
         If Not mdl.wkbkParsed Is Nothing Then mdl.wkbkParsed.Close False
@@ -95,7 +95,7 @@ End Sub
 '
 Sub test_ParseSuppHeaderCalcModel(procs)
     Dim tst As New Test: tst.Init tst, "test_ParseSuppHeaderCalcModel"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     
     With tst
     
@@ -106,7 +106,7 @@ Sub test_ParseSuppHeaderCalcModel(procs)
         Application.Calculate
         
         'Call Parse function and check values
-        Excelsteps.ParseMdl mdl
+        ExcelSteps.ParseMdl mdl
         CheckValsCalc tst
         
         If Not mdl.wkbkParsed Is Nothing Then mdl.wkbkParsed.Close False
@@ -119,7 +119,7 @@ End Sub
 '
 Sub test_ParseSuppHeaderModel(procs)
     Dim tst As New Test: tst.Init tst, "test_ParseSuppHeaderModel"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     
     With tst
     
@@ -130,7 +130,7 @@ Sub test_ParseSuppHeaderModel(procs)
         Application.Calculate
         
         'Call Parse function and check values
-        Excelsteps.ParseMdl mdl
+        ExcelSteps.ParseMdl mdl
         CheckValsNoDescColumn tst
         
         If Not mdl.wkbkParsed Is Nothing Then mdl.wkbkParsed.Close False
@@ -143,7 +143,7 @@ End Sub
 '
 Sub test_ParseWithDeleteFlag(procs)
     Dim tst As New Test: tst.Init tst, "test_ParseWithDeleteFlag"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     
     With tst
     
@@ -154,7 +154,7 @@ Sub test_ParseWithDeleteFlag(procs)
         Application.Calculate
         
         'Call Parse function and check values
-        Excelsteps.ParseMdl mdl
+        ExcelSteps.ParseMdl mdl
         CheckValsDeleteFlag tst
         
         If Not mdl.wkbkParsed Is Nothing Then mdl.wkbkParsed.Close False
@@ -167,7 +167,7 @@ End Sub
 '
 Sub test_ParseNonHomed(procs)
     Dim tst As New Test: tst.Init tst, "test_ParseWithDeleteFlag"
-    Dim mdl As Object: Set mdl = Excelsteps.New_mdl
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
     
     With tst
     
@@ -179,7 +179,7 @@ Sub test_ParseNonHomed(procs)
         Application.Calculate
         
         'Call Parse function and check values
-        Excelsteps.ParseMdl mdl
+        ExcelSteps.ParseMdl mdl
         CheckValsNoDescColumn tst
         
         If Not mdl.wkbkParsed Is Nothing Then mdl.wkbkParsed.Close False

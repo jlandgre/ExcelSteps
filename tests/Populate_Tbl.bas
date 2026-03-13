@@ -10,8 +10,8 @@ Option Explicit
 '
 Sub PrepBlankStepsForTesting(wkbk, ByRef refr, ByRef tblSteps)
     Const sMsg  As String = "Sub PrepBlankStepsForTesting Error"
-    Set refr = Excelsteps.New_Refresh
-    Set tblSteps = Excelsteps.New_tbl
+    Set refr = ExcelSteps.New_Refresh
+    Set tblSteps = ExcelSteps.New_tbl
     
     'Initialize Refresh class and point it to test workbook
     With refr

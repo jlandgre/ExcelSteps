@@ -1287,7 +1287,7 @@ End Function
 ' Returns a full path as a String, or "" if the user cancels.
 ' On Windows -> normal path. On Mac -> POSIX path (e.g., /Users/you/Desktop/file.txt).
 ' JDL 6/25
-Public Function PickFile(Optional ByVal prompt As String = "Choose a file�", _
+Public Function PickFile(Optional ByVal prompt As String = "Choose a file?", _
     Optional ByVal initialFolder As String = "") As String
 
     #If Mac Then
@@ -1626,3 +1626,5 @@ Sub ActiveCellColor()
     Debug.Print "RGB: " & r & ", " & g & ", " & b
     Debug.Print "Color value: " & lngColor
 End Sub
+
+

@@ -18,7 +18,7 @@ Sub PopulateMdlImportType1AndType2(Test, tblImp)
         .wkbkTest.Sheets(shtTblImp).Cells.Clear
         
         'Provision and format the tblImp sheet
-        Set tblImp = Excelsteps.New_tbl
+        Set tblImp = ExcelSteps.New_tbl
         .Assert Test, tblImp.Provision(tblImp, .wkbkTest, False, shtTblImp, nCols:=10, IsSetColRngs:=True)
         .Assert Test, tblImp.FormatMdlImport(tblImp)
         
@@ -84,7 +84,7 @@ Sub PopulateDashMdl(Test, mdlDash)
     nRows = 3
 
     'Initialize mdlDash and Populate by columns
-    Set mdlDash = Excelsteps.New_mdl
+    Set mdlDash = ExcelSteps.New_mdl
     With mdlDash
         Test.Assert Test, .Init(mdlDash, Test.wkbkTest, defn:=defn_dash)
     
