@@ -1523,7 +1523,7 @@ Private Function EnsureFolderAccess(ByVal folder As String) As Boolean
     End If
     
     ' Need to request access
-    Call errs.ShowMessage("EnsureFolderAccess", 1, vbInformation)
+    Call errs.ReportWarningMsg(1, "EnsureFolderAccess", vbType:=vbInformation)
     
     If Not RequestFolderAccess(folder) Then GoTo ErrorExit
     Exit Function

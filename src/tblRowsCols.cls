@@ -62,7 +62,6 @@ Public colrngCode As Range
 Public colrngMod As Range
 Public colrngRoutine As Range
 Public colrngMsg As Range
-Public colrngSVal As Range
 Public colrngUserFace As Range
 Public colrngProj As Range
 
@@ -1179,12 +1178,11 @@ Public Function SetColRanges(ByRef tbl) As Boolean
     With tbl
         If .TblName = shtErrors Then
             Set .colrngCode = .cellHome.Offset(0, 0).EntireColumn
-            Set .colrngMod = cellHome.Offset(0, 1).EntireColumn
-            Set .colrngRoutine = cellHome.Offset(0, 2).EntireColumn
-            Set .colrngMsg = cellHome.Offset(0, 3).EntireColumn
-            Set .colrngSVal = cellHome.Offset(0, 4).EntireColumn
-            Set .colrngUserFace = cellHome.Offset(0, 5).EntireColumn
-            Set .colrngProj = cellHome.Offset(0, 6).EntireColumn
+            Set .colrngMod = .cellHome.Offset(0, 1).EntireColumn
+            Set .colrngRoutine = .cellHome.Offset(0, 2).EntireColumn
+            Set .colrngMsg = .cellHome.Offset(0, 3).EntireColumn
+            Set .colrngUserFace = .cellHome.Offset(0, 4).EntireColumn
+            Set .colrngProj = .cellHome.Offset(0, 5).EntireColumn
 
         ElseIf .TblName = shtSteps Then
             Set .colrngSht = .cellHome.Offset(0, 0).EntireColumn
@@ -1215,9 +1213,3 @@ Public Function SetColRanges(ByRef tbl) As Boolean
 ErrorExit:
     errs.RecordErr "SetColRanges", SetColRanges
 End Function
-
-
-
-
-
-

@@ -9,7 +9,6 @@ Public errs As Object
 Public Const shtErrors As String = "Errors_"
 Public Const sErrBase As String = "Base"
 Public Const sVBAErr As String = "Unknown VBA Error"
-Public Const iErrNotFound As Integer = 10000
 Public Const sFileErrs As String = "Warnings_and_Errors.txt"
 Public Const sSettingErrs As String = "Warnings_Errors"
 '-----------------------------------------------------------------------------------------------------
@@ -18,25 +17,38 @@ Public Const sSettingErrs As String = "Warnings_Errors"
 ''JDL 3/8/23; Modified 10/16/25
 '
 Sub SetErrs(CallingFunction, Optional wkbkE As Workbook = Nothing)
-    Dim Msgs_accum As String
+    Dim IsDriver As Boolean, IsNonBool As Boolean
+
+    IsDriver = (VarType(CallingFunction) = vbString And LCase(CallingFunction) = "driver")
+    IsNonBool = (VarType(CallingFunction) = vbString And LCase(CallingFunction) = "non-bool")
 
     'Initialize errs (In case CallingFunction called directly instead of by local driver sub)
-    If (errs Is Nothing) Or (CallingFunction = "driver") Then
+    If (errs Is Nothing) Or IsDriver Then
         Set errs = New ErrorHandling
-        
-        ' If errs not instanced by driver, assume CallingFunction is being tested (for errs.ReportMsg)
-        errs.IsTesting = True
-        If CallingFunction = "driver" Then errs.IsTesting = False
         
         'Default Errors_ sheet location
         If wkbkE Is Nothing Then Set wkbkE = ThisWorkbook
         
         'True/False = Master switch for enabling error handling in project
         errs.Init wkbkE, IsHandle:=True
+
+        'Set defaults by calling mode
+        If IsDriver Then
+            errs.IsTesting = False
+            errs.IsShowMsgs = True
+        Else
+            errs.IsTesting = True
+            errs.IsShowMsgs = False
+        End If
+
+    ElseIf IsDriver Then
+        'Driver call refreshes mode flags even if errs already exists
+        errs.IsTesting = False
+        errs.IsShowMsgs = True
     End If
     
     'Initialize Boolean calling function
-    If (CallingFunction <> "driver") And (CallingFunction <> "non-bool") Then CallingFunction = True
+    If Not IsDriver And Not IsNonBool Then CallingFunction = True
 End Sub
 
 

@@ -31,6 +31,9 @@ End Function
 Public Function New_ErrorHandling() As ErrorHandling
     Set New_ErrorHandling = New ErrorHandling
 End Function
+Public Function New_ErrorsMeta() As ErrorsMeta
+    Set New_ErrorsMeta = New ErrorsMeta
+End Function
 Public Function New_mdlRow() As mdlRow
     Set New_mdlRow = New mdlRow
 End Function
