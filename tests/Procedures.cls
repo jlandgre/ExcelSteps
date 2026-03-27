@@ -37,6 +37,7 @@ Public mdlImportRow As Object '1/28/26
 Public dictionary As Object '1/29/26
 Public ErrorHandling As Object '3/13/26
 Public ErrorParams As Object '3/13/26
+Public PivotTable As Object '3/27/26
 
 ' General attributes for all procedures in the code project
 Public wkbk_testing As Workbook
@@ -105,6 +106,10 @@ Sub Init(procs, ByVal wkbk, ByVal shtT, test_suite_name)
         .ErrorHandling.Name = "ErrorHandling Class"
         Set .ErrorParams = New Procedure
         .ErrorParams.Name = "Error params and SetErrs"
+
+        ' TestDriver_PivotTable
+        Set .PivotTable = New Procedure
+        .PivotTable.Name = "PivotTable Class"
         
         ' Set attributes and initialize test results sheet
         .test_suite_name = test_suite_name

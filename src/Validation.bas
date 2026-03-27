@@ -46,4 +46,7 @@ End Function
 Public Function New_Dictionary() As Dictionary
     Set New_Dictionary = New Dictionary
 End Function
+Public Function New_PivotTable() As PivotTable
+    Set New_PivotTable = New PivotTable
+End Function
 
