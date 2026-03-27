@@ -9,7 +9,9 @@ Projects built in VBA have cross-platform compatibility (Windows/Mac Excel). A t
 - **tests_ProjectName.xlsm** - Unit test suite workbook (VBA Project: `Tests`)
 VBA Project `ProjectName` has VBA Project `ExcelSteps` as a reference. `Tests` has `ProjectName` as a reference. We assume comprehensive unit testing in the test suite which contains one or more test modules grouped by topic. Within a test module, we use the Tests.Procedures class instance, procs to manage test groups and reporting.
 
-We use `xlwings edit VBA` tool to sync code modules between the project folder and Excel files. This allows AI to edit the code files and have the changes propagate into Excel. The `vs_code_setup.md` skill instructs on configuring VS Code for this. Code files (in the project's src and tests subfolders) have typical extensions: `.bas` for standard modules, `.cls` for class modules, and `.frm` for userforms. Before making any code changes, AI should check that there is a VS Code Terminal running in VS Code for the file being changed and that `xlwings vba edit` is enabled so that changes are synced. Stop and address this before making code changes if it is not enabled. 
+We use `xlwings edit VBA` tool to sync code modules between the project folder and Excel files. This allows AI to edit the code files and have the changes propagate into Excel. The `vs_code_setup.md` skill instructs on configuring VS Code for this. Code files (in the project's src and tests subfolders) have typical extensions: `.bas` for standard modules, `.cls` for class modules, and `.frm` for userforms.
+
+When editing VBA module files under active xlwings sync, prefer direct file patch edits (`apply_patch`) and avoid terminal-based rewrite commands (for example `Get-Content ... -replace ... | Set-Content ...`) because they can disrupt sync/watch behavior.
 
 ## Core Data Management Pattern
 

@@ -10,6 +10,7 @@ Sub a_RunAllTests()
     TestDriver_ParseModel
     TestDriver_mdlImportRow
     TestDriver_Dictionary
+    TestDriver_ErrorHandling
     TestDriver_TblRowsCols
     'TestDriver_SwapModels
 ThisWorkbook.Sheets("SMdl").Activate

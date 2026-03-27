@@ -35,6 +35,8 @@ Public LiteModelSpeed As Object '10/23/25
 Public ParseModel As Object '11/17/25
 Public mdlImportRow As Object '1/28/26
 Public dictionary As Object '1/29/26
+Public ErrorHandling As Object '3/13/26
+Public ErrorParams As Object '3/13/26
 
 ' General attributes for all procedures in the code project
 Public wkbk_testing As Workbook
@@ -97,6 +99,12 @@ Sub Init(procs, ByVal wkbk, ByVal shtT, test_suite_name)
         ' TestDriver_Dictionary
         Set .dictionary = New Procedure
         .dictionary.Name = "Dictionary Class"
+
+        ' TestDriver_ErrorHandling
+        Set .ErrorHandling = New Procedure
+        .ErrorHandling.Name = "ErrorHandling Class"
+        Set .ErrorParams = New Procedure
+        .ErrorParams.Name = "Error params and SetErrs"
         
         ' Set attributes and initialize test results sheet
         .test_suite_name = test_suite_name
