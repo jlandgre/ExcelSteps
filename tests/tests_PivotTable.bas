@@ -29,6 +29,7 @@ Sub TestDriver_PivotTable()
 			test_MakePivotTableProcedure1 procs
 			test_MakePivotTableProcedure2 procs
 			test_MakePivotTableProcedure3 procs
+			test_MakePivotTableProcedure4 procs
 		End If
 	End With
 
@@ -52,8 +53,8 @@ Sub test_InitPivotTable(procs)
 	Set pvt = ExcelSteps.New_PivotTable
 
 	With tst
-		PopulatePivotTableSimple ThisWorkbook, "PivotSrc"
-		.Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:="PivotSrc", _
+		PopulatePivotTableSimple ThisWorkbook, "SMdl"
+		.Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:="SMdl", _
 			IsSetColNames:=True)
 		.Assert tst, pvt.InitPivotTable(pvt, tblSrc, "PivotOut")
 		.Assert tst, Not pvt.tblSrc Is Nothing
@@ -75,8 +76,8 @@ Sub test_CreatePivotCacheAndTable(procs)
 	Set pvt = ExcelSteps.New_PivotTable
 
 	With tst
-		PopulatePivotTableSimple ThisWorkbook, "PivotSrc"
-		.Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:="PivotSrc", _
+		PopulatePivotTableSimple ThisWorkbook, "SMdl"
+		.Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:="SMdl", _
 			IsSetColNames:=True)
 		.Assert tst, pvt.InitPivotTable(pvt, tblSrc, "PivotOut")
 		.Assert tst, pvt.CreatePivotCacheAndTable(pvt)
@@ -103,25 +104,24 @@ Sub test_ConfigurePivotFields(procs)
 	Set pvt = ExcelSteps.New_PivotTable
 
 	With tst
-		PopulatePivotTableSimple ThisWorkbook, "PivotSrc"
-		.Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:="PivotSrc", _
+		PopulatePivotTableSimple ThisWorkbook, "SMdl"
+		.Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:="SMdl", _
 			IsSetColNames:=True)
 		.Assert tst, pvt.InitPivotTable(pvt, tblSrc, "PivotOut")
 		.Assert tst, pvt.CreatePivotCacheAndTable(pvt)
 
-		rowFields = Array(Array("Category", True))
-		colFields = Array(Array("SubCategory", False))
+		rowFields = Array("Category")
+		colFields = Array("SubCategory")
 
         'We specify (field name, aggregation, output name) for each analyte (inner array)
 		analytes = Array(Array("Amount", xlSum, "Sum of Amount"))
 
 		.Assert tst, pvt.ConfigurePivotFields(pvt, rowFields, colFields, analytes, vbNullString)
-		.Assert tst, pvt.pvtTable.RowFields.Count = 1
-		.Assert tst, pvt.pvtTable.ColumnFields.Count = 1
-		.Assert tst, pvt.pvtTable.DataFields.Count = 1
-		.Assert tst, pvt.pvtTable.DataFields(1).Name = "Sum of Amount"
-		.Assert tst, pvt.pvtTable.PivotFields("Category").Subtotals(1) = True
-		.Assert tst, pvt.pvtTable.PivotFields("SubCategory").Subtotals(1) = False
+		.Assert tst, pvt.FormatPivotTable(pvt)
+		.Assert tst, pvt.ConvertPivotToValues(pvt)
+		.Assert tst, CStr(pvt.wkshtDest.Cells(1, 1).Value2) = "Category"
+		.Assert tst, CStr(pvt.wkshtDest.Cells(1, 2).Value2) = "X"
+		.Assert tst, CStr(pvt.wkshtDest.Cells(1, 3).Value2) = "Y"
 		DeletePivotSht pvt
 		.Update tst, procs
 	End With
@@ -140,8 +140,8 @@ Sub test_ApplySortOrder(procs)
 	Set pvt = ExcelSteps.New_PivotTable
 
 	With tst
-		PopulatePivotTableSimple ThisWorkbook, "PivotSrc"
-		.Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:="PivotSrc", _
+		PopulatePivotTableSimple ThisWorkbook, "SMdl"
+		.Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:="SMdl", _
 			IsSetColNames:=True)
 		.Assert tst, pvt.InitPivotTable(pvt, tblSrc, "PivotOut")
 		.Assert tst, pvt.CreatePivotCacheAndTable(pvt)
@@ -165,25 +165,30 @@ Sub test_FormatPivotTable(procs)
 	Set ExcelSteps.errs = Nothing
 	Dim tblSrc As Object, pvt As Object
 	Dim rowFields As Variant, colFields As Variant, analytes As Variant
+	Dim cellGrand As Range
 
 	Set tblSrc = ExcelSteps.New_tbl
 	Set pvt = ExcelSteps.New_PivotTable
 
 	With tst
-		PopulatePivotTableSimple ThisWorkbook, "PivotSrc"
-		.Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:="PivotSrc", _
+		PopulatePivotTableSimple ThisWorkbook, "SMdl"
+		.Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:="SMdl", _
 			IsSetColNames:=True)
 		.Assert tst, pvt.InitPivotTable(pvt, tblSrc, "PivotOut")
 		.Assert tst, pvt.CreatePivotCacheAndTable(pvt)
 
-		rowFields = Array("Category")
-		colFields = Array("SubCategory")
+		rowFields = Array("Category", "SubCategory")
+		colFields = vbNullString
 		analytes = Array(Array("Amount", xlSum, "Sum of Amount"))
 
 		.Assert tst, pvt.ConfigurePivotFields(pvt, rowFields, colFields, analytes, vbNullString)
-		.Assert tst, pvt.FormatPivotTable(pvt, False, False)
-		.Assert tst, pvt.pvtTable.RowGrand = False
-		.Assert tst, pvt.pvtTable.ColumnGrand = False
+		.Assert tst, pvt.FormatPivotTable(pvt)
+		.Assert tst, pvt.ConvertPivotToValues(pvt)
+		.Assert tst, CStr(pvt.wkshtDest.Cells(1, 1).Value2) = "Category"
+		.Assert tst, CStr(pvt.wkshtDest.Cells(1, 2).Value2) = "SubCategory"
+		.Assert tst, CStr(pvt.wkshtDest.Cells(1, 3).Value2) = "Sum of Amount"
+		Set cellGrand = ExcelSteps.FindInRange(pvt.wkshtDest.UsedRange, "Grand Total")
+		.Assert tst, cellGrand Is Nothing
 		DeletePivotSht pvt
 		.Update tst, procs
 	End With
@@ -202,8 +207,8 @@ Sub test_ConvertPivotToValues(procs)
 	Set pvt = ExcelSteps.New_PivotTable
 
 	With tst
-		PopulatePivotTableSimple ThisWorkbook, "PivotSrc"
-		.Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:="PivotSrc", _
+		PopulatePivotTableSimple ThisWorkbook, "SMdl"
+		.Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:="SMdl", _
 			IsSetColNames:=True)
 		.Assert tst, pvt.InitPivotTable(pvt, tblSrc, "PivotOut")
 		.Assert tst, pvt.CreatePivotCacheAndTable(pvt)
@@ -233,8 +238,8 @@ Sub test_SetOutputRanges(procs)
 	Set pvt = ExcelSteps.New_PivotTable
 
 	With tst
-		PopulatePivotTableSimple ThisWorkbook, "PivotSrc"
-		.Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:="PivotSrc", _
+		PopulatePivotTableSimple ThisWorkbook, "SMdl"
+		.Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:="SMdl", _
 			IsSetColNames:=True)
 		.Assert tst, pvt.InitPivotTable(pvt, tblSrc, "PivotOut")
 		.Assert tst, pvt.CreatePivotCacheAndTable(pvt)
@@ -267,8 +272,8 @@ Sub test_MakePivotTableProcedure1(procs)
 	Set pvt = ExcelSteps.New_PivotTable
 
 	With tst
-		PopulatePivotTableSimple ThisWorkbook, "PivotSrc"
-		.Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:="PivotSrc", _
+		PopulatePivotTableSimple ThisWorkbook, "SMdl"
+		.Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:="SMdl", _
 			IsSetColNames:=True)
 
 		rowFields = Array("Category")
@@ -276,7 +281,7 @@ Sub test_MakePivotTableProcedure1(procs)
 		analytes = Array(Array("Amount", xlSum, "Sum of Amount"))
 
 		.Assert tst, pvt.MakePivotTableProcedure(pvt, tblSrc, rowFields, colFields, "PivotOut", _
-			analytes, isRowGrand:=False, isColGrand:=False)
+			analytes)
 		.Assert tst, Not pvt.rngTableOut Is Nothing
 
 		Set colX = ExcelSteps.FindInRange(pvt.wkshtDest.Rows(2), "X")
@@ -308,14 +313,14 @@ Sub test_MakePivotTableProcedure2(procs)
 	Set ExcelSteps.errs = Nothing
 	Dim tblSrc As Object, pvt As Object
 	Dim rowFields As Variant, colFields As Variant, analytes As Variant
-	Dim rowA As Range, rowB As Range, rowGrand As Range, colAmount As Range
+	Dim rowGrand As Range
 
 	Set tblSrc = ExcelSteps.New_tbl
 	Set pvt = ExcelSteps.New_PivotTable
 
 	With tst
-		PopulatePivotTableSimple ThisWorkbook, "PivotSrc"
-		.Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:="PivotSrc", _
+		PopulatePivotTableSimple ThisWorkbook, "SMdl"
+		.Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:="SMdl", _
 			IsSetColNames:=True)
 
 		rowFields = Array("Category", "SubCategory")
@@ -325,21 +330,24 @@ Sub test_MakePivotTableProcedure2(procs)
 		.Assert tst, pvt.MakePivotTableProcedure(pvt, tblSrc, rowFields, colFields, "PivotOut", _
 			analytes)
 		.Assert tst, Not pvt.rngTableOut Is Nothing
-		'.Assert tst, pvt.pvtTable.ColumnFields.Count = 0
 
-		Set colAmount = ExcelSteps.FindInRange(pvt.wkshtDest.Rows(1), "Sum of Amount")
-		Set rowA = ExcelSteps.FindInRange(pvt.wkshtDest.Columns(1), "A")
-		Set rowB = ExcelSteps.FindInRange(pvt.wkshtDest.Columns(1), "B")
+		.Assert tst, CStr(pvt.wkshtDest.Cells(1, 1).Value2) = "Category"
+		.Assert tst, CStr(pvt.wkshtDest.Cells(1, 2).Value2) = "SubCategory"
+		.Assert tst, CStr(pvt.wkshtDest.Cells(1, 3).Value2) = "Sum of Amount"
+		.Assert tst, CStr(pvt.wkshtDest.Cells(2, 1).Value2) = "A"
+		.Assert tst, CStr(pvt.wkshtDest.Cells(2, 2).Value2) = "X"
+		.Assert tst, CDbl(pvt.wkshtDest.Cells(2, 3).Value2) = 15
+		.Assert tst, CStr(pvt.wkshtDest.Cells(3, 1).Value2) = "A"
+		.Assert tst, CStr(pvt.wkshtDest.Cells(3, 2).Value2) = "Y"
+		.Assert tst, CDbl(pvt.wkshtDest.Cells(3, 3).Value2) = 20
+		.Assert tst, CStr(pvt.wkshtDest.Cells(4, 1).Value2) = "B"
+		.Assert tst, CStr(pvt.wkshtDest.Cells(4, 2).Value2) = "X"
+		.Assert tst, CDbl(pvt.wkshtDest.Cells(4, 3).Value2) = 7
+		.Assert tst, CStr(pvt.wkshtDest.Cells(5, 1).Value2) = "B"
+		.Assert tst, CStr(pvt.wkshtDest.Cells(5, 2).Value2) = "Y"
+		.Assert tst, CDbl(pvt.wkshtDest.Cells(5, 3).Value2) = 5
 		Set rowGrand = ExcelSteps.FindInRange(pvt.wkshtDest.Columns(1), "Grand Total")
-
-		.Assert tst, Not colAmount Is Nothing
-		.Assert tst, Not rowA Is Nothing
-		.Assert tst, Not rowB Is Nothing
-		.Assert tst, Not rowGrand Is Nothing
-
-		.Assert tst, CDbl(Intersect(rowA.EntireRow, colAmount.EntireColumn).Value2) = 35
-		.Assert tst, CDbl(Intersect(rowB.EntireRow, colAmount.EntireColumn).Value2) = 12
-		.Assert tst, CDbl(Intersect(rowGrand.EntireRow, colAmount.EntireColumn).Value2) = 47
+		.Assert tst, rowGrand Is Nothing
 
 		DeletePivotSht pvt
 		.Update tst, procs
@@ -355,29 +363,109 @@ Sub test_MakePivotTableProcedure3(procs)
 	Set ExcelSteps.errs = Nothing
 	Dim tblSrc As Object, pvt As Object
 	Dim rowFields As Variant, colFields As Variant, analytes As Variant
+	Dim dictSubtotals As Object
+	Dim rowAX As Range, rowAY As Range, rowBX As Range, rowBY As Range
 
 	Set tblSrc = ExcelSteps.New_tbl
 	Set pvt = ExcelSteps.New_PivotTable
+	Set dictSubtotals = ExcelSteps.New_Dictionary
 
 	With tst
-		PopulatePivotTableSimple ThisWorkbook, "PivotSrc"
-		.Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:="PivotSrc", _
+		PopulatePivotTableSimple ThisWorkbook, "SMdl"
+		.Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:="SMdl", _
 			IsSetColNames:=True)
 
-		rowFields = Array(Array("Category", False), Array("SubCategory", True))
+		rowFields = Array("Category", "SubCategory")
 		colFields = vbNullString
 		analytes = Array(Array("Amount", xlSum, "Sum of Amount"))
+		dictSubtotals.Add "Category", False
+		dictSubtotals.Add "SubCategory", True
 
 		.Assert tst, pvt.MakePivotTableProcedure(pvt, tblSrc, rowFields, colFields, "PivotOut", _
-			analytes)
+			analytes, dictSubtotals:=dictSubtotals)
 		.Assert tst, Not pvt.rngTableOut Is Nothing
-		'.Assert tst, pvt.pvtTable.PivotFields("Category").Subtotals(1) = False
-		'.Assert tst, pvt.pvtTable.PivotFields("SubCategory").Subtotals(1) = True
+
+		Set rowAX = FindRowByTwoVals(pvt.wkshtDest, "A", "X")
+		Set rowAY = FindRowByTwoVals(pvt.wkshtDest, "A", "Y")
+		Set rowBX = FindRowByTwoVals(pvt.wkshtDest, "B", "X")
+		Set rowBY = FindRowByTwoVals(pvt.wkshtDest, "B", "Y")
+
+		.Assert tst, Not rowAX Is Nothing
+		.Assert tst, Not rowAY Is Nothing
+		.Assert tst, Not rowBX Is Nothing
+		.Assert tst, Not rowBY Is Nothing
+		.Assert tst, CDbl(rowAX.Offset(0, 2).Value2) = 15
+		.Assert tst, CDbl(rowAY.Offset(0, 2).Value2) = 20
+		.Assert tst, CDbl(rowBX.Offset(0, 2).Value2) = 7
+		.Assert tst, CDbl(rowBY.Offset(0, 2).Value2) = 5
 
 		DeletePivotSht pvt
 		.Update tst, procs
 	End With
 End Sub
+
+'--------------------------------------------------------------------------------------
+' Build pivot with non-default formatting params and verify grand totals are present
+' JDL 3/27/26
+'
+Sub test_MakePivotTableProcedure4(procs)
+	Dim tst As New Test: tst.Init tst, "test_MakePivotTableProcedure4"
+	Set ExcelSteps.errs = Nothing
+	Dim tblSrc As Object, pvt As Object
+	Dim rowFields As Variant, colFields As Variant, analytes As Variant
+	Dim dictParams As Object
+	Dim rowGrand As Range, colGrand As Range
+
+	Set tblSrc = ExcelSteps.New_tbl
+	Set pvt = ExcelSteps.New_PivotTable
+	Set dictParams = ExcelSteps.New_Dictionary
+
+	With tst
+		PopulatePivotTableSimple ThisWorkbook, "SMdl"
+		.Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:="SMdl", _
+			IsSetColNames:=True)
+
+		rowFields = Array("Category")
+		colFields = Array("SubCategory")
+		analytes = Array(Array("Amount", xlSum, "Sum of Amount"))
+
+		' RowAxisLayout options: xlCompactRow, xlTabularRow, xlOutlineRow
+		' RepeatAllLabels options: xlRepeatLabels, xlDoNotRepeatLabels
+		dictParams.Add "RowAxisLayout", xlCompactRow
+		dictParams.Add "RepeatAllLabels", xlDoNotRepeatLabels
+		dictParams.Add "isRowGrand", True
+		dictParams.Add "isColGrand", True
+
+		.Assert tst, pvt.MakePivotTableProcedure(pvt, tblSrc, rowFields, colFields, "PivotOut", _
+			analytes, dictParams:=dictParams)
+		.Assert tst, Not pvt.rngTableOut Is Nothing
+
+		Set rowGrand = ExcelSteps.FindInRange(pvt.wkshtDest.Columns(1), "Grand Total")
+		Set colGrand = ExcelSteps.FindInRange(pvt.wkshtDest.Rows(1), "Grand Total")
+		If colGrand Is Nothing Then Set colGrand = ExcelSteps.FindInRange(pvt.wkshtDest.Rows(2), "Grand Total")
+
+		.Assert tst, Not rowGrand Is Nothing
+		.Assert tst, Not colGrand Is Nothing
+		If Not (rowGrand Is Nothing Or colGrand Is Nothing) Then _
+			.Assert tst, CDbl(Intersect(rowGrand.EntireRow, colGrand.EntireColumn).Value2) = 47
+
+		DeletePivotSht pvt
+		.Update tst, procs
+	End With
+End Sub
+
+Private Function FindRowByTwoVals(wksht As Worksheet, ByVal val1 As String, _
+		ByVal val2 As String) As Range
+	Dim i As Long, lastRow As Long
+
+	lastRow = wksht.Cells(wksht.Rows.Count, 1).End(xlUp).Row
+	For i = 2 To lastRow
+		If CStr(wksht.Cells(i, 1).Value2) = val1 And CStr(wksht.Cells(i, 2).Value2) = val2 Then
+			Set FindRowByTwoVals = wksht.Cells(i, 1)
+			Exit Function
+		End If
+	Next i
+End Function
 
 Private Sub DeletePivotSht(pvt)
 	If pvt Is Nothing Then Exit Sub

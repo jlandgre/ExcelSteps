@@ -26,16 +26,17 @@ Public rngDataOut As Range
 Public Function MakePivotTableProcedure(pvt, tblSrc, rowFields, colFields, shtDest, _
         analytes, Optional filters = vbNullString, _
         Optional sortOrder = vbNullString, _
-        Optional isRowGrand As Variant = vbNullString, _
-    Optional isColGrand As Variant = vbNullString, _
+    Optional dictSubtotals As Object = Nothing, _
+    Optional dictParams As Object = Nothing, _
     Optional IsDestNewWorkbook As Boolean = False) As Boolean
     SetErrs MakePivotTableProcedure: If errs.IsHandle Then On Error GoTo ErrorExit
 
     If Not InitPivotTable(pvt, tblSrc, shtDest) Then GoTo ErrorExit
     If Not CreatePivotCacheAndTable(pvt, IsDestNewWorkbook) Then GoTo ErrorExit
-    If Not ConfigurePivotFields(pvt, rowFields, colFields, analytes, filters) Then GoTo ErrorExit
+        If Not ConfigurePivotFields(pvt, rowFields, colFields, analytes, filters, _
+            dictSubtotals) Then GoTo ErrorExit
     If Not ApplySortOrder(pvt, sortOrder) Then GoTo ErrorExit
-    If Not FormatPivotTable(pvt, isRowGrand, isColGrand) Then GoTo ErrorExit
+        If Not FormatPivotTable(pvt, dictParams) Then GoTo ErrorExit
     If Not ConvertPivotToValues(pvt) Then GoTo ErrorExit
     If Not SetOutputRanges(pvt) Then GoTo ErrorExit
     Exit Function
@@ -108,12 +109,13 @@ End Function
 ' Configure row, column, page and data fields
 ' JDL 3/27/26
 '
-Public Function ConfigurePivotFields(pvt, rowFields, colFields, analytes, filters) As Boolean
+Public Function ConfigurePivotFields(pvt, rowFields, colFields, analytes, filters, _
+        Optional dictSubtotals As Object = Nothing) As Boolean
     SetErrs ConfigurePivotFields: If errs.IsHandle Then On Error GoTo ErrorExit
 
-    If Not AddFieldGroup(pvt, rowFields, xlRowField) Then GoTo ErrorExit
+    If Not AddFieldGroup(pvt, rowFields, xlRowField, dictSubtotals) Then GoTo ErrorExit
     If HasFieldSpecs(colFields) Then
-        If Not AddFieldGroup(pvt, colFields, xlColumnField) Then GoTo ErrorExit
+        If Not AddFieldGroup(pvt, colFields, xlColumnField, dictSubtotals) Then GoTo ErrorExit
     End If
     If Not AddFilterFields(pvt, filters) Then GoTo ErrorExit
     If Not AddAnalytes(pvt, analytes) Then GoTo ErrorExit
@@ -155,29 +157,18 @@ End Function
 ' Add row or column field group from string or array of strings
 ' JDL 3/27/26
 '
-Private Function AddFieldGroup(pvt, fields, ByVal fieldOrientation As XlPivotFieldOrientation) As Boolean
+Private Function AddFieldGroup(pvt, fields, ByVal fieldOrientation As XlPivotFieldOrientation, _
+        Optional dictSubtotals As Object = Nothing) As Boolean
     SetErrs AddFieldGroup: If errs.IsHandle Then On Error GoTo ErrorExit
-    Dim i As Long, j As Long, fieldName As String, nFields As Long
-    Dim fieldSpec As Variant, isSubtotalsOn As Boolean, hasSubtotalSpec As Boolean
+    Dim i As Long, fieldName As String, nFields As Long
+    Dim fieldSpec As Variant, isSubtotalsOn As Boolean
     Dim pvtField As PivotField
 
     If IsArray(fields) Then
         nFields = UBound(fields) - LBound(fields) + 1
         For i = LBound(fields) To UBound(fields)
             fieldSpec = fields(i)
-            hasSubtotalSpec = False
-            isSubtotalsOn = True
-
-            If IsArray(fieldSpec) Then
-                j = LBound(fieldSpec)
-                fieldName = CStr(fieldSpec(j))
-                If UBound(fieldSpec) >= j + 1 Then
-                    hasSubtotalSpec = True
-                    isSubtotalsOn = CBool(fieldSpec(j + 1))
-                End If
-            Else
-                fieldName = CStr(fieldSpec)
-            End If
+            fieldName = CStr(fieldSpec)
 
             If Len(fieldName) < 1 Then GoTo NextField
             Set pvtField = pvt.pvtTable.PivotFields(fieldName)
@@ -185,9 +176,8 @@ Private Function AddFieldGroup(pvt, fields, ByVal fieldOrientation As XlPivotFie
                 .Orientation = fieldOrientation
                 .Position = i - LBound(fields) + 1
             End With
-            If hasSubtotalSpec Then
-                If Not SetFieldSubtotals(pvtField, isSubtotalsOn) Then GoTo ErrorExit
-            End If
+            If Not ResolveSubtotalsSetting(dictSubtotals, fieldName, isSubtotalsOn) Then GoTo ErrorExit
+            If Not SetFieldSubtotals(pvtField, isSubtotalsOn) Then GoTo ErrorExit
 NextField:
         Next i
     Else
@@ -198,6 +188,8 @@ NextField:
             .Orientation = fieldOrientation
             .Position = 1
         End With
+        If Not ResolveSubtotalsSetting(dictSubtotals, fieldName, isSubtotalsOn) Then GoTo ErrorExit
+        If Not SetFieldSubtotals(pvtField, isSubtotalsOn) Then GoTo ErrorExit
     End If
     Exit Function
 
@@ -220,6 +212,22 @@ Private Function SetFieldSubtotals(pvtField As PivotField, ByVal IsOn As Boolean
 
 ErrorExit:
     errs.RecordErr "SetFieldSubtotals", SetFieldSubtotals
+End Function
+'--------------------------------------------------------------------------------------
+' Resolve subtotal setting for field (default False, optional dictionary override)
+' JDL 3/27/26
+'
+Private Function ResolveSubtotalsSetting(dictSubtotals As Object, ByVal fieldName As String, _
+        isSubtotalsOn As Boolean) As Boolean
+    SetErrs ResolveSubtotalsSetting: If errs.IsHandle Then On Error GoTo ErrorExit
+
+    isSubtotalsOn = False
+    If dictSubtotals Is Nothing Then Exit Function
+    If dictSubtotals.Exists(fieldName) Then isSubtotalsOn = CBool(dictSubtotals.Item(fieldName))
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "ResolveSubtotalsSetting", ResolveSubtotalsSetting
 End Function
 '--------------------------------------------------------------------------------------
 ' Add optional page filter fields; each entry may be "FieldName" or Array(FieldName, Value)
@@ -357,19 +365,28 @@ ErrorExit:
     errs.RecordErr "ApplySortOrder", ApplySortOrder
 End Function
 '--------------------------------------------------------------------------------------
-' Apply standard formatting and optional grand-total settings
+' Apply standard formatting and optional parameter overrides
 ' JDL 3/27/26
 '
-Public Function FormatPivotTable(pvt, isRowGrand, isColGrand) As Boolean
+Public Function FormatPivotTable(pvt, Optional dictParams As Object = Nothing) As Boolean
     SetErrs FormatPivotTable: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim rowAxisLayout As XlLayoutRowType, repeatLabels As Long
+    Dim isRowGrand As Boolean, isColGrand As Boolean
+
+    rowAxisLayout = xlTabularRow
+    repeatLabels = xlRepeatLabels
+    isRowGrand = False
+    isColGrand = False
+
+    If Not ResolveFormatParams(dictParams, rowAxisLayout, repeatLabels, _
+            isRowGrand, isColGrand) Then GoTo ErrorExit
 
     With pvt.pvtTable
-        If Not IsEmpty(isRowGrand) And CStr(isRowGrand) <> vbNullString Then _
-            .RowGrand = CBool(isRowGrand)
-        If Not IsEmpty(isColGrand) And CStr(isColGrand) <> vbNullString Then _
-            .ColumnGrand = CBool(isColGrand)
+        .RowAxisLayout rowAxisLayout
+        .RowGrand = isRowGrand
+        .ColumnGrand = isColGrand
         .PreserveFormatting = True
-        .RepeatAllLabels xlRepeatLabels
+        .RepeatAllLabels repeatLabels
     End With
 
     If Not pvt.pvtTable.DataBodyRange Is Nothing Then _
@@ -378,6 +395,25 @@ Public Function FormatPivotTable(pvt, isRowGrand, isColGrand) As Boolean
 
 ErrorExit:
     errs.RecordErr "FormatPivotTable", FormatPivotTable
+End Function
+'--------------------------------------------------------------------------------------
+' Resolve optional formatting parameter overrides from dictionary input
+' JDL 3/27/26
+'
+Private Function ResolveFormatParams(dictParams As Object, rowAxisLayout As XlLayoutRowType, _
+        repeatLabels As Long, isRowGrand As Boolean, isColGrand As Boolean) As Boolean
+    SetErrs ResolveFormatParams: If errs.IsHandle Then On Error GoTo ErrorExit
+
+    If dictParams Is Nothing Then Exit Function
+
+    If dictParams.Exists("RowAxisLayout") Then rowAxisLayout = CLng(dictParams.Item("RowAxisLayout"))
+    If dictParams.Exists("RepeatAllLabels") Then repeatLabels = CLng(dictParams.Item("RepeatAllLabels"))
+    If dictParams.Exists("isRowGrand") Then isRowGrand = CBool(dictParams.Item("isRowGrand"))
+    If dictParams.Exists("isColGrand") Then isColGrand = CBool(dictParams.Item("isColGrand"))
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "ResolveFormatParams", ResolveFormatParams
 End Function
 '--------------------------------------------------------------------------------------
 ' Freeze pivot results by converting UsedRange to values
