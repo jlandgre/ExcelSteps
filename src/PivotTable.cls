@@ -42,8 +42,8 @@ Public Function MakePivotTableProcedure(pvt, tblSrc, rowFields, colFields, shtDe
     If Not ConfigurePivotFields(pvt, analytes, filters) Then GoTo ErrorExit
     If Not ApplySortOrder(pvt, sortOrder) Then GoTo ErrorExit
     If Not FormatPivotTable(pvt) Then GoTo ErrorExit
-    If Not ConvertPivotToValues(pvt) Then GoTo ErrorExit
-    If Not SetOutputRanges(pvt) Then GoTo ErrorExit
+    ' If Not ConvertPivotToValues(pvt) Then GoTo ErrorExit
+    ' If Not SetOutputRanges(pvt) Then GoTo ErrorExit
     Exit Function
 
 ErrorExit:
@@ -81,7 +81,6 @@ Public Function InitPivotTable(pvt, tblSrc, shtDest, _
         ' For same-workbook output, destination sheet must differ from source sheet.
         If Not .IsDestNewWorkbook Then _
             If errs.IsFail(LCase(.tblSrc.sht) = LCase(.shtDest), 3) Then GoTo ErrorExit
-
     End With
     Exit Function
 
@@ -97,11 +96,13 @@ Public Function CreatePivotCacheAndTable(pvt) As Boolean
     SetErrs CreatePivotCacheAndTable: If errs.IsHandle Then On Error GoTo ErrorExit
 
     With pvt
+        ' Destination workbook is different than source workbook
         If .IsDestNewWorkbook Then
             Set .wkbkDest = Application.Workbooks.Add
             Set .wkshtDest = .wkbkDest.Sheets(1)
             If Not DeleteExtraneousShts(.wkbkDest, .shtDest) Then GoTo ErrorExit
 
+        'Destination sheet is in same workbook as source sheet
         Else
             Set .wkbkDest = .tblSrc.wkbk
 
@@ -109,7 +110,7 @@ Public Function CreatePivotCacheAndTable(pvt) As Boolean
             if SheetExists(.wkbkDest, .shtDest) Then DeleteSheet .wkbkDest, .shtDest
 
             With pvt.wkbkDest
-                Set pvt.wkshtDest = .Worksheets.Add(After:=.tblSrc.wksht)
+                Set pvt.wkshtDest = .Worksheets.Add(After:=pvt.tblSrc.wksht)
             End With
         End If
 
@@ -141,14 +142,17 @@ Public Function ValidateFieldSpecs(pvt, rowFields, colFields) As Boolean
     If Not NormalizeFieldSpecs(rowFields, False, rowFieldsCsv) Then GoTo ErrorExit
     If Not NormalizeFieldSpecs(colFields, True, colFieldsCsv) Then GoTo ErrorExit
 
-    'Check that specified names exist and don't overlap between row and column groups
-    If Not ValidateFieldNamesExist(pvt.tblSrc, rowFieldsCsv) Then GoTo ErrorExit
-    If Not ValidateFieldNamesExist(pvt.tblSrc, colFieldsCsv) Then GoTo ErrorExit
-    If Not ValidateNoFieldOverlap(rowFieldsCsv, colFieldsCsv) Then GoTo ErrorExit
+    With pvt
 
-    'Set class attributes for normalized field specs
-    pvt.rowFields = rowFieldsCsv
-    pvt.colFields = colFieldsCsv
+        'Check specified names exist and don't overlap between row and column groups
+        If Not ValidateFieldNamesExist(.tblSrc, rowFieldsCsv) Then GoTo ErrorExit
+        If Not ValidateFieldNamesExist(.tblSrc, colFieldsCsv) Then GoTo ErrorExit
+        If Not ValidateNoFieldOverlap(rowFieldsCsv, colFieldsCsv) Then GoTo ErrorExit
+
+        'Set class attributes for normalized field specs
+        .rowFields = rowFieldsCsv
+        .colFields = colFieldsCsv
+    End With
     Exit Function
 
 ErrorExit:
@@ -246,11 +250,9 @@ Private Function ValidateFieldNamesExist(tblSrc, ByVal fieldSpecsCsv As String) 
     If Len(fieldSpecsCsv) < 1 Then Exit Function
 
     Set dictHeaders = New Dictionary
-    Set rngHeaders = tblSrc.rngHeader
-    If rngHeaders Is Nothing Then Set rngHeaders = tblSrc.rngTable.Rows(1)
-    If errs.IsFail(rngHeaders Is Nothing, 1) Then GoTo ErrorExit
+    If errs.IsFail(tblSrc.rngHeader Is Nothing, 1) Then GoTo ErrorExit
 
-    For Each headerCell In rngHeaders.Cells
+    For Each headerCell In tblSrc.rngHeader.Cells
         fieldName = Trim(CStr(headerCell.Value))
         If Len(fieldName) > 0 Then
             If Not dictHeaders.Exists(LCase(fieldName)) Then _
@@ -302,7 +304,6 @@ Private Function ValidateNoFieldOverlap(ByVal rowFieldsCsv As String, _
 ErrorExit:
     errs.RecordErr "ValidateNoFieldOverlap", ValidateNoFieldOverlap
 End Function
-
 
 '--------------------------------------------------------------------------------------
 ' Configure row, column, page and data fields

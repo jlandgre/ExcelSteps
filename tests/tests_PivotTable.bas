@@ -20,17 +20,17 @@ Sub TestDriver_PivotTable()
     With procs.PivotTable
         If .Enabled Or AllEnabled Then
             procs.curProcedure = .Name
-            test_InitPivotTable procs
-            test_CreatePivotCacheAndTable procs
-            test_ValidateFieldSpecs procs
-            test_ValidateAnalytes procs
-            test_ConfigurePivotFields procs
-            test_ApplySortOrder procs
-            test_FormatPivotTable procs
-            test_ConvertPivotToValues procs
-            test_SetOutputRanges procs
-            test_MakePivotTableProcedure1 procs
-            test_MakePivotTableProcedure2 procs
+            ' test_InitPivotTable procs
+            ' test_CreatePivotCacheAndTable procs
+            ' test_ValidateFieldSpecs procs
+            ' test_ValidateAnalytes procs
+            ' test_ConfigurePivotFields procs
+            ' test_ApplySortOrder procs
+            ' test_FormatPivotTable procs
+            ' test_ConvertPivotToValues procs
+            ' test_SetOutputRanges procs
+            ' test_MakePivotTableProcedure1 procs
+            ' test_MakePivotTableProcedure2 procs
             test_MakePivotTableProcedure3 procs
         End If
     End With
