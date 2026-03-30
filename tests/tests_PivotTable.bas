@@ -22,6 +22,8 @@ Sub TestDriver_PivotTable()
             procs.curProcedure = .Name
             test_InitPivotTable procs
             test_CreatePivotCacheAndTable procs
+            test_ValidateFieldSpecs procs
+            test_ValidateAnalytes procs
             test_ConfigurePivotFields procs
             test_ApplySortOrder procs
             test_FormatPivotTable procs
@@ -103,6 +105,147 @@ Sub test_CreatePivotCacheAndTable(procs)
     End With
 End Sub
 '--------------------------------------------------------------------------------------
+' Validate row/column field specs and error handling edge cases
+' JDL 3/30/26
+'
+Sub test_ValidateFieldSpecs(procs)
+    Dim tst As New Test: tst.Init tst, "test_ValidateFieldSpecs"
+    Set ExcelSteps.errs = Nothing
+    Dim tblSrc As Object: Set tblSrc = ExcelSteps.New_tbl
+    Dim pvt As Object: Set pvt = ExcelSteps.New_PivotTable
+    Dim rowFields As Variant, colFields As Variant
+
+    With tst
+        PopulatePivotTableSimple ThisWorkbook, shtPivotSrc
+        .Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:=shtPivotSrc, _
+            IsSetColNames:=True)
+
+        'Initialize up through cache/table creation
+        .Assert tst, pvt.InitPivotTable(pvt, tblSrc, "PivotOut")
+        .Assert tst, pvt.CreatePivotCacheAndTable(pvt)
+
+        'Valid specs: array rowFields, string colFields
+        Set ExcelSteps.errs = Nothing
+        rowFields = Array("Category")
+        colFields = "SubCategory"
+        .Assert tst, pvt.ValidateFieldSpecs(pvt, rowFields, colFields)
+        .Assert tst, pvt.rowFields = "Category"
+        .Assert tst, pvt.colFields = "SubCategory"
+
+        'Invalid rowFields type
+        Set ExcelSteps.errs = Nothing
+        rowFields = 42
+        colFields = "SubCategory"
+        .Assert tst, Not pvt.ValidateFieldSpecs(pvt, rowFields, colFields)
+        .Assert tst, ExcelSteps.errs.Locn = "ValidateFieldSpecs"
+        .Assert tst, ExcelSteps.errs.iCodeLocal = 4
+
+        'Invalid empty rowFields string
+        Set ExcelSteps.errs = Nothing
+        rowFields = vbNullString
+        colFields = "SubCategory"
+        .Assert tst, Not pvt.ValidateFieldSpecs(pvt, rowFields, colFields)
+        .Assert tst, ExcelSteps.errs.Locn = "ValidateFieldSpecs"
+        .Assert tst, ExcelSteps.errs.iCodeLocal = 3
+
+        'Invalid colFields type
+        Set ExcelSteps.errs = Nothing
+        rowFields = "Category"
+        colFields = 77
+        .Assert tst, Not pvt.ValidateFieldSpecs(pvt, rowFields, colFields)
+        .Assert tst, ExcelSteps.errs.Locn = "ValidateFieldSpecs"
+        .Assert tst, ExcelSteps.errs.iCodeLocal = 4
+
+        'Unknown field name not found in source headers
+        Set ExcelSteps.errs = Nothing
+        rowFields = Array("Category", "MissingField")
+        colFields = "SubCategory"
+        .Assert tst, Not pvt.ValidateFieldSpecs(pvt, rowFields, colFields)
+        .Assert tst, ExcelSteps.errs.Locn = "ValidateFieldSpecs"
+        .Assert tst, ExcelSteps.errs.iCodeLocal = 2
+
+        'Field overlap between row and column groups
+        Set ExcelSteps.errs = Nothing
+        rowFields = Array("Category", "SubCategory")
+        colFields = "SubCategory"
+        .Assert tst, Not pvt.ValidateFieldSpecs(pvt, rowFields, colFields)
+        .Assert tst, ExcelSteps.errs.Locn = "ValidateFieldSpecs"
+        .Assert tst, ExcelSteps.errs.iCodeLocal = 1
+
+        DeletePivotSht pvt
+        .Update tst, procs
+    End With
+End Sub
+'--------------------------------------------------------------------------------------
+' Validate analytes spec and error handling edge cases
+' JDL 3/30/26
+'
+Sub test_ValidateAnalytes(procs)
+    Dim tst As New Test: tst.Init tst, "test_ValidateAnalytes"
+    Set ExcelSteps.errs = Nothing
+    Dim tblSrc As Object: Set tblSrc = ExcelSteps.New_tbl
+    Dim pvt As Object: Set pvt = ExcelSteps.New_PivotTable
+    Dim analytes As Variant
+
+    With tst
+        PopulatePivotTableSimple ThisWorkbook, shtPivotSrc
+        .Assert tst, tblSrc.Provision(tblSrc, ThisWorkbook, False, sht:=shtPivotSrc, _
+            IsSetColNames:=True)
+        .Assert tst, pvt.InitPivotTable(pvt, tblSrc, "PivotOut")
+        .Assert tst, pvt.CreatePivotCacheAndTable(pvt)
+
+        'Valid analytes: two-item arrays (fieldName, xFunc)
+        Set ExcelSteps.errs = Nothing
+        analytes = Array(Array("Amount", xlSum))
+        .Assert tst, pvt.ValidateAnalytes(pvt, analytes)
+
+        'Invalid analytes root type
+        Set ExcelSteps.errs = Nothing
+        analytes = "Amount"
+        .Assert tst, Not pvt.ValidateAnalytes(pvt, analytes)
+        .Assert tst, ExcelSteps.errs.Locn = "ValidateAnalytes"
+        .Assert tst, ExcelSteps.errs.iCodeLocal = 1
+
+        'Invalid analyte item type
+        Set ExcelSteps.errs = Nothing
+        analytes = Array("Amount")
+        .Assert tst, Not pvt.ValidateAnalytes(pvt, analytes)
+        .Assert tst, ExcelSteps.errs.Locn = "ValidateAnalytes"
+        .Assert tst, ExcelSteps.errs.iCodeLocal = 2
+
+        'Invalid analyte item count (must be exactly two)
+        Set ExcelSteps.errs = Nothing
+        analytes = Array(Array("Amount"))
+        .Assert tst, Not pvt.ValidateAnalytes(pvt, analytes)
+        .Assert tst, ExcelSteps.errs.Locn = "ValidateAnalytes"
+        .Assert tst, ExcelSteps.errs.iCodeLocal = 3
+
+        'Invalid analyte field name blank
+        Set ExcelSteps.errs = Nothing
+        analytes = Array(Array(vbNullString, xlSum))
+        .Assert tst, Not pvt.ValidateAnalytes(pvt, analytes)
+        .Assert tst, ExcelSteps.errs.Locn = "ValidateAnalytes"
+        .Assert tst, ExcelSteps.errs.iCodeLocal = 4
+
+        'Invalid analyte xFunc type
+        Set ExcelSteps.errs = Nothing
+        analytes = Array(Array("Amount", "badfunc"))
+        .Assert tst, Not pvt.ValidateAnalytes(pvt, analytes)
+        .Assert tst, ExcelSteps.errs.Locn = "ValidateAnalytes"
+        .Assert tst, ExcelSteps.errs.iCodeLocal = 5
+
+        'Invalid analyte field missing in source headers
+        Set ExcelSteps.errs = Nothing
+        analytes = Array(Array("MissingField", xlSum))
+        .Assert tst, Not pvt.ValidateAnalytes(pvt, analytes)
+        .Assert tst, ExcelSteps.errs.Locn = "ValidateAnalytes"
+        .Assert tst, ExcelSteps.errs.iCodeLocal = 6
+
+        DeletePivotSht pvt
+        .Update tst, procs
+    End With
+End Sub
+'--------------------------------------------------------------------------------------
 ' Configure row/column/data fields on created pivot table
 ' JDL 3/27/26
 '
@@ -123,10 +266,11 @@ Sub test_ConfigurePivotFields(procs)
         rowFields = Array("Category")
         colFields = Array("SubCategory")
 
-        'We specify (field name, aggregation, output name) for each analyte (inner array)
-        analytes = Array(Array("Amount", xlSum, "Sum of Amount"))
+        'We specify (field name, aggregation) for each analyte (inner array)
+        analytes = Array(Array("Amount", xlSum))
 
-        .Assert tst, pvt.ConfigurePivotFields(pvt, rowFields, colFields, analytes, vbNullString)
+        .Assert tst, pvt.ValidateFieldSpecs(pvt, rowFields, colFields)
+        .Assert tst, pvt.ConfigurePivotFields(pvt, analytes, vbNullString)
         
         'Check SubCategory assigned to columns (xlColumnField=2)
         .Assert tst, CStr(pvt.wkshtDest.Cells(2, 2).Value2) = "X"
@@ -161,9 +305,10 @@ Sub test_ApplySortOrder(procs)
 
         rowFields = Array("Category")
         colFields = Array("SubCategory")
-        analytes = Array(Array("Amount", xlSum, "Sum of Amount"))
+        analytes = Array(Array("Amount", xlSum))
 
-        .Assert tst, pvt.ConfigurePivotFields(pvt, rowFields, colFields, analytes, vbNullString)
+        .Assert tst, pvt.ValidateFieldSpecs(pvt, rowFields, colFields)
+        .Assert tst, pvt.ConfigurePivotFields(pvt, analytes, vbNullString)
         .Assert tst, pvt.ApplySortOrder(pvt, "desc")
         
         'Check descending order
@@ -195,15 +340,16 @@ Sub test_FormatPivotTable(procs)
 
         rowFields = Array("Category", "SubCategory")
         colFields = vbNullString
-        analytes = Array(Array("Amount", xlSum, "Sum of Amount"))
+        analytes = Array(Array("Amount", xlSum))
 
-        .Assert tst, pvt.ConfigurePivotFields(pvt, rowFields, colFields, analytes, vbNullString)
+        .Assert tst, pvt.ValidateFieldSpecs(pvt, rowFields, colFields)
+        .Assert tst, pvt.ConfigurePivotFields(pvt, analytes, vbNullString)
         .Assert tst, pvt.FormatPivotTable(pvt)
         
         'Headers
         .Assert tst, CStr(pvt.wkshtDest.Cells(1, 1).Value2) = "Category"
         .Assert tst, CStr(pvt.wkshtDest.Cells(1, 2).Value2) = "SubCategory"
-        .Assert tst, CStr(pvt.wkshtDest.Cells(1, 3).Value2) = "Sum of Amount"
+        .Assert tst, CStr(pvt.wkshtDest.Cells(1, 3).Value2) = "Amount_"
         
         'First and last data rows
         .Assert tst, CStr(pvt.wkshtDest.Cells(2, 1).Value2) = "A"
@@ -244,9 +390,10 @@ Sub test_ConvertPivotToValues(procs)
 
         rowFields = Array("Category")
         colFields = Array("SubCategory")
-        analytes = Array(Array("Amount", xlSum, "Sum of Amount"))
+        analytes = Array(Array("Amount", xlSum))
 
-        .Assert tst, pvt.ConfigurePivotFields(pvt, rowFields, colFields, analytes, vbNullString)
+        .Assert tst, pvt.ValidateFieldSpecs(pvt, rowFields, colFields)
+        .Assert tst, pvt.ConfigurePivotFields(pvt, analytes, vbNullString)
         .Assert tst, pvt.FormatPivotTable(pvt)
         .Assert tst, pvt.ConvertPivotToValues(pvt)
         .Assert tst, Not pvt.rngDataOut Is Nothing
@@ -276,9 +423,10 @@ Sub test_SetOutputRanges(procs)
 
         rowFields = Array("Category")
         colFields = Array("SubCategory")
-        analytes = Array(Array("Amount", xlSum, "Sum of Amount"))
+        analytes = Array(Array("Amount", xlSum))
 
-        .Assert tst, pvt.ConfigurePivotFields(pvt, rowFields, colFields, analytes, vbNullString)
+        .Assert tst, pvt.ValidateFieldSpecs(pvt, rowFields, colFields)
+        .Assert tst, pvt.ConfigurePivotFields(pvt, analytes, vbNullString)
         .Assert tst, pvt.FormatPivotTable(pvt)
         .Assert tst, pvt.ConvertPivotToValues(pvt)
         .Assert tst, pvt.SetOutputRanges(pvt)
@@ -307,14 +455,14 @@ Sub test_MakePivotTableProcedure1(procs)
 
         rowFields = Array("Category")
         colFields = Array("SubCategory")
-        analytes = Array(Array("Amount", xlSum, "Sum of Amount"))
+        analytes = Array(Array("Amount", xlSum))
 
         .Assert tst, pvt.MakePivotTableProcedure(pvt, tblSrc, rowFields, colFields, "PivotOut", _
             analytes)
         .Assert tst, Not pvt.rngTableOut Is Nothing
 
         'Headers
-        .Assert tst, CStr(pvt.wkshtDest.Cells(1, 1).Value2) = "Sum of Amount"
+        .Assert tst, CStr(pvt.wkshtDest.Cells(1, 1).Value2) = "Amount_"
         .Assert tst, CStr(pvt.wkshtDest.Cells(1, 2).Value2) = "SubCategory"
         
         .Assert tst, CStr(pvt.wkshtDest.Cells(2, 1).Value2) = "Category"
@@ -355,7 +503,7 @@ Sub test_MakePivotTableProcedure2(procs)
 
         rowFields = Array("Category", "SubCategory")
         colFields = vbNullString
-        analytes = Array(Array("Amount", xlSum, "Sum of Amount"))
+        analytes = Array(Array("Amount", xlSum))
         
         ' Expect just totals at bottom (isColGrand) because no data columns for isRowGrand to sum
         dictParams.Add "isRowGrand", True
@@ -368,7 +516,7 @@ Sub test_MakePivotTableProcedure2(procs)
         'Headers
         .Assert tst, CStr(pvt.wkshtDest.Cells(1, 1).Value2) = "Category"
         .Assert tst, CStr(pvt.wkshtDest.Cells(1, 2).Value2) = "SubCategory"
-        .Assert tst, CStr(pvt.wkshtDest.Cells(1, 3).Value2) = "Sum of Amount"
+        .Assert tst, CStr(pvt.wkshtDest.Cells(1, 3).Value2) = "Amount_"
         
         'First and last data rows
         .Assert tst, CStr(pvt.wkshtDest.Cells(2, 1).Value2) = "A"
@@ -407,9 +555,9 @@ Sub test_MakePivotTableProcedure3(procs)
 
         rowFields = Array("Store", "Prodtype")
         colFields = Array("Week", "Year")
-        analytes = Array(Array("Discounts", xlSum, "Discounts"), _
-            Array("Markdowns", xlSum, "Markdowns"), _
-            Array("COGS", xlSum, "COGS"))
+        analytes = Array(Array("Discounts", xlSum), _
+            Array("Markdowns", xlSum), _
+            Array("COGS", xlSum))
 
         ' Place Values field in rows between Store and Prodtype (Store, Sigma Values, Prodtype)
         dictParams.Add "DataPivotFieldOrientation", xlRowField
@@ -419,9 +567,9 @@ Sub test_MakePivotTableProcedure3(procs)
             analytes, dictParams:=dictParams)
         .Assert tst, Not pvt.rngTableOut Is Nothing
 
-        Set rowDX = FindRowByThreeVals(pvt.wkshtDest, "Store1", "Discounts", "X")
-        Set rowMX = FindRowByThreeVals(pvt.wkshtDest, "Store1", "Markdowns", "X")
-        Set rowCX = FindRowByThreeVals(pvt.wkshtDest, "Store1", "COGS", "X")
+        Set rowDX = FindRowByThreeVals(pvt.wkshtDest, "Store1", "Discounts_", "X")
+        Set rowMX = FindRowByThreeVals(pvt.wkshtDest, "Store1", "Markdowns_", "X")
+        Set rowCX = FindRowByThreeVals(pvt.wkshtDest, "Store1", "COGS_", "X")
 
         .Assert tst, Not rowDX Is Nothing
         .Assert tst, Not rowMX Is Nothing

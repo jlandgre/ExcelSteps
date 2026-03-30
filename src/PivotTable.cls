@@ -19,6 +19,11 @@ Public pvtCache As PivotCache
 Public pvtTable As Object
 Public rngTableOut As Range
 Public rngDataOut As Range
+Public IsDestNewWorkbook As Boolean
+Public dictSubT As Object
+Public dictParams As Object
+Public rowFields As String
+Public colFields As String
 '--------------------------------------------------------------------------------------
 ' Build a pivot table from rows/columns source data and convert to values output
 ' JDL 3/27/26
@@ -26,17 +31,17 @@ Public rngDataOut As Range
 Public Function MakePivotTableProcedure(pvt, tblSrc, rowFields, colFields, shtDest, _
         analytes, Optional filters = vbNullString, _
         Optional sortOrder = vbNullString, _
-    Optional dictSubT As Object = Nothing, _
-    Optional dictParams As Object = Nothing, _
-    Optional IsDestNewWorkbook As Boolean = False) As Boolean
+        Optional dictSubT As Object = Nothing, _
+        Optional dictParams As Object = Nothing) As Boolean
     SetErrs MakePivotTableProcedure: If errs.IsHandle Then On Error GoTo ErrorExit
 
-    If Not InitPivotTable(pvt, tblSrc, shtDest) Then GoTo ErrorExit
-    If Not CreatePivotCacheAndTable(pvt, IsDestNewWorkbook) Then GoTo ErrorExit
-    If Not ConfigurePivotFields(pvt, rowFields, colFields, analytes, filters, _
-        dictSubT) Then GoTo ErrorExit
+    If Not InitPivotTable(pvt, tblSrc, shtDest, dictSubT, dictParams) Then GoTo ErrorExit
+    If Not CreatePivotCacheAndTable(pvt) Then GoTo ErrorExit
+    If Not ValidateFieldSpecs(pvt, rowFields, colFields) Then GoTo ErrorExit
+    If Not ValidateAnalytes(pvt, analytes) Then GoTo ErrorExit
+    If Not ConfigurePivotFields(pvt, analytes, filters) Then GoTo ErrorExit
     If Not ApplySortOrder(pvt, sortOrder) Then GoTo ErrorExit
-    If Not FormatPivotTable(pvt, dictParams) Then GoTo ErrorExit
+    If Not FormatPivotTable(pvt) Then GoTo ErrorExit
     If Not ConvertPivotToValues(pvt) Then GoTo ErrorExit
     If Not SetOutputRanges(pvt) Then GoTo ErrorExit
     Exit Function
@@ -44,22 +49,40 @@ Public Function MakePivotTableProcedure(pvt, tblSrc, rowFields, colFields, shtDe
 ErrorExit:
     errs.RecordErr "MakePivotTableProcedure", MakePivotTableProcedure
 End Function
-
 '--------------------------------------------------------------------------------------
 ' Initialize attributes used by MakePivotTableProcedure
 ' JDL 3/27/26
 '
-Public Function InitPivotTable(pvt, tblSrc, shtDest) As Boolean
+Public Function InitPivotTable(pvt, tblSrc, shtDest, _
+    Optional dictSubT As Object = Nothing, _
+    Optional dictParams As Object = Nothing) As Boolean
     SetErrs InitPivotTable: If errs.IsHandle Then On Error GoTo ErrorExit
 
     If errs.IsFail(tblSrc Is Nothing, 1) Then GoTo ErrorExit
     If errs.IsFail(tblSrc.rngTable Is Nothing, 2) Then GoTo ErrorExit
 
-    Set pvt.tblSrc = tblSrc
-    Set pvt.tblOut = New tblRowsCols
+    With pvt
+        Set .tblSrc = tblSrc
+        Set .tblOut = New tblRowsCols
+        Set .dictSubT = New Dictionary
+        Set .dictParams = New Dictionary
+        If Not dictSubT Is Nothing Then Set .dictSubT = dictSubT
+        If Not dictParams Is Nothing Then Set .dictParams = dictParams
 
-    pvt.shtDest = shtDest
-    If Len(pvt.shtDest) < 1 Then pvt.shtDest = "PivotData"
+        ' Set attribute for whether pivot table is in new workbook (default False)
+        .IsDestNewWorkbook = False
+        If .dictParams.Exists("IsDestNewWorkbook") Then _
+            .IsDestNewWorkbook = CBool(.dictParams.Item("IsDestNewWorkbook"))
+
+        ' Set Pivot table sheet name
+        .shtDest = shtDest
+        If Len(.shtDest) < 1 Then .shtDest = "PivotData"
+
+        ' For same-workbook output, destination sheet must differ from source sheet.
+        If Not .IsDestNewWorkbook Then _
+            If errs.IsFail(LCase(.tblSrc.sht) = LCase(.shtDest), 3) Then GoTo ErrorExit
+
+    End With
     Exit Function
 
 ErrorExit:
@@ -70,35 +93,34 @@ End Function
 ' Create destination workbook and pivot cache/table
 ' JDL 3/27/26
 '
-Public Function CreatePivotCacheAndTable(pvt, Optional IsDestNewWorkbook As Boolean = False) As Boolean
+Public Function CreatePivotCacheAndTable(pvt) As Boolean
     SetErrs CreatePivotCacheAndTable: If errs.IsHandle Then On Error GoTo ErrorExit
-    Dim i As Long
 
     With pvt
-        If IsDestNewWorkbook Then
+        If .IsDestNewWorkbook Then
             Set .wkbkDest = Application.Workbooks.Add
             Set .wkshtDest = .wkbkDest.Sheets(1)
-
             If Not DeleteExtraneousShts(.wkbkDest, .shtDest) Then GoTo ErrorExit
 
         Else
             Set .wkbkDest = .tblSrc.wkbk
-            If errs.IsFail(.wkbkDest Is Nothing, 1) Then GoTo ErrorExit
-            If errs.IsFail(LCase(.tblSrc.sht) = LCase(.shtDest), 2) Then GoTo ErrorExit
 
-            Application.DisplayAlerts = False
-            If SheetExists(.wkbkDest, .shtDest) Then .wkbkDest.Sheets(.shtDest).Delete
-            Application.DisplayAlerts = True
+            ' Delete existing destination sheet if present to avoid error
+            if SheetExists(.wkbkDest, .shtDest) Then DeleteSheet .wkbkDest, .shtDest
 
             With pvt.wkbkDest
-                Set pvt.wkshtDest = .Worksheets.Add(After:=.Sheets(.Sheets.Count))
+                Set pvt.wkshtDest = .Worksheets.Add(After:=.tblSrc.wksht)
             End With
         End If
+
+        ' Name the destination sheet per input argument
         .wkshtDest.Name = .shtDest
 
-        Set .pvtCache = .wkbkDest.PivotCaches.Create(SourceType:=xlDatabase, _
-            SourceData:=.tblSrc.rngTable)
-        Set .pvtTable = .pvtCache.CreatePivotTable(TableDestination:=.wkshtDest.Cells(1, 1))
+        ' Create the pivot cache and table
+        Set .pvtCache = _
+            .wkbkDest.PivotCaches.Create(SourceType:=xlDatabase, SourceData:=.tblSrc.rngTable)
+        Set .pvtTable = _
+            .pvtCache.CreatePivotTable(TableDestination:=.wkshtDest.Cells(1, 1))
     End With
     Exit Function
 
@@ -106,21 +128,196 @@ ErrorExit:
     errs.RecordErr "CreatePivotCacheAndTable", CreatePivotCacheAndTable
 End Function
 
+
+'--------------------------------------------------------------------------------------
+' Validate row/column field specs and normalize into class CSV attributes
+' JDL 3/30/26
+'
+Public Function ValidateFieldSpecs(pvt, rowFields, colFields) As Boolean
+    SetErrs ValidateFieldSpecs: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim rowFieldsCsv As String, colFieldsCsv As String
+
+    'Convert row and col field specs to splittable comma-separated strings
+    If Not NormalizeFieldSpecs(rowFields, False, rowFieldsCsv) Then GoTo ErrorExit
+    If Not NormalizeFieldSpecs(colFields, True, colFieldsCsv) Then GoTo ErrorExit
+
+    'Check that specified names exist and don't overlap between row and column groups
+    If Not ValidateFieldNamesExist(pvt.tblSrc, rowFieldsCsv) Then GoTo ErrorExit
+    If Not ValidateFieldNamesExist(pvt.tblSrc, colFieldsCsv) Then GoTo ErrorExit
+    If Not ValidateNoFieldOverlap(rowFieldsCsv, colFieldsCsv) Then GoTo ErrorExit
+
+    'Set class attributes for normalized field specs
+    pvt.rowFields = rowFieldsCsv
+    pvt.colFields = colFieldsCsv
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "ValidateFieldSpecs", ValidateFieldSpecs
+End Function
+
+'--------------------------------------------------------------------------------------
+' Validate analytes as two-item arrays: (fieldName, xFunc)
+' JDL 3/30/26
+'
+Public Function ValidateAnalytes(pvt, analytes) As Boolean
+    SetErrs ValidateAnalytes: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim fieldName As String, analyteFieldsCsv As String
+    Dim analyteDef As Variant
+
+    If errs.IsFail(Not IsArray(analytes), 1) Then GoTo ErrorExit
+    analyteFieldsCsv = vbNullString
+
+    For Each analyteDef In analytes
+        If errs.IsFail(Not IsArray(analyteDef), 2) Then GoTo ErrorExit
+
+        If errs.IsFail(LBound(analyteDef) <> 0, 3) Then GoTo ErrorExit
+        If errs.IsFail(UBound(analyteDef) <> 1, 4) Then GoTo ErrorExit
+
+        fieldName = Trim(CStr(analyteDef(0)))
+        If errs.IsFail(Len(fieldName) < 1, 5) Then GoTo ErrorExit
+        If errs.IsFail(Not IsNumeric(analyteDef(1)), 6) Then GoTo ErrorExit
+
+        If Len(analyteFieldsCsv) > 0 Then analyteFieldsCsv = analyteFieldsCsv & ","
+        analyteFieldsCsv = analyteFieldsCsv & fieldName
+    Next analyteDef
+
+    If Not ValidateFieldNamesExist(pvt.tblSrc, analyteFieldsCsv) Then
+        errs.iCodeLocal = 6
+        GoTo ErrorExit
+    End If
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "ValidateAnalytes", ValidateAnalytes
+End Function
+
+'--------------------------------------------------------------------------------------
+' Normalize row/column field spec into comma-separated string
+' JDL 3/30/26
+'
+Private Function NormalizeFieldSpecs(fields, ByVal IsCols As Boolean, _
+        fieldSpecsCsv As String) As Boolean
+    SetErrs NormalizeFieldSpecs: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim i As Long, fieldName As String
+    Dim fieldItem As Variant, sOut As String
+
+    fieldSpecsCsv = vbNullString
+    sOut = vbNullString
+
+    If IsArray(fields) Then
+        For i = LBound(fields) To UBound(fields)
+            fieldItem = fields(i)
+            If errs.IsFail(IsArray(fieldItem), 1) Then GoTo ErrorExit
+
+            fieldName = Trim(CStr(fieldItem))
+            If errs.IsFail(Len(fieldName) < 1, 2) Then GoTo ErrorExit
+            If Len(sOut) > 0 Then sOut = sOut & ","
+            sOut = sOut & fieldName
+        Next i
+
+    ElseIf VarType(fields) = vbString Then
+        fieldName = Trim(CStr(fields))
+        If Not IsCols Then
+            If errs.IsFail(Len(fieldName) < 1, 3) Then GoTo ErrorExit
+        End If
+        sOut = fieldName
+
+    Else
+        If errs.IsFail(True, 4) Then GoTo ErrorExit
+    End If
+
+    fieldSpecsCsv = sOut
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "NormalizeFieldSpecs", NormalizeFieldSpecs
+End Function
+
+'--------------------------------------------------------------------------------------
+' Ensure all specified field names exist in source table headers
+' JDL 3/30/26
+'
+Private Function ValidateFieldNamesExist(tblSrc, ByVal fieldSpecsCsv As String) As Boolean
+    SetErrs ValidateFieldNamesExist: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim dictHeaders As Object, rngHeaders As Range
+    Dim arrFields As Variant, i As Long, fieldName As String
+    Dim headerCell As Range
+
+    If Len(fieldSpecsCsv) < 1 Then Exit Function
+
+    Set dictHeaders = New Dictionary
+    Set rngHeaders = tblSrc.rngHeader
+    If rngHeaders Is Nothing Then Set rngHeaders = tblSrc.rngTable.Rows(1)
+    If errs.IsFail(rngHeaders Is Nothing, 1) Then GoTo ErrorExit
+
+    For Each headerCell In rngHeaders.Cells
+        fieldName = Trim(CStr(headerCell.Value))
+        If Len(fieldName) > 0 Then
+            If Not dictHeaders.Exists(LCase(fieldName)) Then _
+                dictHeaders.Add LCase(fieldName), True
+        End If
+    Next headerCell
+
+    arrFields = Split(fieldSpecsCsv, ",")
+    For i = LBound(arrFields) To UBound(arrFields)
+        fieldName = Trim(CStr(arrFields(i)))
+        If errs.IsFail(Not dictHeaders.Exists(LCase(fieldName)), 2) Then GoTo ErrorExit
+    Next i
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "ValidateFieldNamesExist", ValidateFieldNamesExist
+End Function
+
+'--------------------------------------------------------------------------------------
+' Ensure same field is not assigned to both row and column groups
+' JDL 3/30/26
+'
+Private Function ValidateNoFieldOverlap(ByVal rowFieldsCsv As String, _
+        ByVal colFieldsCsv As String) As Boolean
+    SetErrs ValidateNoFieldOverlap: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim dictRow As Object
+    Dim rowArr As Variant, colArr As Variant
+    Dim i As Long, fieldName As String
+
+    If Len(rowFieldsCsv) < 1 Or Len(colFieldsCsv) < 1 Then Exit Function
+
+    Set dictRow = New Dictionary
+
+    rowArr = Split(rowFieldsCsv, ",")
+    For i = LBound(rowArr) To UBound(rowArr)
+        fieldName = LCase(Trim(CStr(rowArr(i))))
+        If Len(fieldName) > 0 Then
+            If Not dictRow.Exists(fieldName) Then dictRow.Add fieldName, True
+        End If
+    Next i
+
+    colArr = Split(colFieldsCsv, ",")
+    For i = LBound(colArr) To UBound(colArr)
+        fieldName = LCase(Trim(CStr(colArr(i))))
+        If errs.IsFail(dictRow.Exists(fieldName), 1) Then GoTo ErrorExit
+    Next i
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "ValidateNoFieldOverlap", ValidateNoFieldOverlap
+End Function
+
+
 '--------------------------------------------------------------------------------------
 ' Configure row, column, page and data fields
 ' JDL 3/27/26
 '
-Public Function ConfigurePivotFields(pvt, rowFields, colFields, analytes, filters, _
-    Optional dictSubT As Object = Nothing) As Boolean
+Public Function ConfigurePivotFields(pvt, analytes, filters) As Boolean
     SetErrs ConfigurePivotFields: If errs.IsHandle Then On Error GoTo ErrorExit
 
-    ' Add row fields (at least one required)
-    If Not AddFieldGroup(pvt, rowFields, xlRowField, dictSubT) Then GoTo ErrorExit
+    With pvt
+        ' Add row fields (at least one required)
+        If Not AddFieldGroup(pvt, .rowFields, xlRowField) Then GoTo ErrorExit
 
-    ' Add column fields if any (optional)
-    If HasFieldSpecs(colFields) Then
-        If Not AddFieldGroup(pvt, colFields, xlColumnField, dictSubT) Then GoTo ErrorExit
-    End If
+        ' Add column fields if any (optional)
+        If Not AddFieldGroup(pvt, .colFields, xlColumnField) Then GoTo ErrorExit
+    End With
 
     ' Add page filters if any (optional) and analytes (at least one required)
     If Not AddFilterFields(pvt, filters) Then GoTo ErrorExit
@@ -132,74 +329,24 @@ ErrorExit:
 End Function
 
 '--------------------------------------------------------------------------------------
-' Check whether a row/column field argument contains one or more non-blank field names
+' Add row or column field group from array of strings or individual string
 ' JDL 3/27/26
 '
-Private Function HasFieldSpecs(fields) As Boolean
-    Dim i As Long, fieldSpec As Variant, fieldName As String
-
-    HasFieldSpecs = False
-    If IsArray(fields) Then
-        For i = LBound(fields) To UBound(fields)
-            fieldSpec = fields(i)
-            
-            'If spec is array, name is first element
-            If IsArray(fieldSpec) Then
-                fieldName = CStr(fieldSpec(LBound(fieldSpec)))
-                
-            'fieldSpec
-            Else
-                fieldName = CStr(fieldSpec)
-            End If
-
-            If Len(Trim(fieldName)) > 0 Then
-                HasFieldSpecs = True
-                Exit Function
-            End If
-        Next i
-        Exit Function
-    End If
-
-    If Len(Trim(CStr(fields))) > 0 Then HasFieldSpecs = True
-End Function
-
-'--------------------------------------------------------------------------------------
-' Add row or column field group from string or array of strings
-' JDL 3/27/26
-'
-Private Function AddFieldGroup(pvt, fields, ByVal fieldOrientation As XlPivotFieldOrientation, _
-        Optional dictSubT As Object = Nothing) As Boolean
+Private Function AddFieldGroup(pvt, fieldsCsv, ByVal fieldOrientation As XlPivotFieldOrientation) As Boolean
     SetErrs AddFieldGroup: If errs.IsHandle Then On Error GoTo ErrorExit
-    Dim i As Long, fieldName As String, nFields As Long
-    Dim fieldSpec As Variant, isSubtotalsOn As Boolean, pvtField As PivotField
+    Dim i As Long, fieldName As Variant
 
-    If IsArray(fields) Then
-        nFields = UBound(fields) - LBound(fields) + 1
-        For i = LBound(fields) To UBound(fields)
-            fieldSpec = fields(i)
-            fieldName = CStr(fieldSpec)
+    If Len(CStr(fieldsCsv)) < 1 Then Exit Function
 
-            If Len(fieldName) < 1 Then GoTo NextField
-            Set pvtField = pvt.pvtTable.PivotFields(fieldName)
-            With pvtField
-                .Orientation = fieldOrientation
-                .Position = i - LBound(fields) + 1
-            End With
-            If Not ResolveSubtotalsSetting(dictSubT, fieldName, isSubtotalsOn) Then GoTo ErrorExit
-            If Not SetFieldSubtotals(pvtField, isSubtotalsOn) Then GoTo ErrorExit
-NextField:
-        Next i
-    Else
-        fieldName = CStr(fields)
-        If Len(fieldName) < 1 Then GoTo ErrorExit
-        Set pvtField = pvt.pvtTable.PivotFields(fieldName)
-        With pvtField
+    i = 1
+    For Each fieldName In Split(CStr(fieldsCsv), ",")
+        With pvt.pvtTable.PivotFields(fieldName)
             .Orientation = fieldOrientation
-            .Position = 1
+            .Position = i
         End With
-        If Not ResolveSubtotalsSetting(dictSubT, fieldName, isSubtotalsOn) Then GoTo ErrorExit
-        If Not SetFieldSubtotals(pvtField, isSubtotalsOn) Then GoTo ErrorExit
-    End If
+        If Not SetFieldSubtotals(pvt, fieldName) Then GoTo ErrorExit
+        i = i + 1
+    Next fieldName
     Exit Function
 
 ErrorExit:
@@ -207,38 +354,29 @@ ErrorExit:
 End Function
 
 '--------------------------------------------------------------------------------------
-' Toggle pivot field subtotals by setting Automatic (index 1) on/off and clearing others
+' Toggle pivot field subtotals by field-name override from pvt.dictSubT
 ' JDL 3/27/26
 '
-Private Function SetFieldSubtotals(pvtField As PivotField, ByVal IsOn As Boolean) As Boolean
+Private Function SetFieldSubtotals(pvt, ByVal fieldName As String) As Boolean
     SetErrs SetFieldSubtotals: If errs.IsHandle Then On Error GoTo ErrorExit
     Dim i As Long
 
-    For i = 1 To 12
-        pvtField.Subtotals(i) = False
-    Next i
-    If IsOn Then pvtField.Subtotals(1) = True
+    ' Default to no subtotals
+    With pvt.pvtTable.PivotFields(fieldName)
+        For i = 1 To 12
+            .Subtotals(i) = False
+        Next i
+
+        ' Override with dictSubT value if specified
+        If Not pvt.dictSubT Is Nothing Then
+            If pvt.dictSubT.Exists(fieldName) Then _
+                .Subtotals(1) = CBool(pvt.dictSubT.Item(fieldName))
+        End If
+    End With
     Exit Function
 
 ErrorExit:
     errs.RecordErr "SetFieldSubtotals", SetFieldSubtotals
-End Function
-
-'--------------------------------------------------------------------------------------
-' Resolve subtotal setting for field (default False, optional dictionary override)
-' JDL 3/27/26
-'
-Private Function ResolveSubtotalsSetting(dictSubT As Object, ByVal fieldName As String, _
-        isSubtotalsOn As Boolean) As Boolean
-    SetErrs ResolveSubtotalsSetting: If errs.IsHandle Then On Error GoTo ErrorExit
-
-    isSubtotalsOn = False
-    If dictSubT Is Nothing Then Exit Function
-    If dictSubT.Exists(fieldName) Then isSubtotalsOn = CBool(dictSubT.Item(fieldName))
-    Exit Function
-
-ErrorExit:
-    errs.RecordErr "ResolveSubtotalsSetting", ResolveSubtotalsSetting
 End Function
 
 '--------------------------------------------------------------------------------------
@@ -284,87 +422,36 @@ End Function
 
 '--------------------------------------------------------------------------------------
 ' Add analyte definitions to data area
-' JDL 3/27/26
+' JDL 3/27/26; Updated 3/30/26
 '
 Private Function AddAnalytes(pvt, analytes) As Boolean
     SetErrs AddAnalytes: If errs.IsHandle Then On Error GoTo ErrorExit
-    Dim i As Long, j As Long, fieldName As String, caption As String
+    Dim fieldName As String, caption As String
     Dim xFunc As XlConsolidationFunction, analyteDef As Variant
-    Dim dataField As PivotField, nErr As Long
 
-    If errs.IsFail(Not IsArray(analytes), 1) Then GoTo ErrorExit
+    For Each analyteDef In analytes
+        fieldName = CStr(analyteDef(0))
+        xFunc = CLng(analyteDef(1))
+        caption = fieldName & "_"
 
-    For i = LBound(analytes) To UBound(analytes)
-        analyteDef = analytes(i)
-        xFunc = xlSum
-
-        If IsArray(analyteDef) Then
-            j = LBound(analyteDef)
-            fieldName = CStr(analyteDef(j))
-            If UBound(analyteDef) >= j + 1 Then xFunc = CLng(analyteDef(j + 1))
-            If UBound(analyteDef) >= j + 2 Then
-                caption = CStr(analyteDef(j + 2))
-            Else
-                caption = GetDefaultCaption(fieldName, xFunc)
-            End If
-        Else
-            fieldName = CStr(analyteDef)
-            caption = GetDefaultCaption(fieldName, xFunc)
-        End If
-
-        If errs.IsFail(Len(fieldName) < 1, 2) Then GoTo ErrorExit
-
-        If Not NormalizeAnalyteCaption(pvt, fieldName, xFunc, caption) Then GoTo ErrorExit
-
-        Set dataField = Nothing
         On Error Resume Next
-        Set dataField = pvt.pvtTable.AddDataField(pvt.pvtTable.PivotFields(fieldName), caption, xFunc)
-        nErr = err.Number
-        err.Clear
-        If errs.IsHandle Then
-            On Error GoTo ErrorExit
-        Else
+        With pvt.pvtTable
+             .AddDataField .PivotFields(fieldName), caption, xFunc
+        End With
+        If errs.IsFail(err.Number > 0, 1, fieldName) Then
             On Error GoTo 0
+            GoTo ErrorExit
         End If
-        If nErr <> 0 Or dataField Is Nothing Then GoTo ErrorExit
-    Next i
+
+        ' Reset error handling on each iteration to avoid unintended error bypass
+        err.Clear
+        On Error GoTo 0
+        If errs.IsHandle Then On Error GoTo ErrorExit
+    Next analyteDef
     Exit Function
 
 ErrorExit:
     errs.RecordErr "AddAnalytes", AddAnalytes
-End Function
-
-'--------------------------------------------------------------------------------------
-' Normalize analyte captions to avoid collisions with source field names
-' JDL 3/30/26
-'
-Private Function NormalizeAnalyteCaption(pvt, ByVal fieldName As String, _
-    ByVal xFunc As XlConsolidationFunction, caption As String) As Boolean
-    SetErrs NormalizeAnalyteCaption: If errs.IsHandle Then On Error GoTo ErrorExit
-
-    If Len(Trim(caption)) < 1 Then caption = GetDefaultCaption(fieldName, xFunc)
-
-    ' Excel may reject DataField captions equal to source field names.
-    If LCase(Trim(caption)) = LCase(Trim(fieldName)) Then _
-        caption = GetDefaultCaption(fieldName, xFunc)
-    Exit Function
-
-ErrorExit:
-    errs.RecordErr "NormalizeAnalyteCaption", NormalizeAnalyteCaption
-End Function
-
-'--------------------------------------------------------------------------------------
-' Return default data-field caption by consolidation function
-' JDL 3/27/26
-'
-Private Function GetDefaultCaption(ByVal fieldName As String, _
-        ByVal xFunc As XlConsolidationFunction) As String
-    Select Case xFunc
-        Case xlCount
-            GetDefaultCaption = "Count of " & fieldName
-        Case Else
-            GetDefaultCaption = "Sum of " & fieldName
-    End Select
 End Function
 
 '--------------------------------------------------------------------------------------
@@ -418,7 +505,7 @@ End Function
 ' Apply standard formatting and optional parameter overrides
 ' JDL 3/27/26; Modified 3/30/26
 '
-Public Function FormatPivotTable(pvt, Optional dictParams As Object = Nothing) As Boolean
+Public Function FormatPivotTable(pvt) As Boolean
     SetErrs FormatPivotTable: If errs.IsHandle Then On Error GoTo ErrorExit
     Dim rowAxisLayout As XlLayoutRowType, repeatLabels As Long
     Dim isRowGrand As Boolean, isColGrand As Boolean
@@ -435,7 +522,7 @@ Public Function FormatPivotTable(pvt, Optional dictParams As Object = Nothing) A
     dataPivotPosition = 1
 
     'Check for non-default inputs specified by dictParams
-    If Not ResolveFormatParams(dictParams, rowAxisLayout, repeatLabels, _
+    If Not ResolveFormatParams(pvt.dictParams, rowAxisLayout, repeatLabels, _
             isRowGrand, isColGrand, hasDataPivotOrientation, dataPivotOrientation, _
             hasDataPivotPosition, dataPivotPosition) Then GoTo ErrorExit
 
