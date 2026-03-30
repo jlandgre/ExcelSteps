@@ -79,25 +79,25 @@ Sub RecordParams(cls)
             aryIsFiltered(i) = False
             
             'Is Column(i) filtered?
-            If .wksht.AutoFilter.Filters(i).On Then
+            If .wksht.AutoFilter.filters(i).On Then
                 aryIsFiltered(i) = True
                 
                 '0=Single criterion; 1=Multi AND; 2=Multi OR; 7=List/complex
-                aryOper(i) = .wksht.AutoFilter.Filters(i).Operator
+                aryOper(i) = .wksht.AutoFilter.filters(i).Operator
                 
                 'Set IsListCriteria flag if List-based filtering encountered
                 If aryOper(i) > 2 Then .IsListCriteria = True
                 
                 'Capture criteria strings (example string: "=aa")
                 If Not .IsListCriteria Then
-                    aryCrit1(i) = .wksht.AutoFilter.Filters(i).Criteria1
+                    aryCrit1(i) = .wksht.AutoFilter.filters(i).Criteria1
                     If aryOper(i) > 0 Then aryCrit2(i) = _
-                        .wksht.AutoFilter.Filters(i).Criteria2
+                        .wksht.AutoFilter.filters(i).Criteria2
                 
                 'Capture array of selected items as semicolon delimited list
                 Else
                     aryCrit1(i) = _
-                        ListFromArray(.wksht.AutoFilter.Filters(i).Criteria1, sDelim:=";")
+                        ListFromArray(.wksht.AutoFilter.filters(i).Criteria1, sDelim:=";")
                 End If
             End If
         Next i

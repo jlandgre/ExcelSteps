@@ -175,7 +175,7 @@ Function MiscCleanup(mdl, rowVarNames, icolEnd) As Boolean
     
         'Ensure Calculator model has Scenario column
         If mdl.IsCalc Then
-            If rowVarNames.Find("Scenario", lookat:=xlWhole) Is Nothing Then
+            If rowVarNames.Find("Scenario", LookAt:=xlWhole) Is Nothing Then
                 .Columns(2).Insert
                 .Cells(2, 2).Value2 = "Scenario"
                 icolEnd = icolEnd + 1

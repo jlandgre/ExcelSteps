@@ -1,5 +1,5 @@
 Attribute VB_Name = "ErrorHandleUtil"
-'Version 1/29/26
+'Version 3/13/26
 'Import this module and ErrorHandling Class Module to install error handling in a project
 
 Option Explicit
@@ -50,5 +50,6 @@ Sub SetErrs(CallingFunction, Optional wkbkE As Workbook = Nothing)
     'Initialize Boolean calling function
     If Not IsDriver And Not IsNonBool Then CallingFunction = True
 End Sub
+
 
 

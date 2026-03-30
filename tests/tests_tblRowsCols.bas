@@ -728,7 +728,7 @@ Sub test_SetNRows1(procs)
         'Check results of method
         .Assert tst, tbl.nRows = 0
         .Assert tst, tbl.rngrows Is Nothing
-        .Assert tst, tbl.lastrow = 0
+        .Assert tst, tbl.lastRow = 0
     
         'tst with header-only sheet
         Set tbl = ExcelSteps.New_tbl
@@ -742,7 +742,7 @@ Sub test_SetNRows1(procs)
 
         .Assert tst, tbl.nRows = 0
         .Assert tst, tbl.rngrows Is Nothing
-        .Assert tst, tbl.lastrow = 0
+        .Assert tst, tbl.lastRow = 0
 
         .Update tst, procs
     End With
@@ -767,7 +767,7 @@ Sub test_SetNRows2(procs)
 
         .Assert tst, tbl.nRows = 3
         .Assert tst, tbl.rngrows.Address = "$2:$4"
-        .Assert tst, tbl.lastrow = 4
+        .Assert tst, tbl.lastRow = 4
 
         .Update tst, procs
     End With
@@ -797,7 +797,7 @@ Sub test_SetNRows3(procs)
         'Check results of method
         .Assert tst, tbl.nRows = 3
         .Assert tst, tbl.rngrows.Address = "$3:$5"
-        .Assert tst, tbl.lastrow = 5
+        .Assert tst, tbl.lastRow = 5
 
         .Update tst, procs
     End With
@@ -912,7 +912,7 @@ Sub test_SetNCols3(procs)
         .Assert tst, tbl.nCols = 3
         .Assert tst, tbl.rngHeader.Address = "$B$1:$D$1"
         .Assert tst, tbl.lastcol = 4
-        .Assert tst, tbl.lastrow = 5
+        .Assert tst, tbl.lastRow = 5
         .Assert tst, tbl.rngrows.Address = "$3:$5"
 
         .Update tst, procs
@@ -1637,7 +1637,7 @@ Sub test_ProvisionTbl2EmptySpec(procs)
     
     With tst
         .Assert tst, (tbl.lastcol = 4)
-        .Assert tst, (tbl.lastrow = 4)
+        .Assert tst, (tbl.lastRow = 4)
         .Assert tst, (tbl.cellHome.Address = "$A$2")
         .Assert tst, (tbl.nRows = 3)
         .Assert tst, (tbl.nCols = 4)
@@ -1669,7 +1669,7 @@ Sub test_ProvisionTbl2EmptyTbl(procs)
         .Assert tst, (tbl.rngrows Is Nothing)
         .Assert tst, (tbl.rngHeader Is Nothing)
         .Assert tst, (tbl.lastcol = 0)
-        .Assert tst, (tbl.lastrow = 0)
+        .Assert tst, (tbl.lastRow = 0)
         .Assert tst, (tbl.cellHome.Address = "$A$2")
         .Assert tst, (tbl.nRows = 0)
         .Assert tst, (tbl.nCols = 0)
@@ -1697,7 +1697,7 @@ Sub test_ProvisionTbl2HeaderOnly(procs)
         .Assert tst, (tbl.rngTable.Address = "$A$1:$F$1")
         .Assert tst, (tbl.rngrows Is Nothing)
         .Assert tst, (tbl.lastcol = 6)
-        .Assert tst, (tbl.lastrow = 0)
+        .Assert tst, (tbl.lastRow = 0)
         .Assert tst, (tbl.rngHeader.Address = "$A$1:$F$1")
         .Assert tst, (tbl.nRows = 0)
         .Assert tst, (tbl.nCols = 6)
@@ -1725,7 +1725,7 @@ Sub test_ProvisionTbl2(procs)
     With tst
         .Assert tst, (tbl.rngTable.Address = "$A$1:$F$6")
         .Assert tst, (tbl.lastcol = 6)
-        .Assert tst, (tbl.lastrow = 6)
+        .Assert tst, (tbl.lastRow = 6)
         .Assert tst, (tbl.rngHeader.Address = "$A$1:$F$1")
         .Assert tst, (tbl.nRows = 5)
         .Assert tst, (tbl.nCols = 6)

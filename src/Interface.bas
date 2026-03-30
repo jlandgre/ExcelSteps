@@ -57,17 +57,17 @@ Private Sub Auto_Open()
             Set ExcelSteps = CommandBars(1).Controls.Add(Type:=msoControlPopup, _
                 before:=HelpMenu.index, Temporary:=True)
         End If
-        ExcelSteps.Caption = "&ExcelSteps"
+        ExcelSteps.caption = "&ExcelSteps"
         ExcelSteps.Tag = "ExcelSteps"
     
         'Add menu item: Refresh Worksheets
         Set MenuItem = ExcelSteps.Controls.Add(Type:=msoControlButton)
-        MenuItem.Caption = sRefresh
+        MenuItem.caption = sRefresh
         MenuItem.OnAction = "RefreshDriver"
     
         'Add menu item: Parse Scenario Model
         Set MenuItem = ExcelSteps.Controls.Add(Type:=msoControlButton)
-        MenuItem.Caption = sParseSM
+        MenuItem.caption = sParseSM
         MenuItem.OnAction = "ParseModelDriver"
     End If
 End Sub

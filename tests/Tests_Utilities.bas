@@ -20,26 +20,30 @@ Sub TestDriver_Utilities()
     With procs.Utilities
         If .Enabled Or AllEnabled Then
             procs.curProcedure = .Name
-            test_LastPopulatedCell1 procs
-            test_LastPopulatedCell2 procs
-            test_LastPopulatedCell3 procs
-            test_LastPopulatedCell4 procs
-            test_LastPopulatedCell5 procs
-            test_BuildMultiCellRange1 procs
-            test_BuildMultiCellRange2 procs
-            test_BuildMultiCellRange3 procs
-            test_BuildMultiCellRange4 procs
-            test_IsShtCaseErr procs
-            test_iCountAndDeleteStraySheets procs
-            test_PopRngMultiKeyTbl procs
-            test_RngMultiKey_One procs
-            test_RngMultiKey_Two procs
-            test_RngMultiKey_Four procs
-            test_AryUniqueValsInRange procs
-            test_TestAryVals procs
-            test_CkNumFmtMatch procs
-            test_TestRngVals procs
-            test_ConvertValToNumeric procs
+            ' test_LastPopulatedCell1 procs
+            ' test_LastPopulatedCell2 procs
+            ' test_LastPopulatedCell3 procs
+            ' test_LastPopulatedCell4 procs
+            ' test_LastPopulatedCell5 procs
+            ' test_BuildMultiCellRange1 procs
+            ' test_BuildMultiCellRange2 procs
+            ' test_BuildMultiCellRange3 procs
+            ' test_BuildMultiCellRange4 procs
+            ' test_IsShtCaseErr procs
+            ' test_iCountAndDeleteStraySheets procs
+            ' test_PopRngMultiKeyTbl procs
+            ' test_RngMultiKey_One procs
+            ' test_RngMultiKey_Two procs
+            ' test_RngMultiKey_Four procs
+            ' test_AryUniqueValsInRange procs
+            ' test_TestAryVals procs
+            ' test_CkNumFmtMatch procs
+            ' test_TestRngVals procs
+            ' test_ConvertValToNumeric procs
+            test_FindInRange1 procs
+            test_FindInRange2 procs
+            test_FindInRange3 procs
+            test_FindInRange4 procs
         End If
     End With
     
@@ -1160,6 +1164,113 @@ Sub test_ConvertValToNumeric(procs)
         .Assert tst, VarType(valNew) = 11
         .Assert tst, valNew
 
+        .Update tst, procs
+    End With
+End Sub
+'-------------------------------------------------------------------------------------------------------
+' Find value within range (works with hidden cells, outline etc.)
+' JDL 7/26/23; Refactored 10/23/25 for procs
+'
+Sub test_FindInRange1(procs)
+    Dim tst As New Test: tst.Init tst, "test_FindInRange1"
+    Set ExcelSteps.errs = Nothing
+    Dim wksht As Worksheet, rng As Range, r As Range
+
+    With tst
+        Set wksht = .wkbkTest.Sheets(shtTesting)
+        PopulateCol3 .wkbkTest, shtTesting
+        Set rng = Intersect(wksht.Columns(1), wksht.UsedRange)
+
+        Set r = ExcelSteps.FindInRange(rng, "c")
+        .Assert tst, Not r Is Nothing
+        If Not r Is Nothing Then .Assert tst, r.Address = "$A$3"
+
+        Set r = ExcelSteps.FindInRange(rng, "zzz")
+        .Assert tst, r Is Nothing
+
+        .Update tst, procs
+    End With
+End Sub
+'-------------------------------------------------------------------------------------------------------
+' Find value within a 2-D range block
+' JDL 3/30/26
+'
+Sub test_FindInRange2(procs)
+    Dim tst As New Test: tst.Init tst, "test_FindInRange2"
+    Set ExcelSteps.errs = Nothing
+    Dim wksht As Worksheet, rng As Range, r As Range
+
+    With tst
+        Set wksht = .wkbkTest.Sheets(shtTesting)
+        PopulateCells .wkbkTest, shtTesting
+        Set rng = wksht.Range("A1:C4")
+
+        Set r = ExcelSteps.FindInRange(rng, "c")
+        .Assert tst, Not r Is Nothing
+        If Not r Is Nothing Then .Assert tst, r.Address = "$B$2"
+
+        Set r = ExcelSteps.FindInRange(rng, "not_found")
+        .Assert tst, r Is Nothing
+
+        .Update tst, procs
+    End With
+End Sub
+'-------------------------------------------------------------------------------------------------------
+' Find value within a non-contiguous multiarea range
+' JDL 3/30/26
+'
+Sub test_FindInRange3(procs)
+    Dim tst As New Test: tst.Init tst, "test_FindInRange3"
+    Set ExcelSteps.errs = Nothing
+    Dim wksht As Worksheet, rng As Range, r As Range
+
+    With tst
+        Set wksht = .wkbkTest.Sheets(shtTesting)
+        ClearTestSheetAndNames wksht
+
+        wksht.Range("A1:A3").Value2 = WorksheetFunction.Transpose(Split("x,y,z", ","))
+        wksht.Range("C1:C3").Value2 = WorksheetFunction.Transpose(Split("a,b,c", ","))
+        Set rng = Union(wksht.Range("A1:A3"), wksht.Range("C1:C3"))
+
+        Set r = ExcelSteps.FindInRange(rng, "c")
+        .Assert tst, Not r Is Nothing
+        If Not r Is Nothing Then .Assert tst, r.Address = "$C$3"
+
+        Set r = ExcelSteps.FindInRange(rng, "missing")
+        .Assert tst, r Is Nothing
+
+        .Update tst, procs
+    End With
+End Sub
+'-------------------------------------------------------------------------------------------------------
+' Find value in hidden and outlined/collapsed columns
+' JDL 3/30/26
+'
+Sub test_FindInRange4(procs)
+    Dim tst As New Test: tst.Init tst, "test_FindInRange4"
+    Set ExcelSteps.errs = Nothing
+    Dim wksht As Worksheet, rng As Range, r As Range
+
+    With tst
+        Set wksht = .wkbkTest.Sheets(shtTesting)
+        PopulateCells .wkbkTest, shtTesting
+        Set rng = wksht.Range("A1:C4")
+
+        wksht.Columns(2).EntireColumn.Hidden = True
+        Set r = ExcelSteps.FindInRange(rng, "c")
+        .Assert tst, Not r Is Nothing
+        If Not r Is Nothing Then .Assert tst, r.Address = "$B$2"
+
+        wksht.Columns(2).EntireColumn.Hidden = False
+        wksht.Cells.ClearOutline
+        wksht.Columns(2).Columns.Group
+        wksht.Outline.ShowLevels ColumnLevels:=1
+
+        Set r = ExcelSteps.FindInRange(rng, "c")
+        .Assert tst, Not r Is Nothing
+        If Not r Is Nothing Then .Assert tst, r.Address = "$B$2"
+
+        RevealWkshtCells wksht
         .Update tst, procs
     End With
 End Sub

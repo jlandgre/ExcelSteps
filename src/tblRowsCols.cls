@@ -911,13 +911,13 @@ Function SetTableWidthAndNumFormat(tbl) As Boolean
         For Each r In tbl.rngHeader
         
             'Find the variable in colinfo table
-            Set cell_CI = .colrngColName.Find(r.value, lookat:=xlWhole)
+            Set cell_CI = .colrngColName.Find(r.value, LookAt:=xlWhole)
             If Not cell_CI Is Nothing Then
                 iWidth = .TableLoc(cell_CI, .colrngVarXlwidth)
                 sFormat = .TableLoc(cell_CI, .colrngVarXlFormat)
 
                 'Locate the variable in header of table being formatted and apply col info
-                Set v = tbl.rngHeader.Find(r.value, lookat:=xlWhole)
+                Set v = tbl.rngHeader.Find(r.value, LookAt:=xlWhole)
                 If iWidth > 0 Then v.EntireColumn.ColumnWidth = iWidth
                 If Len(sFormat) > 0 And Not tbl.rngRows Is Nothing Then _
                     Intersect(v.EntireColumn, tbl.rngRows).NumberFormat = sFormat
@@ -1145,7 +1145,7 @@ Public Function TblSortBy(tbl, SortBy) As Boolean
     With tbl.wksht.Sort.SortFields
         .Clear
         For i = LBound(arySortBy) To UBound(arySortBy)
-            Set RSortBy = tbl.rngHeader.Find(arySortBy(i), lookat:=xlWhole)
+            Set RSortBy = tbl.rngHeader.Find(arySortBy(i), LookAt:=xlWhole)
             If RSortBy Is Nothing Then GoTo ErrorExit
             .Add key:=RSortBy, SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
         Next i
@@ -1213,3 +1213,4 @@ Public Function SetColRanges(ByRef tbl) As Boolean
 ErrorExit:
     errs.RecordErr "SetColRanges", SetColRanges
 End Function
+

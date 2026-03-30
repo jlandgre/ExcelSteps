@@ -358,7 +358,7 @@ Function SortBy(Step, tbl) As Integer
     With tbl.wksht.Sort.SortFields
         .Clear
         For i = LBound(arySortBy) To UBound(arySortBy)
-            Set RSortBy = tbl.rngHeader.Find(arySortBy(i), lookat:=xlWhole)
+            Set RSortBy = tbl.rngHeader.Find(arySortBy(i), LookAt:=xlWhole)
             If errs.IsFail(RSortBy Is Nothing, 14) Then GoTo ErrorExit
             .Add key:=RSortBy, SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
         Next i
@@ -393,7 +393,7 @@ Function AddValLst(Step, tbl) As Boolean
     'Perform checks and exit if error
     With Step
         If errs.IsFail(Len(.sColName) < 1, 1) Then GoTo ErrorExit
-        Set r = tbl.rngHeader.Find(.sColName, lookat:=xlWhole)
+        Set r = tbl.rngHeader.Find(.sColName, LookAt:=xlWhole)
         If errs.IsFail(r Is Nothing, 2) Then GoTo ErrorExit
         If errs.IsFail(Len(.sLstRngName) < 1, 11) Then GoTo ErrorExit
         If errs.IsFail(Not RangeExists(tbl.wkbk, .sLstRngName), 12) Then GoTo ErrorExit
@@ -419,7 +419,7 @@ Function SplitColumns(Step, tbl) As Boolean
     'Check that screen split location specified and column exists
     With Step
         If errs.IsFail(Len(.sColName) < 1, 9) Then GoTo ErrorExit
-        Set r = tbl.rngHeader.Find(.sColName, lookat:=xlWhole)
+        Set r = tbl.rngHeader.Find(.sColName, LookAt:=xlWhole)
         If errs.IsFail(r Is Nothing, 10) Then GoTo ErrorExit
     End With
     
@@ -461,7 +461,7 @@ Function Rename(Step, tbl) As Boolean
     With Step
         If errs.IsFail(Len(.sColName) < 1, 1) Then GoTo ErrorExit
         If errs.IsFail(Len(.sCol2) < 1, 8) Then GoTo ErrorExit
-        Set r = tbl.rngHeader.Find(.sColName, lookat:=xlWhole)
+        Set r = tbl.rngHeader.Find(.sColName, LookAt:=xlWhole)
         If errs.IsFail(r Is Nothing, 2) Then GoTo ErrorExit
         
         'Rename the header cell and replace its column name
@@ -494,7 +494,7 @@ Function Delete(Step, tbl) As Boolean
     'Exit if column is not specified or is not in table
     With Step
         If errs.IsFail(Len(.sColName) < 1, 1) Then GoTo ErrorExit
-        Set r = tbl.rngHeader.Find(.sColName, lookat:=xlWhole)
+        Set r = tbl.rngHeader.Find(.sColName, LookAt:=xlWhole)
         If errs.IsFail(r Is Nothing, 2) Then GoTo ErrorExit
         r.EntireColumn.Delete
     End With
@@ -518,8 +518,8 @@ Function AddGroup(Step, tbl) As Boolean
         If errs.IsFail(Len(.sCol2) < 1, 5) Then GoTo ErrorExit
 
         'Check that specified columns exist and that end column follows start column
-        Set colStart = tbl.rngHeader.Find(.sColName, lookat:=xlWhole)
-        Set colEnd = tbl.rngHeader.Find(.sCol2, lookat:=xlWhole)
+        Set colStart = tbl.rngHeader.Find(.sColName, LookAt:=xlWhole)
+        Set colEnd = tbl.rngHeader.Find(.sCol2, LookAt:=xlWhole)
         If errs.IsFail(colStart Is Nothing Or colEnd Is Nothing, 6) Then GoTo ErrorExit
         Set colStart = colStart.Offset(0, 1)
         If errs.IsFail(colEnd.Column < colStart.Column, 7) Then GoTo ErrorExit
@@ -554,7 +554,7 @@ Function SetNumFmt(Step, tbl) As Boolean
     'Check that column exists
     With Step
         If errs.IsFail(Len(.sColName) < 1, 1) Then GoTo ErrorExit
-        Set r = tbl.rngHeader.Find(.sColName, lookat:=xlWhole)
+        Set r = tbl.rngHeader.Find(.sColName, LookAt:=xlWhole)
         If errs.IsFail(r Is Nothing, 2) Then GoTo ErrorExit
         Intersect(r.EntireColumn, tbl.rngRows).NumberFormat = .NumFmt
     End With
@@ -575,7 +575,7 @@ Function SetWidth(Step, tbl) As Boolean
     'Check that column exists and that specified width is integer and within allowable limits
     With Step
         If errs.IsFail(Len(.sColName) < 1, 1) Then GoTo ErrorExit
-        Set r = tbl.rngHeader.Find(.sColName, lookat:=xlWhole)
+        Set r = tbl.rngHeader.Find(.sColName, LookAt:=xlWhole)
         If errs.IsFail(r Is Nothing, 2) Then GoTo ErrorExit
         If errs.IsFail(Not IsNumeric(.Width), 4) Then GoTo ErrorExit
         If errs.IsFail(.Width < 0 Or .Width > 255, 4) Then GoTo ErrorExit
@@ -598,7 +598,7 @@ Function HeaderComment(Step, tbl) As Boolean
     'Check that column is specified and exists
     With Step
         If errs.IsFail(Len(.sColName) < 1, 1) Then GoTo ErrorExit
-        Set r = tbl.rngHeader.Find(.sColName, lookat:=xlWhole)
+        Set r = tbl.rngHeader.Find(.sColName, LookAt:=xlWhole)
         If errs.IsFail(r Is Nothing, 2) Then GoTo ErrorExit
         AddComment r, .sComment
     End With

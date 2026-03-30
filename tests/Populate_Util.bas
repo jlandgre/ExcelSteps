@@ -130,3 +130,32 @@ Sub PopulateCol2(wkbk, sht)
             Application.Transpose(Split("a,b,,c,,d", ","))
     End With
 End Sub
+'Populate block of values in column
+Sub PopulateCol3(wkbk, sht)
+    Dim nvals As Long, ary As Variant
+
+    'Turn off sheet's filter if on and clear cells
+    RevealWkshtCells wkbk.Sheets(sht)
+    With wkbk.Sheets(sht)
+        .Cells.Clear
+        Range(.Columns(1), .Columns(20)).Delete
+        ary = Split("a,b,c,d,e,f", ",")
+        nvals = UBound(ary) + 1
+        Range(.Cells(1, 1), .Cells(1 + nvals - 1, 1)) = Application.Transpose(ary)
+    End With
+End Sub
+'Populate 2-D block values for FindInRange tests
+Sub PopulateCells(wkbk, sht)
+    Dim wksht As Worksheet
+
+    Set wksht = wkbk.Sheets(sht)
+    RevealWkshtCells wksht
+    ClearTestSheetAndNames wksht
+
+    With wksht
+        .Range("A1:C1").Value2 = Split("Key,Val,Amount", ",")
+        .Range("A2:C2").Value2 = Split("row1,c,10", ",")
+        .Range("A3:C3").Value2 = Split("row2,d,20", ",")
+        .Range("A4:C4").Value2 = Split("row3,e,30", ",")
+    End With
+End Sub

@@ -119,7 +119,7 @@ Function NameIsRedundant(ByVal curCell, ByVal rng) As Boolean
     Dim w As Range, v As Range
     
     NameIsRedundant = False
-    Set w = rng.Find(curCell.value, lookat:=xlWhole)
+    Set w = rng.Find(curCell.value, LookAt:=xlWhole)
     If Not w.Address = curCell.Address Then
         NameIsRedundant = True
     Else
@@ -538,9 +538,9 @@ End Function
 ' JDL 5/6/20  Modified 5/2/25 to iterate over rng.Areas (fix bug with non-contiguous)
 '             Minor comment updates 8/13/25
 '
-Function FindInRange(ByVal rng As Range, ByVal val) As Range
+Function FindInRange_prev(ByVal rng As Range, ByVal val) As Range
     Dim area As Range, i As Integer, q As String
-    Set FindInRange = Nothing
+    Set FindInRange_prev = Nothing
 
     ' If val is a string, wrap it in
     If VarType(val) = vbString Then q = """"
@@ -552,9 +552,51 @@ Function FindInRange(ByVal rng As Range, ByVal val) As Range
             & ",0)")
         On Error GoTo 0
         If i > 0 Then
-            Set FindInRange = area.Cells(i)
+            Set FindInRange_prev = area.Cells(i)
             Exit Function
         End If
+    Next area
+End Function
+'-------------------------------------------------------------------------------------
+' Range Find that works with hidden cells and cells in column or row outline
+' https://www.mrexcel.com/board/threads/vba-cannot-find-in-if-cells-are-hidden-even-
+' /x/if-xlformulas-is-used.518661/
+'
+' JDL 5/6/20  Modified 5/2/25 to iterate over rng.Areas (fix bug with non-contiguous)
+'             3/30/26 to fix bug with 2-D rng not working; add qVal options
+'
+Function FindInRange(ByVal rng As Range, ByVal val As Variant) As Range
+    Dim area As Range, col As Range, pos As Variant, expr As String, qVal As String
+
+    Set FindInRange = Nothing
+
+    For Each area In rng.Areas
+        For Each col In area.Columns
+            If VarType(val) = vbString Then
+                qVal = """" & Replace(CStr(val), """", """""") & """"
+            ElseIf IsDate(val) Then
+                qVal = CDbl(val)
+            ElseIf IsError(val) Then
+                qVal = CVErr(val)
+            Else
+                qVal = CStr(val)
+            End If
+
+            expr = "MATCH(" & qVal & "," & col.Address(External:=True) & ",0)"
+
+            On Error Resume Next
+            pos = Application.Evaluate(expr)
+            On Error GoTo 0
+
+            If Not IsError(pos) Then
+                If IsNumeric(pos) Then
+                    If CLng(pos) > 0 Then
+                        Set FindInRange = col.Cells(CLng(pos), 1)
+                        Exit Function
+                    End If
+                End If
+            End If
+        Next col
     Next area
 End Function
 '-------------------------------------------------------------------------------------
@@ -568,7 +610,7 @@ Function FindAll(rngSearch, FindWhat As Variant)
     Dim c As Range, cFirst As Range, iRow As Long, iCol As Long
     
     'Initialize with first found cell
-    Set FindAll = rngSearch.Find(FindWhat, lookat:=xlWhole)
+    Set FindAll = rngSearch.Find(FindWhat, LookAt:=xlWhole)
     If FindAll Is Nothing Then Exit Function
     Set cFirst = FindAll
     Set c = FindAll
@@ -650,7 +692,7 @@ End Function
 Function ReadSetting(wkbk, ByVal sName As String) As Variant
     Dim c As Range
     If Not SheetExists(wkbk, shtSettings) Then Exit Function
-    Set c = wkbk.Sheets(shtSettings).Columns(1).Find(sName, lookat:=xlWhole)
+    Set c = wkbk.Sheets(shtSettings).Columns(1).Find(sName, LookAt:=xlWhole)
     If c Is Nothing Then Exit Function
     ReadSetting = c.Offset(0, 1)
 End Function
@@ -665,7 +707,7 @@ Sub UpdateSetting(wkbk, ByVal sName As String, ByVal val As Variant)
 
     'Find the existing setting row or add a new setting if  not found
     With wkbk.Sheets(shtSettings)
-        Set c = .Columns(1).Find(sName, lookat:=xlWhole)
+        Set c = .Columns(1).Find(sName, LookAt:=xlWhole)
         If c Is Nothing Then Set c = .Cells(.Rows.Count, 1).End(xlUp).Offset(1, 0)
         c = sName
         c.Offset(0, 1) = val
@@ -681,7 +723,7 @@ Function DeleteSetting(wkbk, sName As String) As Variant
     DeleteSetting = False
     If Not SheetExists(wkbk, shtSettings) Then Exit Function
     
-    Set c = wkbk.Sheets(shtSettings).Columns(1).Find(sName, lookat:=xlWhole)
+    Set c = wkbk.Sheets(shtSettings).Columns(1).Find(sName, LookAt:=xlWhole)
     If c Is Nothing Then Exit Function
     c.EntireRow.Delete
     DeleteSetting = True
@@ -695,7 +737,7 @@ Sub AppendSetting(wkbk, sName As String, val As Variant)
 
     'Find the existing setting row or add a new setting if  not found
     With wkbk.Sheets(shtSettings)
-        Set c = .Columns(1).Find(sName, lookat:=xlWhole)
+        Set c = .Columns(1).Find(sName, LookAt:=xlWhole)
         If c Is Nothing Then Set c = .Cells(.Rows.Count, 1).End(xlUp).Offset(1, 0)
         c = sName
         c.Offset(0, 1) = c.Offset(0, 1) & val
@@ -718,12 +760,12 @@ Function rngKeycolRows(tbl, colrng, val) As Range
 
         'Start search for val in first cell of colRng
         Set cellFirst = colrng.Find(val, After:=colrng.Cells(colrng.Cells.Count), _
-            lookat:=xlWhole, SearchDirection:=xlNext)
+            LookAt:=xlWhole, SearchDirection:=xlNext)
         If cellFirst Is Nothing Then Exit Function
         Set rngKeycolRows = cellFirst
 
         'Search previous from first cell of colRng (starts in last cell)
-        Set cellLast = colrng.Find(val, lookat:=xlWhole, SearchDirection:=xlPrevious)
+        Set cellLast = colrng.Find(val, LookAt:=xlWhole, SearchDirection:=xlPrevious)
         If cellLast Is Nothing Then Exit Function
         Set rngKeycolRows = Range(cellFirst, cellLast).EntireRow
         
@@ -750,7 +792,7 @@ Sub StepSortBy(sSortBy, rngheaders, rngData)
     With rngheaders.Parent.Sort.SortFields
         .Clear
         For i = LBound(sArySortBy) To UBound(sArySortBy)
-            Set w = rngheaders.Find(sArySortBy(i), lookat:=xlWhole)
+            Set w = rngheaders.Find(sArySortBy(i), LookAt:=xlWhole)
 
             'Exit if specified sort field not found in the table
             If w Is Nothing Then Exit Sub
@@ -1311,8 +1353,8 @@ Public Function PickFile(Optional ByVal prompt As String = "Choose a file?", _
             .AllowMultiSelect = False
     
             ' Optional: show all files
-            .Filters.Clear
-            .Filters.Add "All Files", "*.*"
+            .filters.Clear
+            .filters.Add "All Files", "*.*"
     
             ' Seed the starting folder (trailing slash ok/not required)
             If Len(initialFolder) > 0 Then
@@ -1626,5 +1668,7 @@ Sub ActiveCellColor()
     Debug.Print "RGB: " & r & ", " & g & ", " & b
     Debug.Print "Color value: " & lngColor
 End Sub
+
+
 
 

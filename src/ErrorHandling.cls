@@ -392,6 +392,3 @@ Sub WriteErrorsToFile(wkbk, IsVal)
     Call WriteFile(sPathFile, sErrs)
     DeleteSetting wkbk, sSettingErrs
 End Sub
-
-
-

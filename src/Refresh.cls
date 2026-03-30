@@ -222,7 +222,7 @@ Function SetInsertFormatsAndVals(tblT, tblSteps, rngRecipeActions) As Boolean
         
         'For col_Insert columns, either format live calculation or copy/paste values
         If Step.sType = sAInsert Then
-            Set colInsert = tblT.rngHeader.Find(Step.sColName, lookat:=xlWhole)
+            Set colInsert = tblT.rngHeader.Find(Step.sColName, LookAt:=xlWhole)
             
             'Conditional in case colInsert was deleted by previous step (1/10/25)
             If Not colInsert Is Nothing Then
@@ -398,14 +398,14 @@ Public Function FormatStepsShtColumns(refr) As Boolean
     Dim r As Range
 
     With refr.wkbk.Sheets(refr.shtS).Rows(1)
-        Set r = .Find("Number Format", lookat:=xlWhole)
+        Set r = .Find("Number Format", LookAt:=xlWhole)
         r.EntireColumn.NumberFormat = "@"
         
-        Set r = .Find("Formula/List Name/Sort-by", lookat:=xlWhole)
+        Set r = .Find("Formula/List Name/Sort-by", LookAt:=xlWhole)
         r.EntireColumn.NumberFormat = "@"
         r.EntireColumn.WrapText = True
         
-        Set r = .Find("Comment", lookat:=xlWhole)
+        Set r = .Find("Comment", LookAt:=xlWhole)
         r.EntireColumn.WrapText = True
     End With
     Exit Function
@@ -452,7 +452,7 @@ Public Function AddStepsShtDropdowns(tblSteps) As Boolean
     Dim r As Range
     
     With tblSteps
-        Set r = .rngHeader.Find("Step", lookat:=xlWhole)
+        Set r = .rngHeader.Find("Step", LookAt:=xlWhole)
         AddValidationList Intersect(.rngRows, r.EntireColumn), sStepList
         r.EntireColumn.ClearComments
     End With
@@ -472,7 +472,7 @@ Public Function StepsShtMiscFormat(tblSteps) As Boolean
     With tblSteps
     
         'Ensure formula cells display formulas as text - not calculated values
-        Set rngCol = .rngHeader.Find("Formula/List Name/Sort-by", lookat:=xlWhole)
+        Set rngCol = .rngHeader.Find("Formula/List Name/Sort-by", LookAt:=xlWhole)
         Set rngCol = rngCol.EntireColumn
         For Each c In Intersect(.rngRows, rngCol)
             c.Cells(4).value = c.Cells(4).Formula

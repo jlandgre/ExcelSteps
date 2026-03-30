@@ -62,7 +62,7 @@ Public Function ResolveCodesFromLocn(meta, errsObj) As Boolean
     Exit Function
   End If
 
-  valCode = Intersect(rngBase, meta.tblErrs.colrngCode).Value
+  valCode = Intersect(rngBase, meta.tblErrs.colrngCode).value
   If Not IsNumeric(valCode) Then GoTo ErrorExit
 
   errsObj.iCodeBase = CLng(valCode)
@@ -95,11 +95,11 @@ Public Function LoadFromLookup(meta, errsObj) As Boolean
     Exit Function
   End If
 
-  meta.Code = CLng(Intersect(rngCode, meta.tblErrs.colrngCode).Value)
-  meta.Routine = CStr(Intersect(rngCode, meta.tblErrs.colrngRoutine).Value)
-  meta.Message = CStr(Intersect(rngCode, meta.tblErrs.colrngMsg).Value)
+  meta.Code = CLng(Intersect(rngCode, meta.tblErrs.colrngCode).value)
+  meta.Routine = CStr(Intersect(rngCode, meta.tblErrs.colrngRoutine).value)
+  meta.Message = CStr(Intersect(rngCode, meta.tblErrs.colrngMsg).value)
 
-  valUser = Intersect(rngCode, meta.tblErrs.colrngUserFace).Value
+  valUser = Intersect(rngCode, meta.tblErrs.colrngUserFace).value
   If VarType(valUser) = vbBoolean Then
     meta.IsUserFacing = CBool(valUser)
   Else
@@ -197,3 +197,5 @@ Public Function ToDeveloperMessage(meta, errsObj) As String
   If Len(meta.Routine) > 0 Then ToDeveloperMessage = ToDeveloperMessage & meta.Routine & vbCrLf
   If Len(sBody) > 0 Then ToDeveloperMessage = ToDeveloperMessage & sBody & errsObj.ErrParam & vbCrLf
 End Function
+
+

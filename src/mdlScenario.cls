@@ -540,7 +540,7 @@ Sub SetRngFormulaRows(ByRef mdl)
             'If Lite, search mdl's rows in ExcelSteps and populate dictionaries
             Else
             
-                Set r = .rngStepsVars.Find(w.value, lookat:=xlWhole)
+                Set r = .rngStepsVars.Find(w.value, LookAt:=xlWhole)
                 If Not r Is Nothing Then
                     'Check for formula
                     Set r_formula = Intersect(r.EntireRow, .tblSteps.colrngStrInput)

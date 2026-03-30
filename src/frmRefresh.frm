@@ -112,7 +112,7 @@ Private Sub CmdButOK_Click()
                     .IsTbl = False
                     .IsMdl = False
                     
-                    .sht = SheetLbls(i).Caption
+                    .sht = SheetLbls(i).caption
                     If Len(.sht) > 0 Then
                         If RefreshBxes(i) Then
                             .IsTbl = True
@@ -166,7 +166,7 @@ Public Function SetRefreshAttributes(refr, i, SheetLbls, AppendShtNmBxes, SMBxes
         .IsTbl = False
         .IsMdl = False
         
-        .sht = SheetLbls(i).Caption
+        .sht = SheetLbls(i).caption
         If Len(.sht) > 0 Then
             If RefreshBxes(i) Then
                 .IsTbl = True
@@ -198,7 +198,7 @@ Private Sub EnableDialogItems(i, ShtLbls, RefBxes, ReplBxes, SMBxes, sCaption, b
     RefBxes(i).Enabled = bEnable
     ReplBxes(i).Enabled = bEnable
     SMBxes(i).Enabled = bEnable
-    ShtLbls(i).Caption = sCaption
+    ShtLbls(i).caption = sCaption
 End Sub
 '
 ' Sub Sub PopulateArrays - Populate arrays of dialog items
@@ -232,8 +232,8 @@ Function WriteSettings(refr) As Boolean
     
     'Loop through worksheet labels and update their status to Settings
     For i = 0 To UBound(SheetLbls)
-        If Len(SheetLbls(i).Caption > 0) Then
-            UpdateSetting refr.wkbk, setting_shtFrm, SheetLbls(i).Caption, RefreshBxes(i).value, _
+        If Len(SheetLbls(i).caption > 0) Then
+            UpdateSetting refr.wkbk, setting_shtFrm, SheetLbls(i).caption, RefreshBxes(i).value, _
                 ReplaceBxes(i).value, SMBxes(i).value, IsCalcBxes(i).value, AppendShtNmBxes(i).value
         End If
     Next i
@@ -252,7 +252,7 @@ Sub UpdateSetting(wkbk, sType, txtVal, bool1, bool2, bool3, bool4, bool5)
         If sType = setting_shtFrm Then
             
             'Find the existing setting row or add a new setting if it is not found
-            Set curCell = .Columns(2).Find(txtVal, lookat:=xlWhole)
+            Set curCell = .Columns(2).Find(txtVal, LookAt:=xlWhole)
             If curCell Is Nothing Then
                 Set curCell = .Cells(.Rows.Count, 1).End(xlUp).Offset(1, 0)
             Else
@@ -272,7 +272,7 @@ Sub UpdateSetting(wkbk, sType, txtVal, bool1, bool2, bool3, bool4, bool5)
         ElseIf sType = setting_cBoxFrm1 Then
         
             'Find the existing setting row or add a new setting if it is not found
-            Set curCell = .Columns(1).Find(setting_cBoxFrm1, lookat:=xlWhole)
+            Set curCell = .Columns(1).Find(setting_cBoxFrm1, LookAt:=xlWhole)
             If curCell Is Nothing Then Set curCell = .Cells(.Rows.Count, 1).End(xlUp).Offset(1, 0)
             
             'Update the setting's values
