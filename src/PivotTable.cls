@@ -7,7 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'Version 3/27/26
+'Version 3/30/26
 Option Explicit
 
 Public tblSrc As Object
@@ -26,7 +26,7 @@ Public rowFields As String
 Public colFields As String
 '--------------------------------------------------------------------------------------
 ' Build a pivot table from rows/columns source data and convert to values output
-' JDL 3/27/26
+' JDL 3/27/26; Modified 3/30/26
 '
 Public Function MakePivotTableProcedure(pvt, tblSrc, rowFields, colFields, shtDest, _
         analytes, Optional filters = vbNullString, _
@@ -42,8 +42,8 @@ Public Function MakePivotTableProcedure(pvt, tblSrc, rowFields, colFields, shtDe
     If Not ConfigurePivotFields(pvt, analytes, filters) Then GoTo ErrorExit
     If Not ApplySortOrder(pvt, sortOrder) Then GoTo ErrorExit
     If Not FormatPivotTable(pvt) Then GoTo ErrorExit
-    ' If Not ConvertPivotToValues(pvt) Then GoTo ErrorExit
-    ' If Not SetOutputRanges(pvt) Then GoTo ErrorExit
+    If Not ConvertPivotToValues(pvt) Then GoTo ErrorExit
+    If Not SetOutputRanges(pvt) Then GoTo ErrorExit
     Exit Function
 
 ErrorExit:
@@ -51,7 +51,7 @@ ErrorExit:
 End Function
 '--------------------------------------------------------------------------------------
 ' Initialize attributes used by MakePivotTableProcedure
-' JDL 3/27/26
+' JDL 3/27/26; Modified 3/30/26
 '
 Public Function InitPivotTable(pvt, tblSrc, shtDest, _
     Optional dictSubT As Object = Nothing, _
@@ -90,7 +90,7 @@ End Function
 
 '--------------------------------------------------------------------------------------
 ' Create destination workbook and pivot cache/table
-' JDL 3/27/26
+' JDL 3/27/26; Modified 3/30/26
 '
 Public Function CreatePivotCacheAndTable(pvt) As Boolean
     SetErrs CreatePivotCacheAndTable: If errs.IsHandle Then On Error GoTo ErrorExit
@@ -107,7 +107,7 @@ Public Function CreatePivotCacheAndTable(pvt) As Boolean
             Set .wkbkDest = .tblSrc.wkbk
 
             ' Delete existing destination sheet if present to avoid error
-            if SheetExists(.wkbkDest, .shtDest) Then DeleteSheet .wkbkDest, .shtDest
+            If SheetExists(.wkbkDest, .shtDest) Then DeleteSheet .wkbkDest, .shtDest
 
             With pvt.wkbkDest
                 Set pvt.wkshtDest = .Worksheets.Add(After:=pvt.tblSrc.wksht)
@@ -128,7 +128,6 @@ Public Function CreatePivotCacheAndTable(pvt) As Boolean
 ErrorExit:
     errs.RecordErr "CreatePivotCacheAndTable", CreatePivotCacheAndTable
 End Function
-
 
 '--------------------------------------------------------------------------------------
 ' Validate row/column field specs and normalize into class CSV attributes
@@ -186,7 +185,7 @@ Public Function ValidateAnalytes(pvt, analytes) As Boolean
     Next analyteDef
 
     If Not ValidateFieldNamesExist(pvt.tblSrc, analyteFieldsCsv) Then
-        errs.iCodeLocal = 6
+        errs.iCodeLocal = 7
         GoTo ErrorExit
     End If
     Exit Function
@@ -253,7 +252,7 @@ Private Function ValidateFieldNamesExist(tblSrc, ByVal fieldSpecsCsv As String) 
     If errs.IsFail(tblSrc.rngHeader Is Nothing, 1) Then GoTo ErrorExit
 
     For Each headerCell In tblSrc.rngHeader.Cells
-        fieldName = Trim(CStr(headerCell.Value))
+        fieldName = Trim(CStr(headerCell.value))
         If Len(fieldName) > 0 Then
             If Not dictHeaders.Exists(LCase(fieldName)) Then _
                 dictHeaders.Add LCase(fieldName), True
@@ -307,7 +306,7 @@ End Function
 
 '--------------------------------------------------------------------------------------
 ' Configure row, column, page and data fields
-' JDL 3/27/26
+' JDL 3/27/26; Modified 3/30/26
 '
 Public Function ConfigurePivotFields(pvt, analytes, filters) As Boolean
     SetErrs ConfigurePivotFields: If errs.IsHandle Then On Error GoTo ErrorExit
@@ -356,7 +355,7 @@ End Function
 
 '--------------------------------------------------------------------------------------
 ' Toggle pivot field subtotals by field-name override from pvt.dictSubT
-' JDL 3/27/26
+' JDL 3/27/26; Modified 3/30/26
 '
 Private Function SetFieldSubtotals(pvt, ByVal fieldName As String) As Boolean
     SetErrs SetFieldSubtotals: If errs.IsHandle Then On Error GoTo ErrorExit
@@ -382,7 +381,7 @@ End Function
 
 '--------------------------------------------------------------------------------------
 ' Add optional page filter fields; entry may be "FieldName" or Array(FieldName, Value)
-' JDL 3/27/26
+' JDL 3/27/26; Modified 3/30/26
 '
 Private Function AddFilterFields(pvt, filters) As Boolean
     SetErrs AddFilterFields: If errs.IsHandle Then On Error GoTo ErrorExit
@@ -549,7 +548,7 @@ End Function
 
 '--------------------------------------------------------------------------------------
 ' Resolve optional formatting parameter overrides from dictionary input
-' JDL 3/27/26
+' JDL 3/27/26; Modified 3/30/26
 '
 Private Function ResolveFormatParams(dictParams As Object, rowAxisLayout As XlLayoutRowType, _
     repeatLabels As Long, isRowGrand As Boolean, isColGrand As Boolean, _
@@ -619,5 +618,7 @@ Public Function SetOutputRanges(pvt) As Boolean
 ErrorExit:
     errs.RecordErr "SetOutputRanges", SetOutputRanges
 End Function
+
+
 
 

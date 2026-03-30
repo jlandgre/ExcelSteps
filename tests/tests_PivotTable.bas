@@ -1,7 +1,7 @@
 Attribute VB_Name = "tests_PivotTable"
 Option Explicit
-Const shtPivotSrc As String = "PivotSrc"
-'Version 3/27/26
+Const shtPivotSrc As String = "SMdl"
+'Version 3/30/26
 '--------------------------------------------------------------------------------------
 ' PivotTable Class Testing
 Sub TestDriver_PivotTable()
@@ -20,17 +20,17 @@ Sub TestDriver_PivotTable()
     With procs.PivotTable
         If .Enabled Or AllEnabled Then
             procs.curProcedure = .Name
-            ' test_InitPivotTable procs
-            ' test_CreatePivotCacheAndTable procs
-            ' test_ValidateFieldSpecs procs
-            ' test_ValidateAnalytes procs
-            ' test_ConfigurePivotFields procs
-            ' test_ApplySortOrder procs
-            ' test_FormatPivotTable procs
-            ' test_ConvertPivotToValues procs
-            ' test_SetOutputRanges procs
-            ' test_MakePivotTableProcedure1 procs
-            ' test_MakePivotTableProcedure2 procs
+            test_InitPivotTable procs
+            test_CreatePivotCacheAndTable procs
+            test_ValidateFieldSpecs procs
+            test_ValidateAnalytes procs
+            test_ConfigurePivotFields procs
+            test_ApplySortOrder procs
+            test_FormatPivotTable procs
+            test_ConvertPivotToValues procs
+            test_SetOutputRanges procs
+            test_MakePivotTableProcedure1 procs
+            test_MakePivotTableProcedure2 procs
             test_MakePivotTableProcedure3 procs
         End If
     End With
@@ -218,28 +218,28 @@ Sub test_ValidateAnalytes(procs)
         analytes = Array(Array("Amount"))
         .Assert tst, Not pvt.ValidateAnalytes(pvt, analytes)
         .Assert tst, ExcelSteps.errs.Locn = "ValidateAnalytes"
-        .Assert tst, ExcelSteps.errs.iCodeLocal = 3
+        .Assert tst, ExcelSteps.errs.iCodeLocal = 4
 
         'Invalid analyte field name blank
         Set ExcelSteps.errs = Nothing
         analytes = Array(Array(vbNullString, xlSum))
         .Assert tst, Not pvt.ValidateAnalytes(pvt, analytes)
         .Assert tst, ExcelSteps.errs.Locn = "ValidateAnalytes"
-        .Assert tst, ExcelSteps.errs.iCodeLocal = 4
+        .Assert tst, ExcelSteps.errs.iCodeLocal = 5
 
         'Invalid analyte xFunc type
         Set ExcelSteps.errs = Nothing
         analytes = Array(Array("Amount", "badfunc"))
         .Assert tst, Not pvt.ValidateAnalytes(pvt, analytes)
         .Assert tst, ExcelSteps.errs.Locn = "ValidateAnalytes"
-        .Assert tst, ExcelSteps.errs.iCodeLocal = 5
+        .Assert tst, ExcelSteps.errs.iCodeLocal = 6
 
         'Invalid analyte field missing in source headers
         Set ExcelSteps.errs = Nothing
         analytes = Array(Array("MissingField", xlSum))
         .Assert tst, Not pvt.ValidateAnalytes(pvt, analytes)
         .Assert tst, ExcelSteps.errs.Locn = "ValidateAnalytes"
-        .Assert tst, ExcelSteps.errs.iCodeLocal = 6
+        .Assert tst, ExcelSteps.errs.iCodeLocal = 7
 
         DeletePivotSht pvt
         .Update tst, procs
@@ -631,5 +631,7 @@ Private Sub DeletePivotSht(pvt)
     pvt.wkbkDest.Sheets(pvt.shtDest).Delete
     Application.DisplayAlerts = True
 End Sub
+
+
 
 
