@@ -7,7 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'Version 3/30/26
+'Version 3/31/26
 Option Explicit
 
 Public tblSrc As Object
@@ -24,6 +24,7 @@ Public dictSubT As Object
 Public dictParams As Object
 Public rowFields As String
 Public colFields As String
+Public isReplaceWithVals As Boolean
 '--------------------------------------------------------------------------------------
 ' Build a pivot table from rows/columns source data and convert to values output
 ' JDL 3/27/26; Modified 3/30/26
@@ -42,7 +43,9 @@ Public Function MakePivotTableProcedure(pvt, tblSrc, rowFields, colFields, shtDe
     If Not ConfigurePivotFields(pvt, analytes, filters) Then GoTo ErrorExit
     If Not ApplySortOrder(pvt, sortOrder) Then GoTo ErrorExit
     If Not FormatPivotTable(pvt) Then GoTo ErrorExit
-    If Not ConvertPivotToValues(pvt) Then GoTo ErrorExit
+    If pvt.isReplaceWithVals Then
+        If Not ConvertPivotToValues(pvt) Then GoTo ErrorExit
+    End If
     If Not SetOutputRanges(pvt) Then GoTo ErrorExit
     Exit Function
 
@@ -51,7 +54,7 @@ ErrorExit:
 End Function
 '--------------------------------------------------------------------------------------
 ' Initialize attributes used by MakePivotTableProcedure
-' JDL 3/27/26; Modified 3/30/26
+' JDL 3/27/26; Modified 3/31/26
 '
 Public Function InitPivotTable(pvt, tblSrc, shtDest, _
     Optional dictSubT As Object = Nothing, _
@@ -81,6 +84,12 @@ Public Function InitPivotTable(pvt, tblSrc, shtDest, _
         ' For same-workbook output, destination sheet must differ from source sheet.
         If Not .IsDestNewWorkbook Then _
             If errs.IsFail(LCase(.tblSrc.sht) = LCase(.shtDest), 3) Then GoTo ErrorExit
+            
+        ' Set attribute for whether to paste over pivot table with values
+        .isReplaceWithVals = True
+        If dictParams.Exists("isReplaceWithVals") Then _
+            .isReplaceWithVals = CBool(.dictParams.Item("isReplaceWithVals"))
+
     End With
     Exit Function
 
@@ -427,12 +436,25 @@ End Function
 Private Function AddAnalytes(pvt, analytes) As Boolean
     SetErrs AddAnalytes: If errs.IsHandle Then On Error GoTo ErrorExit
     Dim fieldName As String, caption As String
-    Dim xFunc As XlConsolidationFunction, analyteDef As Variant
+    Dim xFunc As XlConsolidationFunction, analyteDef As Variant, prefix As String
 
     For Each analyteDef In analytes
         fieldName = CStr(analyteDef(0))
         xFunc = CLng(analyteDef(1))
-        caption = fieldName & "_"
+        
+        'Set caption
+        Select Case xFunc
+            Case xlSum
+                prefix = "Sum of "
+            Case xlCount
+                prefix = "Count of "
+            Case Else
+                prefix = ""
+        End Select
+        caption = prefix & fieldName
+        
+        'Ensure caption differs from fieldName if not sum or count
+        If (Not xFunc = xlSum) And (Not xFunc = xlCount) Then caption = caption & "_"
 
         On Error Resume Next
         With pvt.pvtTable

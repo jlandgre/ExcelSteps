@@ -536,38 +536,11 @@ End Function
 ' /x/if-xlformulas-is-used.518661/
 '
 ' JDL 5/6/20  Modified 5/2/25 to iterate over rng.Areas (fix bug with non-contiguous)
-'             Minor comment updates 8/13/25
-'
-Function FindInRange_prev(ByVal rng As Range, ByVal val) As Range
-    Dim area As Range, i As Integer, q As String
-    Set FindInRange_prev = Nothing
-
-    ' If val is a string, wrap it in
-    If VarType(val) = vbString Then q = """"
-
-    ' Iterate over contiguous areas for reliability of Evaluate with MATCH
-    For Each area In rng.Areas
-        On Error Resume Next
-        i = Evaluate("MATCH(" & q & val & q & "," & area.Address(External:=True) _
-            & ",0)")
-        On Error GoTo 0
-        If i > 0 Then
-            Set FindInRange_prev = area.Cells(i)
-            Exit Function
-        End If
-    Next area
-End Function
-'-------------------------------------------------------------------------------------
-' Range Find that works with hidden cells and cells in column or row outline
-' https://www.mrexcel.com/board/threads/vba-cannot-find-in-if-cells-are-hidden-even-
-' /x/if-xlformulas-is-used.518661/
-'
-' JDL 5/6/20  Modified 5/2/25 to iterate over rng.Areas (fix bug with non-contiguous)
 '             3/30/26 to fix bug with 2-D rng not working; add qVal options
+'             3/30/26 add validation tests (tests_Utilities module)
 '
 Function FindInRange(ByVal rng As Range, ByVal val As Variant) As Range
     Dim area As Range, col As Range, pos As Variant, expr As String, qVal As String
-
     Set FindInRange = Nothing
 
     For Each area In rng.Areas
@@ -784,15 +757,15 @@ End Function
 '
 ' Modified JDL 7/8/21
 '
-Sub StepSortBy(sSortBy, rngheaders, rngData)
+Sub StepSortBy(sSortBy, rngHeaders, rngData)
     Dim sArySortBy() As String, i As Integer, w As Range
 
     sArySortBy = Split(sSortBy, ",")
 
-    With rngheaders.Parent.Sort.SortFields
+    With rngHeaders.Parent.Sort.SortFields
         .Clear
         For i = LBound(sArySortBy) To UBound(sArySortBy)
-            Set w = rngheaders.Find(sArySortBy(i), LookAt:=xlWhole)
+            Set w = rngHeaders.Find(sArySortBy(i), LookAt:=xlWhole)
 
             'Exit if specified sort field not found in the table
             If w Is Nothing Then Exit Sub
@@ -801,8 +774,8 @@ Sub StepSortBy(sSortBy, rngheaders, rngData)
                 DataOption:=xlSortTextAsNumbers
         Next i
     End With
-    With rngheaders.Parent.Sort
-        .SetRange Intersect(rngheaders.EntireColumn, rngData)
+    With rngHeaders.Parent.Sort
+        .SetRange Intersect(rngHeaders.EntireColumn, rngData)
         .Header = xlNo
         .MatchCase = False
         .Orientation = xlTopToBottom
@@ -1668,6 +1641,8 @@ Sub ActiveCellColor()
     Debug.Print "RGB: " & r & ", " & g & ", " & b
     Debug.Print "Color value: " & lngColor
 End Sub
+
+
 
 
 
