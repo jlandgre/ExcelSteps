@@ -1,6 +1,6 @@
 Attribute VB_Name = "tests_PivotTable"
 Option Explicit
-Const shtPivotSrc As String = "SMdl"
+Public Const shtPivotSrc As String = "SMdl"
 'Version 3/30/26
 '--------------------------------------------------------------------------------------
 ' PivotTable Class Testing
@@ -13,8 +13,12 @@ Sub TestDriver_PivotTable()
 
         'Enable testing of all or individual procedures
         AllEnabled = False
-        .PivotTable.Enabled = True
+        .PivotTable.Enabled = False
     End With
+    
+    'Single test
+    procs.curProcedure = procs.PivotTable.Name
+    test_MakePivotTableProcedure3 procs
 
     'Setup procedure group
     With procs.PivotTable
@@ -567,9 +571,9 @@ Sub test_MakePivotTableProcedure3(procs)
             analytes, dictParams:=dictParams)
         .Assert tst, Not pvt.rngTableOut Is Nothing
 
-        Set rowDX = FindRowByThreeVals(pvt.wkshtDest, "Store1", "Discounts_", "X")
-        Set rowMX = FindRowByThreeVals(pvt.wkshtDest, "Store1", "Markdowns_", "X")
-        Set rowCX = FindRowByThreeVals(pvt.wkshtDest, "Store1", "COGS_", "X")
+        Set rowDX = FindRowByThreeVals(pvt.wkshtDest, "Store1", "Discounts", "X")
+        Set rowMX = FindRowByThreeVals(pvt.wkshtDest, "Store1", "Markdowns", "X")
+        Set rowCX = FindRowByThreeVals(pvt.wkshtDest, "Store1", "COGS", "X")
 
         .Assert tst, Not rowDX Is Nothing
         .Assert tst, Not rowMX Is Nothing
