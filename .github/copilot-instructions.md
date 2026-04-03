@@ -92,16 +92,24 @@ End Function
 - Hyphens line indicates maximum code width
 
 **VBA Quirks reminders:**
-When setting a class attribute by calling a function that sets the attribute with a ByRef argument, you must use a local variable as the argument and then set the attribute equal to the local variable. You cannot pass the attribute directly as the argument
+A class attribute cannot be passed directly as a ByRef argument — VBA silently ignores the assignment. The preferred pattern is to set the class attribute first, then create a minimal local alias pointing to the same object solely for the ByRef call. Do NOT create a proxy local, do the work on the proxy, then assign to the attribute at the end.
 
 ```vb
-' Incorrect - does not work to set obj.attr directly
+' Incorrect - attribute cannot be passed directly as ByRef
 If Not SomeFunctionSetsAttr(obj.attr) Then GoTo ErrorExit
-' Correct - use local variable
+
+' Avoid - proxy local created first, attribute assigned last
 Dim tempAttr As Object
 If Not SomeFunctionSetsAttr(tempAttr) Then GoTo ErrorExit
-Set obj.attr = tempAttr
+Set obj.attr = tempAttr  ' redundant late assignment obscures intent
+
+' Preferred - set attribute directly; alias only for ByRef call constraint
+Set obj.attr = ExcelSteps.New_tbl
+Dim tblAlias As Object: Set tblAlias = obj.attr
+If Not tblAlias.Provision(tblAlias, wkbk, False) Then GoTo ErrorExit
 ```
+
+See `Preferred Coding Patterns.md` (VBA_Development Obsidian vault) for the full set of preferred patterns including this one (point 10).
 
 ## VBA Class Usage Patterns
 We use direct public attributes not Property Get/Let. Do not use Property Get/Let in code

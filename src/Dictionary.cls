@@ -128,6 +128,29 @@ Public Function GetKeys() As String()
     GetKeys = result
 End Function
 '-----------------------------------------------------------------------------------------------
+' Get all values as array
+' JDL 04/03/26
+'
+Public Function GetValues() As Variant()
+    Dim result() As Variant
+    Dim i As Long
+
+    If itemCount = 0 Then
+        GetValues = result
+        Exit Function
+    End If
+
+    ReDim result(0 To itemCount - 1)
+    For i = 0 To itemCount - 1
+        If IsObject(values(i)) Then
+            Set result(i) = values(i)
+        Else
+            result(i) = values(i)
+        End If
+    Next i
+    GetValues = result
+End Function
+'-----------------------------------------------------------------------------------------------
 ' Clear all items
 ' JDL 8/6/25
 '
