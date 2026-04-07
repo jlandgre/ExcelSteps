@@ -7,7 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'Version 3/31/26
+'Version 4/7/26
 Option Explicit
 
 Public tblSrc As Object
@@ -54,7 +54,7 @@ ErrorExit:
 End Function
 '--------------------------------------------------------------------------------------
 ' Initialize attributes used by MakePivotTableProcedure
-' JDL 3/27/26; Modified 3/31/26
+' JDL 3/27/26; Modified 4/7/26 bug fix
 '
 Public Function InitPivotTable(pvt, tblSrc, shtDest, _
     Optional dictSubT As Object = Nothing, _
@@ -87,7 +87,7 @@ Public Function InitPivotTable(pvt, tblSrc, shtDest, _
             
         ' Set attribute for whether to paste over pivot table with values
         .isReplaceWithVals = True
-        If dictParams.Exists("isReplaceWithVals") Then _
+        If .dictParams.Exists("isReplaceWithVals") Then _
             .isReplaceWithVals = CBool(.dictParams.Item("isReplaceWithVals"))
 
     End With
