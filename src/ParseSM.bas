@@ -1,10 +1,11 @@
 Attribute VB_Name = "ParseSM"
-'Version 1/29/26
+'Version 4/10/26
 Option Explicit
 '------------------------------------------------------------------------------------------------------
 'Create a rows/columns version of a scenario model
 '
 'Created: 9/23/21 JDL; Rewritten for updated architecture 11/19/25
+' Fix bug setting rowVarNames 4/10/26
 '
 Function ParseMdl(mdl) As Boolean
     SetErrs ParseMdl: If errs.IsHandle Then On Error GoTo ErrorExit
@@ -22,7 +23,7 @@ Function ParseMdl(mdl) As Boolean
     Set wkshtParsed = mdl.wkbkParsed.Sheets(mdl.mdlName)
     
     'Set ranges and delete initial, unneeded rows and unused columns
-    Set rowVarNames = wkshtParsed.Rows(3).EntireRow
+    Set rowVarNames = wkshtParsed.Rows(4).EntireRow
     Set rowDelFlags = wkshtParsed.Rows(8).EntireRow
     If Not ParsedDataCleanup(mdl, rowVarNames, icolEnd) Then GoTo ErrorExit
     

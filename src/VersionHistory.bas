@@ -80,3 +80,5 @@ Attribute VB_Name = "VersionHistory"
 '1/29/26 Cosmetic changes for consistency with use of xlwings vba edit; clean up module names
 '3/10/26 Add Dictionary.ParseStringToDictProcedure; update Errors_ table
 '3/31/26 Add validated PivotTable class (.MakePivotTableProcedure)
+'4/10/26 Fix bug with ParseMdl function
+

@@ -1,6 +1,6 @@
 Attribute VB_Name = "tests_ParseModel"
 Option Explicit
-'Version 1/28/26; all pass
+'Version 4/10/26; all pass
 Const Row1WithDesc As String = "Scenario Description,Scenario,side_a,side_b,side_c"
 Const Row2WithDesc As String = "T1,Triangle1,3,4,5"
 Const Row3WithDesc As String = "T2,Triangle2,6,8,10"
@@ -16,11 +16,11 @@ Sub TestDriver_ParseModel()
     Dim procs As New Procedures, AllEnabled As Boolean
     
     With procs
-        .Init procs, ThisWorkbook, "ParseModel", "Tests_ParseModel"
+        .Init procs, ThisWorkbook, "tests_ParseModel", "tests_ParseModel"
         SetApplEnvir False, False, xlCalculationManual
         
         'Enable testing of all or individual procedures
-        AllEnabled = False
+        AllEnabled = True
         .ParseModel.Enabled = True
     End With
     
@@ -41,7 +41,7 @@ Sub TestDriver_ParseModel()
 End Sub
 '-----------------------------------------------------------------------------------------------
 'Multi-column default model
-' JDL 11/17/25
+' JDL 11/17/25; updated 4/10/26
 '
 Sub test_ParseDefaultModel(procs)
     Dim tst As New Test: tst.Init tst, "test_ParseDefaultModel"
@@ -50,9 +50,15 @@ Sub test_ParseDefaultModel(procs)
     
     With tst
     
-        'Create default, multicolumn model
+        'Create default, multicolumn model (blank out one Description)
         PopulateSMdl2 .wkbkTest.Sheets(shtMdl)
+        
+        'Blank out one Description and one units cell to confirm use of colrngVarNames
+        .wkbkTest.Sheets(shtMdl).Cells(4, 3).ClearContents
+        .wkbkTest.Sheets(shtMdl).Cells(4, 5).ClearContents
+        
         .Assert tst, mdl.Provision(mdl, .wkbkTest, shtMdl)
+        
         .Assert tst, mdl.Refresh(mdl)
         Application.Calculate
         
