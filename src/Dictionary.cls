@@ -7,7 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'Version 1/29/26
+'Version 4/16/26
 'High-performance cross-platform dictionary class (Claude Sonnet generated to have
 'cross-platform dictionary accessible in client-facing project)
 
@@ -28,7 +28,11 @@ Public Sub Class_Initialize()
 End Sub
 '-----------------------------------------------------------------------------------------------
 ' Add or update key-value pair
-' JDL 8/6/25
+' JDL 8/6/25; Updated 4/16/26 to explicitly set String value types
+' to avoid ambiguity between String and Object variants when retrieving values with Item()
+' function. This is necessary because VBA does not have a distinct String type for Variant
+' variables, and without explicit handling, string values could be misinterpreted as Objects
+' or vice versa when retrieved from the dictionary.
 '
 Public Sub Add(ByVal key As String, ByVal value As Variant)
     Dim index As Long
@@ -39,6 +43,8 @@ Public Sub Add(ByVal key As String, ByVal value As Variant)
         ' Update existing value
         If IsObject(value) Then
             Set values(index) = value
+        ElseIf VarType(value) = vbString Then
+            values(index) = CStr(value)
         Else
             values(index) = value
         End If
@@ -49,6 +55,8 @@ Public Sub Add(ByVal key As String, ByVal value As Variant)
         keys(itemCount) = key
         If IsObject(value) Then
             Set values(itemCount) = value
+        ElseIf VarType(value) = vbString Then
+            values(itemCount) = CStr(value)
         Else
             values(itemCount) = value
         End If
@@ -82,7 +90,7 @@ End Sub
 '
 Public Function Item(ByVal key As String) As Variant
     Dim index As Long
-    
+
     index = FindIndex(key)
     If index >= 0 Then
         If IsObject(values(index)) Then
@@ -407,5 +415,3 @@ Public Function AddParsedValue(ByVal key As String, ByVal valParsed As Variant) 
 ErrorExit:
     errs.RecordErr "AddParsedValue", AddParsedValue
 End Function
-
-
