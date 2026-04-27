@@ -1,10 +1,10 @@
 Attribute VB_Name = "Constants"
-'Version 1/29/26
+'Version 4/27/26
 'This module is part of the ExcelSteps open source project posted at:
 'https://github.com/jlandgre/ExcelSteps/. It is licensed under the MIT open source license
 
 Option Explicit
-Public Const Version As String = "version 1/29/26"
+Public Const Version As String = "version 4/27/26"
 Public Const iMinRows As Integer = 10
 Public Const sRefreshSuffix As String = "_t"
 

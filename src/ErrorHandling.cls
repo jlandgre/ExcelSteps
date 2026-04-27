@@ -7,7 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'Version 3/13/26
+'Version 4/27/26
 'Class for error handling in cascaded function architecture
 'Version 6/7/23 - Add ShowMessage and FlagError
 'Version 7/10/23 - Fix bug with ShowMessage args
@@ -21,6 +21,8 @@ Attribute VB_Exposed = False
 'Version 10/30/25 - update .Init arg LookupCommentMsg
 'Version 11/24/25 - update to .setMsgTitleAndText
 'Version 12/3/25 - updates to .RecordMsg and .ReportWarningMsg
+'Version 3/13/26 - significant refactoring
+'Version 4/27/26 - add accidentally-deleted ShowMessage back
 
 Option Explicit
 
@@ -190,8 +192,6 @@ End Function
 
 '-----------------------------------------------------------------------------------------------------
 ' Configure and report warnings
-'
-'
 ' Created:  6/8/21 JDL      Modified: 6/8/23 Add & errs.ErrParam to sMsg
 '                                    5/22/24 add .Msgs_accum and .IsShowMsgs
 '                                    12/3/25 Fix bug; add .wkbkE arg to .Init call at end
@@ -298,6 +298,54 @@ Function IsFail(IsError, iCode, Optional ErrParam) As Boolean
     IsFail = True
     errs.iCodeLocal = iCode
     If Not IsMissing(ErrParam) Then errs.ErrParam = ErrParam
+End Function
+'-----------------------------------------------------------------------------------------------------
+' Create and return user response from msgbox prompt
+'
+' Created:   7/20/21 JDL; 10/16/25 add optional param argument and ConvertVbCrLfToConcat
+'                          4/27/26 refactor for ErrorsMeta class
+'
+' Inputs:   Locn [String] name of calling routine (for Errors_ lookup)
+'         iCode [Integer] local error code ( iCode + errs.iCodeBase = errs.iCodeReport)
+'         vbType [Integer] VBA MsgBox function buttons argument (e.g. vbCritical + vbOK = 17)
+'
+Function ShowMessage(Locn As String, iCode As Integer, vbType As Integer, Optional param) As Long
+    Dim iMsg As Integer, sMsg As String, sTitle As String, meta As ErrorsMeta
+    
+    'Default message and title
+    sMsg = "Base Error Code Not Found: " & Locn
+    sTitle = "Missing Base Code"
+    
+    'Look up message based on Locn and iCode
+    With errs
+        .Locn = Locn
+        .iCodeLocal = iCode
+        Set meta = New ErrorsMeta
+        If Not meta.Init(meta, errs) Then Exit Function
+        If Not meta.ResolveCodesFromLocn(meta, errs) Then Exit Function
+        If Not meta.LoadFromLookup(meta, errs) Then Exit Function
+        If Not meta.Validate(meta, .Locn) Then Exit Function
+
+        If Not meta.IsCodeNotFound Then
+            sMsg = meta.Message
+        Else
+            sMsg = "Message not found for code " & .iCodeReport & " in routine: " & Locn
+        End If
+        
+        'Set Title and Msg based by splitting
+        .setMsgTitleAndText sMsg, sTitle
+    
+        'Append param if any
+        If Not IsMissing(param) Then sMsg = sMsg & param
+        
+        'Check for line breaks and convert
+        sMsg = ConvertVbCrLfToConcat(sMsg)
+    End With
+ShowExit:
+    ShowMessage = MsgBox(sMsg, vbType, sTitle)
+    Exit Function
+ErrorExit:
+    Exit Function
 End Function
 '-----------------------------------------------------------------------------------------------------
 ' Split a Setting or Error message into Title and Text parts
