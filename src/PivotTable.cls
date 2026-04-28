@@ -54,7 +54,7 @@ ErrorExit:
 End Function
 '--------------------------------------------------------------------------------------
 ' Initialize attributes used by MakePivotTableProcedure
-' JDL 3/27/26; Modified 4/7/26 bug fix
+' JDL 3/27/26; Modified 3/31/26
 '
 Public Function InitPivotTable(pvt, tblSrc, shtDest, _
     Optional dictSubT As Object = Nothing, _
@@ -640,6 +640,8 @@ Public Function SetOutputRanges(pvt) As Boolean
 ErrorExit:
     errs.RecordErr "SetOutputRanges", SetOutputRanges
 End Function
+
+
 
 
 

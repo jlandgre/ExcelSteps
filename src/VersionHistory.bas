@@ -82,4 +82,6 @@ Attribute VB_Name = "VersionHistory"
 '3/31/26 Add validated PivotTable class (.MakePivotTableProcedure)
 '4/10/26 Fix bug with ParseMdl function
 '4/16/26 Fix bug/robustness issue with Dictionary.Add
+'4/27/26 Update ErrorHandling (version 4/28/26 has error handling enabled)
+
 
