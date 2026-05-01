@@ -1,4 +1,9 @@
-﻿# Skill: VS Code Environment Setup for VBA Projects with ExcelSteps
+﻿---
+name: VS Code XLwings Setup
+description: >
+  Set up VS Code terminals for VBA development with xlwings, managing multiple Excel files across folders with real-time code sync.
+---
+# Skill: VS Code Environment Setup for VBA Projects with ExcelSteps
 
 ## Overview
 This describes how to set up a VS Code workspace for developing VBA projects that use the ExcelSteps add-in. The setup involves managing multiple Excel files across different folders, with separate PowerShell terminals for each file to enable real-time code synchronization via xlwings.
