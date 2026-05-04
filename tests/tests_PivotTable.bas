@@ -17,13 +17,13 @@ Sub TestDriver_PivotTable()
     End With
     
     'Single test
-    procs.curProcedure = procs.PivotTable.Name
+    procs.curProcedure = procs.PivotTable.name
     test_MakePivotTableProcedure3 procs
 
     'Setup procedure group
     With procs.PivotTable
         If .Enabled Or AllEnabled Then
-            procs.curProcedure = .Name
+            procs.curProcedure = .name
             test_InitPivotTable procs
             test_CreatePivotCacheAndTable procs
             test_ValidateFieldSpecs procs
@@ -103,7 +103,7 @@ Sub test_CreatePivotCacheAndTable(procs)
             .Assert tst, pvt.pvttable.PivotFields(i).Orientation = 0
         Next i
         
-        .Assert tst, pvt.wkshtDest.Name = "PivotOut"
+        .Assert tst, pvt.wkshtDest.name = "PivotOut"
         DeletePivotSht pvt
         .Update tst, procs
     End With

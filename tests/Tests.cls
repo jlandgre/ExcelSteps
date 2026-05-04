@@ -18,7 +18,7 @@ Public shtT As String
 Public valExpected As Variant
 Public valTest As Variant
 Public Result As Boolean
-Public Name As String
+Public name As String
 '-----------------------------------------------------------------------------------------------
 'Purpose:   Initialize sheet for reporting results (clears previous results)
 'Inputs: wkbk [Workbook] contains tests sheet
@@ -30,7 +30,7 @@ Sub InitTestsSheet(wkbk, shtT)
     Dim c As Range
     
     'Add tests sheet if it does not exist
-    If Not SheetExists(wkbk, shtT) Then AddSheet wkbk, shtT, wkbk.Sheets(wkbk.Sheets.Count).Name
+    If Not SheetExists(wkbk, shtT) Then AddSheet wkbk, shtT, wkbk.Sheets(wkbk.Sheets.Count).name
 
     'Clear the results columns and refresh header strings
     With wkbk.Sheets(shtT)
@@ -60,7 +60,7 @@ Sub Populate(clsT, wkbk, Optional shtT, Optional sName, Optional wkbkTest, Optio
         End If
         If Not IsMissing(sFileTest) Then .sFileTest = sFileTest
         If Not IsMissing(shtT) Then .shtT = shtT
-        If Not IsMissing(sName) Then .Name = sName
+        If Not IsMissing(sName) Then .name = sName
         .valExpected = Expected(clsT)
     End With
 End Sub
@@ -77,10 +77,10 @@ Sub Update(clsT)
         
     'Find the existing test row or add a new if  not found
     With clsT.wkbk.Sheets(shtT)
-        Set c = .Columns(1).Find(clsT.Name, LookAt:=xlWhole)
+        Set c = .Columns(1).Find(clsT.name, LookAt:=xlWhole)
         If c Is Nothing Then
             Set c = .Cells(.Rows.Count, 1).End(xlUp).Offset(1, 0)
-            c.Value = clsT.Name
+            c.Value = clsT.name
         End If
     End With
     
@@ -111,7 +111,7 @@ Function Expected(clsT)
     
     With clsT
         If Not SheetExists(.wkbk, .shtT) Then Exit Function
-        Set c = .wkbk.Sheets(.shtT).Columns(1).Find(.Name, LookAt:=xlWhole)
+        Set c = .wkbk.Sheets(.shtT).Columns(1).Find(.name, LookAt:=xlWhole)
     End With
     
     If c Is Nothing Then Exit Function

@@ -7,7 +7,7 @@ Option Explicit
 Sub PopulatePivotTableSimple(wkbk, sht)
     Dim wksht As Worksheet
 
-    If Not SheetExists(wkbk, sht) Then AddSheet wkbk, sht, wkbk.Sheets(wkbk.Sheets.Count).Name
+    If Not SheetExists(wkbk, sht) Then AddSheet wkbk, sht, wkbk.Sheets(wkbk.Sheets.Count).name
     Set wksht = wkbk.Sheets(sht)
 
     With wksht
@@ -28,7 +28,7 @@ End Sub
 Sub PopulatePivotTableOTBLike(wkbk, sht)
     Dim wksht As Worksheet
 
-    If Not SheetExists(wkbk, sht) Then AddSheet wkbk, sht, wkbk.Sheets(wkbk.Sheets.Count).Name
+    If Not SheetExists(wkbk, sht) Then AddSheet wkbk, sht, wkbk.Sheets(wkbk.Sheets.Count).name
     Set wksht = wkbk.Sheets(sht)
 
     With wksht

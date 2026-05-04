@@ -12,6 +12,11 @@ Attribute VB_Exposed = False
 'Version 5/10/24 Refactor
 'Version of 7/18/23 - add testing utility functions TestAryVals etc.
 'Utility subs/functions used: AddSheet, SheetExists, ColWidthAutoFit, ShadeYellow
+
+
+'Version 4/28/26
+'This class handles testing VBA code
+'Utility subs/functions used: AddSheet, SheetExists, ColWidthAutoFit, ShadeYellow
 Option Explicit
 Public wkbk As Workbook 'Testing workbook
 Public wkbkTest As Workbook 'Workbook with results being tested (may be same as wkbk)
@@ -19,74 +24,69 @@ Public sFileTest As String 'Wkbktest file reference
 Public shtT As String
 Public valExpected As Variant
 Public valTest As Boolean
-Public Name As String
+Public name As String
+Public path_test_data
 '-----------------------------------------------------------------------------------------------
-'Populate test properties
-'Inputs:    test [Tests Class]
-'           sName [String] test name
+'Initialize Test instance
+'Inputs:    tst [Test Class instance]
+'           name [String] test name
 '
-'Created:   5/10/24 JDL to replace .Populate method
+' Updated 11/4/25 use wkbkTest Is Nothing; 12/18/25 set errs = Nothing
+' 4/3/25 fix bug .path_test_data should be relative to .wkbk
+' 5/1/26 clarify setting .wkbkTest
 '
-Sub Init(Test, sName)
-    With Test
+Sub Init(tst, name, Optional wkbkTest As Workbook, Optional subfolder_test_data As String = "test_data")
+    Dim sep As String
+    With tst
         .valTest = True
-        .Name = sName
+        .name = name
+        
+        ' Test suite workbook
+        Set .wkbk = ThisWorkbook
+        
+        ' Default workbook being tested is test suite workbook (or arg if specified)
         Set .wkbkTest = ThisWorkbook
+        If Not wkbkTest Is Nothing Then Set .wkbkTest = wkbkTest
+            
+        'Path to test data (sep is OS-independent)
+        sep = Application.PathSeparator
+        .path_test_data = .path_test_data & subfolder_test_data & sep
+        
+        'Initialize errs
+        Set ExcelSteps.errs = Nothing
     End With
 End Sub
 '-----------------------------------------------------------------------------------------------
-'Purpose:   Populate test properties
-'Inputs:    test [Tests Class]
-'           wkbk [Workbook] contains tests sheet
-'           shtT [String] tests sheet name for reporting test results
-'           sName [String] test name
+' Write individual test result to row in test results
 '
-'Created:   11/10/21 JDL    Modified: 6/7/22
-'                                     7/18/23 default wkbktest to be wkbk if not specified
-'
-Sub Populate(Test, wkbk, Optional shtT, Optional sName, Optional wkbkTest, Optional sFileTest)
-    With Test
-        Set .wkbk = wkbk
-        If Not IsMissing(wkbkTest) Then
-            Set .wkbkTest = wkbkTest
-        Else
-            Set .wkbkTest = .wkbk
-        End If
-        If Not IsMissing(sFileTest) Then .sFileTest = sFileTest
-'        If Not IsMissing(shtT) Then .shtT = shtT
-        If Not IsMissing(sName) Then .Name = sName
-        '.valExpected = Expected(test)
-    End With
-End Sub
-'-----------------------------------------------------------------------------------------------
-' Write individual test result to row in tests sheet
-'
-'Created:   11/10/21 JDL      Modified: 5/27/24
+'Created:   11/10/21 JDL      Modified: 12/3/24
 '
 Sub Update(tst, procs)
     Dim c As Range, rng As Range
         
-    'Find the existing test row or add a new if first time running this test
+    'Find existing test row or add new if first time running this test
     With procs.wksht_results
-        Set c = procs.colrngTestName.Find(tst.Name, LookAt:=xlWhole)
+        Set c = procs.colrngTestName.Find(tst.name, LookAt:=xlWhole)
         If c Is Nothing Then
             Set c = .Cells(.Rows.Count, procs.colrngTestName.Column).End(xlUp).Offset(1, 0)
-            c.Value = tst.Name
+            c.Value = tst.name
             procs.colrngTestName.AutoFit
         End If
     End With
     
-    'Write the current procedure name and test result in the test's results row
+    'Write current procedure name and test result in the test's results row
     With tst
         Intersect(c.EntireRow, procs.colrngProcedure) = procs.curProcedure
         Intersect(c.EntireRow, procs.colrngTestResult) = .valTest
+        
+        'Shade cell if failing result
         If Not .valTest Then ShadeYellow Intersect(c.EntireRow, procs.colrngTestResult)
     End With
 End Sub
 '-----------------------------------------------------------------------------------------------
-'Purpose: Assert that specified Boolean test is True
+' Assert that specified Boolean test is True
 '
-'   JDL 11/17/21; Modified 5/10/24
+' JDL 11/17/21; Modified 5/10/24
 '
 Sub Assert(tst, IsCheck)
     With tst

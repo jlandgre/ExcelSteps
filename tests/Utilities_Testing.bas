@@ -10,7 +10,7 @@ Sub wkbkResetStatus(bRefreshStart, wkbk, xCalculation, shtCurrent, shtRC, ZoomSe
     Application.ScreenUpdating = Not bRefreshStart
     If bRefreshStart Then
         xCalculation = Application.Calculation
-        shtCurrent = wkbk.ActiveSheet.Name
+        shtCurrent = wkbk.ActiveSheet.name
         ZoomSetting = ActiveWindow.Zoom
         If SheetExists(wkbk, shtRC) Then wkbk.Sheets(shtRC).Activate
         Application.Calculation = xlCalculationManual
@@ -116,9 +116,9 @@ Function iCountAndDeleteStraySheets(wkbk) As Integer
     Dim wksht As Variant
     iCountAndDeleteStraySheets = 0
     For Each wksht In wkbk.Sheets
-        If LCase(Left(wksht.Name, 5)) = "sheet" Then
+        If LCase(Left(wksht.name, 5)) = "sheet" Then
             If wksht.UsedRange.Address = "$A$1" And IsEmpty(wksht.Cells(1, 1)) Then
-                DeleteSheet wkbk, wksht.Name
+                DeleteSheet wkbk, wksht.name
                 iCountAndDeleteStraySheets = iCountAndDeleteStraySheets + 1
             End If
         End If
@@ -150,7 +150,7 @@ Function RangeExists(wkbk, sName) As Boolean
 Dim w As Variant
     RangeExists = False
     For Each w In wkbk.Names
-        If UCase(w.Name) = UCase(sName) Then
+        If UCase(w.name) = UCase(sName) Then
             RangeExists = True
             Exit Function
         End If
@@ -270,12 +270,12 @@ Sub ExportCodePlanToExcel()
     If Len(Dir$(pathCSV)) > 0 Then
         If Not ExcelSteps.OpenFile(pathCSV, wkbkCSV) Then GoTo ErrorExit
         wkbkCSV.Sheets(1).Copy Before:=wkbkCodePlan.Sheets(1)
-        wkbkCodePlan.Sheets(1).Name = "plan"
+        wkbkCodePlan.Sheets(1).name = "plan"
         wkbkCSV.Close SaveChanges:=False
     Else
         ' Create blank sheet with headers
         Set wksht = wkbkCodePlan.Sheets(1)
-        wksht.Name = "plan"
+        wksht.name = "plan"
         headers = Split("Module;Use_Case;Procedure;Method;Docstring;Arguments;" & _
                        "Code writing instructions;Testing Considerations", ";")
         Set rngHeaders = wksht.Range("A1").Resize(1, UBound(headers) + 1)
@@ -341,5 +341,40 @@ ErrorExit:
     If Not wkbkCodePlan Is Nothing Then wkbkCodePlan.Close SaveChanges:=False
     MsgBox "Error ExportCodePlanFromExcel"
 End Sub
-
+'-----------------------------------------------------------------------------------------------
+' Get wkbk name from its VBA Project name (for setting Test.wkbkTest)
+' JDL 4/14/25; Updated 5/1/26
+'
+Function GetWorkbookByVBProjectName(VBAProjectName As String) As Workbook
+    Dim wkbk As Variant, s As String, addin As addin, VBProj As Object, aryPath As Variant, fname_addin
+    
+    ' Loop through all open workbooks and check for a match
+    For Each wkbk In Application.Workbooks
+        If wkbk.VBProject.name = VBAProjectName Then
+            Set GetWorkbookByVBProjectName = wkbk
+            Exit Function
+        End If
+    Next wkbk
+    
+    ' Try addins (e.g. ExcelSteps etc.)
+    For Each addin In Application.AddIns
+        If addin.Installed Then
+            For Each VBProj In Application.VBE.VBProjects
+            
+                ' VBA quirk need to set Workbook obj by filename; Addins not in Application.Workbooks
+                If VBProj.name = VBAProjectName Then
+                    aryPath = Split(VBProj.Filename, Application.PathSeparator)
+                    fname_addin = aryPath(UBound(aryPath))
+                    Set GetWorkbookByVBProjectName = Workbooks(fname_addin)
+                    Exit Function
+                End If
+            Next VBProj
+        End If
+    Next addin
+    
+    s = "Error setting wkbk by VBA Project Name: Specified name not found in open workbooks"
+    MsgBox s, Title:="Testing Error"
+    
+    Set GetWorkbookByVBProjectName = Nothing
+End Function
 

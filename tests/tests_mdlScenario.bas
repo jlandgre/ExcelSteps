@@ -32,7 +32,7 @@ Sub TestDriver_mdlScenario()
         
     '*** mdl initialization and utilities***
     If procs.mdlInit.Enabled Or AllEnabled Then
-        procs.curProcedure = procs.mdlInit.Name
+        procs.curProcedure = procs.mdlInit.name
         
         'ExcelSteps initialization unpopulated and populated
         test_PrepExcelSteps1 procs
@@ -56,7 +56,7 @@ Sub TestDriver_mdlScenario()
     
     '***mdlRow Class - Refactor Refresh Class 1/7/22***
     If procs.mdlRow.Enabled Or AllEnabled Then
-        procs.curProcedure = procs.mdlRow.Name
+        procs.curProcedure = procs.mdlRow.name
         test_mdlRowDefaultModel procs
         test_mdlRowDefaultModel2 procs
         test_mdlRowLiteModel procs
@@ -64,7 +64,7 @@ Sub TestDriver_mdlScenario()
     
     '***mdlScenario variations***
     If procs.mdlVariations.Enabled Or AllEnabled Then
-        procs.curProcedure = procs.mdlVariations.Name
+        procs.curProcedure = procs.mdlVariations.name
     
         'Default model - Calculator/Single column
         test_PopulateSMdl1 procs
@@ -97,7 +97,7 @@ Sub TestDriver_mdlScenario()
     
     '***Dropdown list capability***
     If procs.mdlDropdowns.Enabled Or AllEnabled Then
-        procs.curProcedure = procs.mdlDropdowns.Name
+        procs.curProcedure = procs.mdlDropdowns.name
         test_PopulateNamedList procs 'create a named list
         test_AddDropdownSMdl4a procs 'Calculator Model
         test_AddDropdownSMdl2 procs 'Default Model - Multi-column
@@ -106,7 +106,7 @@ Sub TestDriver_mdlScenario()
     
     '*** mdl Refresh speedup (7/15/25)***
     If procs.mdlRefreshSpeed.Enabled Or AllEnabled Then
-        procs.curProcedure = procs.mdlInit.Name
+        procs.curProcedure = procs.mdlInit.name
         'test_WriteRngFormulas procs
         'test_UpdateWriteFormulaRng procs
         'test_LegacyRefresh procs
@@ -488,9 +488,9 @@ Sub test_mdl_Init1(procs)
         'Default model (only sht arg specified)
         Set mdl = ExcelSteps.New_mdl
         .Assert tst, mdl.Init(mdl, .wkbkTest, sht:=shtMdl)
-        .Assert tst, mdl.wkbk.Name = ThisWorkbook.Name
+        .Assert tst, mdl.wkbk.name = ThisWorkbook.name
         .Assert tst, mdl.sht = shtMdl
-        .Assert tst, mdl.wksht.Name = shtMdl
+        .Assert tst, mdl.wksht.name = shtMdl
         .Assert tst, mdl.cellHome.Address = "$A$2"
         .Assert tst, mdl.IsCalc = False
         .Assert tst, mdl.IsSuppHeader = False
@@ -994,7 +994,7 @@ Sub test_ProvisionSMdl3(procs)
         'Check mdl attributes match expected
         With mdl
             aryVals = Array(.sht, _
-                            .wksht.Name, _
+                            .wksht.name, _
                             .rngPopRows.Count, _
                             .cellHome.Address, _
                             .rngPopRows.Address, _

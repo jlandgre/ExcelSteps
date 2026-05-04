@@ -27,7 +27,7 @@ Sub TestDriver_ParseModel()
     'Setup procedure group
     With procs.ParseModel
         If .Enabled Or AllEnabled Then
-            procs.curProcedure = .Name
+            procs.curProcedure = .name
             test_ParseDefaultModel procs
             test_ParseDefaultCalcModel procs
             test_ParseSuppHeaderCalcModel procs

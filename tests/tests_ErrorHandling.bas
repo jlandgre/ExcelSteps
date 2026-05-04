@@ -18,14 +18,14 @@ Sub TestDriver_ErrorHandling()
 
     With procs.ErrorParams
         If .Enabled Or AllEnabled Then
-            procs.curProcedure = .Name
+            procs.curProcedure = .name
             test_SetErrs_Defaults procs
         End If
     End With
 
     With procs.ErrorHandling
         If .Enabled Or AllEnabled Then
-            procs.curProcedure = .Name
+            procs.curProcedure = .name
             test_ErrorsMeta_ResolveAndLoad procs
             test_RecordErr_UserFacingCurrent procs
             test_RecordErr_DeveloperNestedTrace procs

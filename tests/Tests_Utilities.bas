@@ -19,7 +19,7 @@ Sub TestDriver_Utilities()
     'Tests of ParseBRSales for parsing Better Reports sales data
     With procs.Utilities
         If .Enabled Or AllEnabled Then
-            procs.curProcedure = .Name
+            procs.curProcedure = .name
             ' test_LastPopulatedCell1 procs
             ' test_LastPopulatedCell2 procs
             ' test_LastPopulatedCell3 procs
@@ -49,7 +49,7 @@ Sub TestDriver_Utilities()
     
     With procs.LiteModelSpeed
         If .Enabled Or AllEnabled Then
-            procs.curProcedure = .Name
+            procs.curProcedure = .name
             test_Search1 procs
             test_Search2 procs
             test_Search3 procs

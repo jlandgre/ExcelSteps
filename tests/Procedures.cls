@@ -7,7 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'Version 5/30/24
+'Version 5/1/26
 Option Explicit
 'This class defines project specific groups of tests to run in a tests_xxxx module
 'Build it from an Excel code plan by declaring an object for each procedure in the plan
@@ -39,6 +39,11 @@ Public ErrorHandling As Object '3/13/26
 Public ErrorParams As Object '3/13/26
 Public PivotTable As Object '3/27/26
 
+' Tests in tests_ToolboxClasses module
+Public ProjFiles As Object
+Public ColInfo As Object
+
+
 ' General attributes for all procedures in the code project
 Public wkbk_testing As Workbook
 Public wksht_results As Worksheet
@@ -57,59 +62,65 @@ Sub Init(procs, ByVal wkbk, ByVal shtT, test_suite_name)
     With procs
         ' TestDriver_TblRowsCols
         Set .tblInit = New Procedure
-        .tblInit.Name = "tblRowsCols.Init"
+        .tblInit.name = "tblRowsCols.Init"
         Set .tblSetDimensions = New Procedure
-        .tblSetDimensions.Name = "tblRowsCols.SetDimensions"
+        .tblSetDimensions.name = "tblRowsCols.SetDimensions"
         Set .tblSetArysNamesRngs = New Procedure
-        .tblSetArysNamesRngs.Name = "tblRowsCols.SetArysNamesRngs"
+        .tblSetArysNamesRngs.name = "tblRowsCols.SetArysNamesRngs"
         Set .tblFormat = New Procedure
-        .tblFormat.Name = "tblRowsCols.Format"
+        .tblFormat.name = "tblRowsCols.Format"
         Set .tblProvision = New Procedure
-        .tblProvision.Name = "tblRowsCols.Provision"
+        .tblProvision.name = "tblRowsCols.Provision"
         Set .tblRefresh = New Procedure
-        .tblRefresh.Name = "tblRowsCols.Refresh"
+        .tblRefresh.name = "tblRowsCols.Refresh"
         Set .tblRefreshAPI = New Procedure
-        .tblRefreshAPI.Name = "tbl_RefreshAPI"
+        .tblRefreshAPI.name = "tbl_RefreshAPI"
         
         ' TestDriver_mdlScenario
         Set .mdlInit = New Procedure
-        .mdlInit.Name = "mdlScenario.Init"
+        .mdlInit.name = "mdlScenario.Init"
         Set .mdlRow = New Procedure
-        .mdlRow.Name = "mdlRow class"
+        .mdlRow.name = "mdlRow class"
         Set .mdlVariations = New Procedure
-        .mdlVariations.Name = "mdl Variations"
+        .mdlVariations.name = "mdl Variations"
         Set .mdlDropdowns = New Procedure
-        .mdlDropdowns.Name = "Dropdown list capability"
+        .mdlDropdowns.name = "Dropdown list capability"
         Set .mdlRefreshSpeed = New Procedure
-        .mdlRefreshSpeed.Name = "Refresh speedup"
+        .mdlRefreshSpeed.name = "Refresh speedup"
         
         ' TestDriver_Utilities
         Set .Utilities = New Procedure
-        .Utilities.Name = "ExcelSteps Utilities"
+        .Utilities.name = "ExcelSteps Utilities"
         Set .LiteModelSpeed = New Procedure
-        .LiteModelSpeed.Name = "Lite Model Prov/Refresh Speedup"
+        .LiteModelSpeed.name = "Lite Model Prov/Refresh Speedup"
         
         ' TestDriver_ParseModel
         Set .ParseModel = New Procedure
-        .ParseModel.Name = "ParseModel"
+        .ParseModel.name = "ParseModel"
         
         ' TestDriver_mdlImportRow
         Set .mdlImportRow = New Procedure
-        .mdlImportRow.Name = "mdlImportRow Class"
+        .mdlImportRow.name = "mdlImportRow Class"
         
         ' TestDriver_Dictionary
         Set .dictionary = New Procedure
-        .dictionary.Name = "Dictionary Class"
+        .dictionary.name = "Dictionary Class"
 
         ' TestDriver_ErrorHandling
         Set .ErrorHandling = New Procedure
-        .ErrorHandling.Name = "ErrorHandling Class"
+        .ErrorHandling.name = "ErrorHandling Class"
         Set .ErrorParams = New Procedure
-        .ErrorParams.Name = "Error params and SetErrs"
+        .ErrorParams.name = "Error params and SetErrs"
 
         ' TestDriver_PivotTable
         Set .PivotTable = New Procedure
-        .PivotTable.Name = "PivotTable Class"
+        .PivotTable.name = "PivotTable Class"
+        
+        ' Tests_ToolboxClasses
+        Set .ProjFiles = New Procedure
+        .ProjFiles.name = "ProjFiles"
+        Set .ColInfo = New Procedure
+        .ColInfo.name = "ColInfo"
         
         ' Set attributes and initialize test results sheet
         .test_suite_name = test_suite_name
@@ -132,7 +143,7 @@ Sub InitTestsSheet(procs, ByVal shtT)
     'Add tests sheet if it does not exist and set Worksheet object
     With procs.wkbk_testing
         If Not SheetExists(procs.wkbk_testing, shtT) Then _
-            AddSheet procs.wkbk_testing, shtT, .Sheets(.Sheets.Count).Name
+            AddSheet procs.wkbk_testing, shtT, .Sheets(.Sheets.Count).name
         Set procs.wksht_results = .Sheets(shtT)
     End With
     

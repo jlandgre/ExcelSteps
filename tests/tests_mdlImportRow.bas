@@ -21,7 +21,7 @@ Sub TestDriver_mdlImportRow()
     'Setup procedure group
     With procs.mdlImportRow
         If .Enabled Or AllEnabled Then
-            procs.curProcedure = .Name
+            procs.curProcedure = .name
             test_Init procs
             test_ReadMdlDestRow procs
             test_ReadStepsRow procs

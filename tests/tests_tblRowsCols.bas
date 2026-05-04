@@ -46,7 +46,7 @@ Sub TestDriver_TblRowsCols()
     
     With procs.tblInit
         If .Enabled Or AllEnabled Then
-            procs.curProcedure = .Name
+            procs.curProcedure = .name
             test_SetIsCustomTbl procs
             test_ReadDefnSetting procs
             test_PopulateCustomTblParams1 procs
@@ -61,7 +61,7 @@ Sub TestDriver_TblRowsCols()
     
     With procs.tblSetDimensions
         If .Enabled Or AllEnabled Then
-            procs.curProcedure = .Name
+            procs.curProcedure = .name
             test_InitializeWkshtAndRanges1 procs
             test_InitializeWkshtAndRanges2 procs
             test_SetIsBlankSheet1 procs
@@ -88,7 +88,7 @@ Sub TestDriver_TblRowsCols()
     
     With procs.tblSetArysNamesRngs
         If .Enabled Or AllEnabled Then
-            procs.curProcedure = .Name
+            procs.curProcedure = .name
             test_SetAryColRngs procs
             test_SetTblNames procs
             test_NameColumn procs
@@ -98,14 +98,14 @@ Sub TestDriver_TblRowsCols()
     
     With procs.tblFormat
         If .Enabled Or AllEnabled Then
-            procs.curProcedure = .Name
+            procs.curProcedure = .name
             '<<tests>>
         End If
     End With
     
     With procs.tblProvision
         If .Enabled Or AllEnabled Then
-            procs.curProcedure = .Name
+            procs.curProcedure = .name
             test_PopulateTbl procs
             test_ProvisionTbl procs
             test_PopulateTbl2 procs
@@ -119,7 +119,7 @@ Sub TestDriver_TblRowsCols()
     'xxx stop 10/17/24 14:30 test_PrepExcelStepsSht has error in refr.PrepExcelStepsSht from tbl.Provision step in procedure
     With procs.tblRefresh
         If .Enabled Or AllEnabled Then
-            procs.curProcedure = .Name
+            procs.curProcedure = .name
             test_PrepExcelStepsSht procs
             test_RefreshTbl2 procs
             test_RefreshTbl3 procs
@@ -128,7 +128,7 @@ Sub TestDriver_TblRowsCols()
     
     With procs.tblRefreshAPI
         If .Enabled Or AllEnabled Then
-            procs.curProcedure = .Name
+            procs.curProcedure = .name
             test_RefreshTblAPI1 procs
             test_RefreshTblAPI2 procs
             test_RefreshTblAPI3 procs
@@ -166,7 +166,7 @@ Sub test_RefreshTblAPI4(procs)
         .Assert tst, ExcelSteps.RefreshTblAPI(.wkbkTest, IsReplace:=True, IsTblFormat:=True, _
             defn:=defn_test2)
         
-        .Assert tst, (tst.wkbkTest.Names("Desc").RefersToRange.Parent.Name = shtTbl)
+        .Assert tst, (tst.wkbkTest.Names("Desc").RefersToRange.Parent.name = shtTbl)
         .Assert tst, (tst.wkbkTest.Names("Desc").RefersToRange.Address = "$C:$C")
         Set rng = Range(tst.wkbkTest.Sheets(shtTbl).Cells(4, 3), tst.wkbkTest.Sheets(shtTbl).Cells(4, 8))
         .Assert tst, rng.Style = "Accent1"
@@ -189,7 +189,7 @@ Sub test_RefreshTblAPI4(procs)
         .Assert tst, ExcelSteps.RefreshTblAPI(.wkbkTest, IsReplace:=True, IsTblFormat:=True, _
             TblName:="Custom", defn:=defn_test2)
 
-        .Assert tst, (tst.wkbkTest.Names("Custom_Desc").RefersToRange.Parent.Name = shtTbl)
+        .Assert tst, (tst.wkbkTest.Names("Custom_Desc").RefersToRange.Parent.name = shtTbl)
         .Assert tst, (.wkbkTest.Names("Custom_Header").RefersToRange.Address = "$4:$4")
 
         With tst.wkbkTest.Sheets(shtTbl)
@@ -543,9 +543,9 @@ Sub test_InitializeWkshtAndRanges1(procs)
 
         'Run method to initialize .wksht, .cellHome and .rngTbl
         .Assert tst, tbl.SetWkshtAndRanges(tbl)
-        .Assert tst, tbl.wksht.Name = tbl.sht
+        .Assert tst, tbl.wksht.name = tbl.sht
         .Assert tst, tbl.cellHome.Address = "$A$2"
-        .Assert tst, tbl.cellHome.Parent.Name = tbl.sht
+        .Assert tst, tbl.cellHome.Parent.name = tbl.sht
         .Assert tst, tbl.rngTable.Address = "$A$2"
     
         .Update tst, procs
@@ -566,9 +566,9 @@ Sub test_InitializeWkshtAndRanges2(procs)
 
         'Run method to initialize .wksht, .cellHome and .rngTbl
         .Assert tst, tbl.SetWkshtAndRanges(tbl)
-        .Assert tst, tbl.wksht.Name = tbl.sht
+        .Assert tst, tbl.wksht.name = tbl.sht
         .Assert tst, tbl.cellHome.Address = "$A$2"
-        .Assert tst, tbl.cellHome.Parent.Name = tbl.sht
+        .Assert tst, tbl.cellHome.Parent.name = tbl.sht
         .Assert tst, tbl.rngTable.Address = "$A$1:$C$4"
     
         .Update tst, procs
@@ -1573,7 +1573,7 @@ End Sub
 Sub CheckRefreshedTable(tst)
     Dim rng As Range
     With tst
-        .Assert tst, (tst.wkbkTest.Names("Desc").RefersToRange.Parent.Name = shtTbl)
+        .Assert tst, (tst.wkbkTest.Names("Desc").RefersToRange.Parent.name = shtTbl)
         .Assert tst, (tst.wkbkTest.Names("Desc").RefersToRange.Address = "$A:$A")
         Set rng = Range(tst.wkbkTest.Sheets(shtTbl).Cells(1, 1), tst.wkbkTest.Sheets(shtTbl).Cells(1, 6))
         .Assert tst, rng.Style = "Accent1"

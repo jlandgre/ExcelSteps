@@ -17,7 +17,7 @@ Sub TestDriver_Dictionary()
     
     With procs.dictionary
         If .Enabled Or AllEnabled Then
-            procs.curProcedure = .Name
+            procs.curProcedure = .name
             test_Add procs
             test_Item procs
             test_Exists procs
@@ -298,7 +298,7 @@ Sub test_ObjectValues(procs)
         
         'Store worksheet object
         dict.Add "sheet", wksht
-        .Assert tst, dict.Item("sheet").Name = wksht.Name
+        .Assert tst, dict.Item("sheet").name = wksht.name
         
         'Mix objects and values
         dict.Add "text", "hello"

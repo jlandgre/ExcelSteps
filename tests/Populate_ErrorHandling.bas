@@ -10,7 +10,7 @@ Sub Populate_Errs_Default()
 
     If Not SheetExists(ExcelSteps.errs.wkbkE, ExcelSteps.shtErrors) Then _
         AddSheet ExcelSteps.errs.wkbkE, ExcelSteps.shtErrors, _
-            ExcelSteps.errs.wkbkE.Sheets(ExcelSteps.errs.wkbkE.Sheets.Count).Name
+            ExcelSteps.errs.wkbkE.Sheets(ExcelSteps.errs.wkbkE.Sheets.Count).name
 
     Set wksht = ExcelSteps.errs.wkbkE.Sheets(ExcelSteps.shtErrors)
 

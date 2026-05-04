@@ -11,3 +11,5 @@ Public Const sRefreshSuffix As String = "_t"
 Public Const setting_shtFrm As String = "ShtNameFrm"
 Public Const setting_cBoxFrm1 As String = "cBoxAppShtName"
 
+'Used to locate files.pathSrc
+Public Const vba_project_name As String = "ExcelSteps"

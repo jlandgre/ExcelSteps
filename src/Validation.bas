@@ -1,12 +1,15 @@
 Attribute VB_Name = "Validation"
-'Version 1/29/26
+'Version 5/1/26
 Option Explicit
+
+'Global variable (default False for production) can toggle to True from tests workbook
+Public IsTest As Boolean
+
 '-----------------------------------------------------------------------------------------------------
-'This module contains functions used for instancing add-in objects from a
-'second workbook. To call, the second workbook's VBA Project
-'needs to add a Reference to ExcelSteps (Tools / References menu
-'in VBA editor), and the second workbook should instance by
-'calling these modValidation functions as shown:
+' Factory functions below instance add-in objects from a second workbook such as a test suite
+' workbook. To call, the second workbook's VBA Project needs to add a Reference to ExcelSteps
+' (Tools / References menu in VBA editor), and the second workbook should instance by
+' calling these modValidation functions as shown:
 '
 'Dim tbl as object
 'Set tbl = ExcelSteps.new_tblRowsCols
@@ -49,5 +52,12 @@ End Function
 Public Function New_PivotTable() As PivotTable
     Set New_PivotTable = New PivotTable
 End Function
+Public Function New_ProjFiles() As ProjFiles
+    Set New_ProjFiles = New ProjFiles
+End Function
+Public Function New_ColInfo() As ColInfo
+    Set New_ColInfo = New ColInfo
+End Function
+
 
 
