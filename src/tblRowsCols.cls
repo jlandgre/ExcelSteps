@@ -7,7 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'Version 3/13/26
+'Version 5/6/26
 Option Explicit
 
 'Table Locator Attributes
@@ -90,12 +90,16 @@ Public colrngValue As Range
 '*** Project-specific table attributes ***
 
 'ColInfo
-Public colrngColName As Range
+Public colrngTblName As Range
+Public colrngVarNorm As Range
+Public colrngVarRaw As Range
+Public colrngIsIndex As Range
 Public colrngVarDesc As Range
 Public colrngVarUnits As Range
-Public colrngVarXlwidth As Range
-Public colrngVarXlFormat As Range
-Public colrngOrder_Errors As Range
+'Public colrngColName As Range
+'Public colrngVarXlwidth As Range
+'Public colrngVarXlFormat As Range
+'Public colrngOrder_Errors As Range
 
 'Array of column ranges - requires Get/Let Properties to work (VBA bug/arch. flaw)
 Private pAryColRngs() As Variant
@@ -1206,6 +1210,15 @@ Public Function SetColRanges(ByRef tbl) As Boolean
             Set .colrngStrInput = .cellHome.Offset(0, 7).EntireColumn
             Set .colrngScenName = .cellHome.Offset(0, 8).EntireColumn
             Set .colrngValue = .cellHome.Offset(0, 9).EntireColumn
+
+        ' colinfo_ utility table with variable metadata for project tables
+        ElseIf .TblName = shtColInfo Then
+            Set .colrngTblName = Nothing
+            Set .colrngVarNorm = .rngTblHeaderVal(tbl, "VarNameNorm").EntireColumn
+            Set .colrngVarRaw = .rngTblHeaderVal(tbl, "VarNameRaw").EntireColumn
+            Set .colrngIsIndex = .rngTblHeaderVal(tbl, "IsIndex").EntireColumn
+            Set .colrngVarDesc = .rngTblHeaderVal(tbl, "Description").EntireColumn
+            Set .colrngVarUnits = .rngTblHeaderVal(tbl, "Units").EntireColumn
         End If
     End With
     Exit Function

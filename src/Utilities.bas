@@ -26,10 +26,22 @@ End Function
 
 '-------------------------------------------------------------------------------------
 ' Open file at path relative to specified workbook (cross-platform compatible)
-' JDL 8/1/25; Modified 10/1/25
+' JDL 8/1/25; Modified 5/6/26 to close without saving changes if notebook was already open
 '
 Public Function OpenFile(ByVal fullpath As String, wkbkOpened As Workbook) As Boolean
     SetErrs OpenFile: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim wkbk As Workbook, wkbkExisting As Workbook, fullpathNorm As String
+
+    fullpathNorm = LCase$(fullpath)
+
+    ' If workbook is already open, close it without saving so a clean copy is opened
+    For Each wkbk In Application.Workbooks
+        If LCase$(wkbk.FullName) = fullpathNorm Then
+            Set wkbkExisting = wkbk
+            Exit For
+        End If
+    Next wkbk
+    If Not wkbkExisting Is Nothing Then wkbkExisting.Close False
     
     ' Check if file exists
     If errs.IsFail(Dir(fullpath) = "", 1, fullpath) Then GoTo ErrorExit
@@ -287,6 +299,7 @@ End Sub
 '-------------------------------------------------------------------------------------
 ' Build Comma-separated list from array
 ' Created: 3/1/21 JDL Modified 11/18/21 Add sDelim optional argument
+'                              5/5/26 Fix bug if ary has multiple, initial blanks
 '
 Function ListFromArray(ary, Optional sDelim, Optional IsFormatted As Boolean) As String
     Dim val As Variant, lst As String, i As Integer
@@ -297,12 +310,14 @@ Function ListFromArray(ary, Optional sDelim, Optional IsFormatted As Boolean) As
 
     'Simple delimited list
     If Not IsFormatted Then
+        i = 0
         For Each val In ary
-            If Len(lst) < 1 Then
+            If i = 0 Then
                 lst = CStr(val)
             Else
                 lst = lst & sDelim & CStr(val)
             End If
+            i = i + 1
         Next val
     
     'Formatted, comma-separated list
