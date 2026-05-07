@@ -1,0 +1,9 @@
+Locn_Raw,ProdType_Raw,Year_Raw,Week_Raw,Sales_Raw,Discounts_Raw,Markdowns_Raw,COGS_Raw,Not_in_normalized_tbl
+Online,Shoes,2026,1,1200,80,35,500,11
+StoreA,,2026,1,900,60,25,410,22
+Online,Locn10,2026,2,1400,95,40,560,33
+StoreB,Outerwear,2026,2,700,45,20,320,44
+Online,,2026,3,1600,110,55,620,55
+Online,Accessories,2026,4,1000,70,30,430,66
+StoreC,Locn10,2026,4,650,42,18,300,77
+Online,Denim,2026,5,1800,125,60,700,88

@@ -21,6 +21,7 @@ Public pathData As String ' path to data directory (tests/subdir_tests if specif
 Public pathColInfo As String ' path to ColInfo file
 Public fColInfo As String ' ColInfo filename (typically ColInfo.xlsx)
 Public pfColInfo As String ' ColInfo path + filename
+Public pfImportFile As String ' Full path to raw data import file
 '-----------------------------------------------------------------------------------------
 ' Set path/filename attributes for project workbook and test suite locations
 ' JDL 4/29/26; updated 5/1/26
@@ -31,6 +32,7 @@ Public Function Init(files, ByVal wkbk As Workbook, Optional subdir_tests As Str
         Set .wkbkProj = wkbk
         .fWkbkProj = .wkbkProj.Name
         .subdir_tests = subdir_tests
+        .pfImportFile = ""
     End With
     
     'Set paths and filenames

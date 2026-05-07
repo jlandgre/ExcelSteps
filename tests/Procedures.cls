@@ -42,6 +42,7 @@ Public PivotTable As Object '3/27/26
 ' Tests in tests_ToolboxClasses module
 Public ProjFiles As Object
 Public ColInfo As Object
+Public ImportParseNorm As Object
 
 
 ' General attributes for all procedures in the code project
@@ -121,6 +122,8 @@ Sub Init(procs, ByVal wkbk, ByVal shtT, test_suite_name)
         .ProjFiles.name = "ProjFiles"
         Set .ColInfo = New Procedure
         .ColInfo.name = "ColInfo"
+        Set .ImportParseNorm = New Procedure
+        .ImportParseNorm.name = "ImportParseNorm"
         
         ' Set attributes and initialize test results sheet
         .test_suite_name = test_suite_name

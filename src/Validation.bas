@@ -58,6 +58,12 @@ End Function
 Public Function New_ColInfo() As ColInfo
     Set New_ColInfo = New ColInfo
 End Function
+Public Function New_ImportParseNorm() As ImportParseNorm
+    Set New_ImportParseNorm = New ImportParseNorm
+End Function
+Public Function New_tblUnstructured() As tblUnstructured
+    Set New_tblUnstructured = New tblUnstructured
+End Function
 
 
 
