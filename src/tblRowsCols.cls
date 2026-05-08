@@ -7,7 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'Version 5/6/26
+'Version 5/8/26
 Option Explicit
 
 'Table Locator Attributes
@@ -87,8 +87,6 @@ Public colrngFormula As Range
 Public colrngScenName As Range
 Public colrngValue As Range
 
-'*** Project-specific table attributes ***
-
 'ColInfo
 Public colrngTblName As Range
 Public colrngVarNorm As Range
@@ -96,10 +94,16 @@ Public colrngVarRaw As Range
 Public colrngIsIndex As Range
 Public colrngVarDesc As Range
 Public colrngVarUnits As Range
+Public colrngFillVals As Range
+Public colrngFilterVals As Range
+
+'Legacy ColInfo
 'Public colrngColName As Range
-'Public colrngVarXlwidth As Range
-'Public colrngVarXlFormat As Range
-'Public colrngOrder_Errors As Range
+Public colrngVarXlwidth As Range
+Public colrngVarXlFormat As Range
+Public colrngOrder_Errors As Range
+
+'*** Project-specific table attributes ***
 
 'Array of column ranges - requires Get/Let Properties to work (VBA bug/arch. flaw)
 Private pAryColRngs() As Variant
@@ -855,10 +859,8 @@ End Sub
 '-----------------------------------------------------------------------------------------
 'Return cell range for specified table header string (Used by a utility related to colinfo
 '
-'Inputs: sVal [String] header string
-'
 ' JDL 4/14/21 Modified: 1/27/22 FindInRange instead of .Find
-'                       6/9/23 JDL cleanup
+'                       5/8/26 JDL cleanup
 '
 Function rngTblHeaderVal(tbl, sVal) As Range
     Set rngTblHeaderVal = FindInRange(tbl.rngHeader, sVal)
@@ -884,7 +886,7 @@ Function SetTableComments(tbl) As Boolean
         For Each r In tbl.rngHeader
         
             'Find the variable in colinfo table
-            Set cellCIVar = FindInRange(.colrngColName, r)
+            Set cellCIVar = FindInRange(.colrngVarNorm, r)
             If Not cellCIVar Is Nothing Then
                 sComment = .TableLoc(cellCIVar, .colrngVarDesc)
                 If Len(sComment) > 0 Then AddComment r, sComment
@@ -915,7 +917,7 @@ Function SetTableWidthAndNumFormat(tbl) As Boolean
         For Each r In tbl.rngHeader
         
             'Find the variable in colinfo table
-            Set cell_CI = .colrngColName.Find(r.value, LookAt:=xlWhole)
+            Set cell_CI = .colrngVarNorm.Find(r.value, LookAt:=xlWhole)
             If Not cell_CI Is Nothing Then
                 iWidth = .TableLoc(cell_CI, .colrngVarXlwidth)
                 sFormat = .TableLoc(cell_CI, .colrngVarXlFormat)
@@ -1219,6 +1221,8 @@ Public Function SetColRanges(ByRef tbl) As Boolean
             Set .colrngIsIndex = .rngTblHeaderVal(tbl, "IsIndex").EntireColumn
             Set .colrngVarDesc = .rngTblHeaderVal(tbl, "Description").EntireColumn
             Set .colrngVarUnits = .rngTblHeaderVal(tbl, "Units").EntireColumn
+            Set .colrngFillVals = .rngTblHeaderVal(tbl, "FillVals").EntireColumn
+            Set .colrngFilterVals = .rngTblHeaderVal(tbl, "FilterVals").EntireColumn
         End If
     End With
     Exit Function

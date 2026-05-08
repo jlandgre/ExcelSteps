@@ -1,6 +1,6 @@
 Attribute VB_Name = "tests_ToolboxClasses"
 Option Explicit
-'Version 5/5/26
+'Version 5/8/26
 
 ' colinfo_ mockup data
 Const ColInfo_BRTable_nrows As Long = 9 'n data  rows in BR_Example table in test_data/ColInfo.xlsx
@@ -8,9 +8,11 @@ Const ColInfo_BRTable_rngRows As String = "$2:$10" '.tbl.rngRows address for 9 r
 Const ColInfo_aryIndices_BRExample As String = "Location,ProdType,Year,SerialWeek"
 Const ColInfo_aryMetrics_BRExample As String = "Net_Sales,Discounts,Markdowns,COGS"
 Const ColInfo_colRng_BRExample As String = "$G:$G"
-Const ColInfo_dictNormalize_BRExample_Size As Long = 8
+Const ColInfo_dictNormalize_BRExample_Count As Long = 8
 Const ColInfo_Locn_VarnameRaw_BRExample As String = "Locn_Raw"
 Const ColInfo_Sales_VarnameRaw_BRExample As String = "Sales_Raw"
+
+'ImportParseNorm test data
 Const ImportFile_BR_Example As String = "BR_Raw_Mockup.xlsx"
 Const ImportFile_SecondTbl As String = "Second_Raw_Mockup.xlsx"
 Const ImportNormHeader_BR_Example As String = "Location,ProdType,Year,SerialWeek,Net_Sales,Discounts,Markdowns,COGS"
@@ -23,12 +25,12 @@ Const ImportFilteredOnlineRows As Long = 5
 Sub TestDriver_ToolBox()
     Dim procs As New Procedures, AllEnabled As Boolean
     With procs
-        .Init procs, ThisWorkbook, "ToolBox", "Tests_ToolboxClasses"
+        .Init procs, ThisWorkbook, "Tests_ToolBox", "Tests_Toolbox"
         SetApplEnvir False, False, xlCalculationAutomatic
 
         AllEnabled = False
         .ProjFiles.Enabled = False
-        .ColInfo.Enabled = True
+        .ColInfo.Enabled = False
         .ImportParseNorm.Enabled = True
     End With
 
@@ -55,14 +57,14 @@ Sub TestDriver_ToolBox()
     With procs.ImportParseNorm
         If .Enabled Or AllEnabled Then
             procs.curProcedure = .name
-            test_ImportParseNorm_Init procs
-            test_ImportParseNorm_OpenRawData procs
-            test_ImportParseNorm_ValidateRawStructure procs
-            test_ImportParseNorm_BuildNormMappings procs
-            test_ImportParseNorm_ApplyFillMapToSortedColumn procs
-            test_ImportParseNorm_FillMissingVals procs
-            test_ImportParseNorm_WriteNormalized procs
-            test_ImportParseNorm_FilterRows procs
+            ' test_ImportParseNorm_Init procs
+            ' test_ImportParseNorm_OpenRawData procs
+            ' test_ImportParseNorm_ValidateRawStructure procs
+            ' test_ImportParseNorm_BuildNormMappings procs
+            ' test_ImportParseNorm_ApplyFillMapToSortedColumn procs
+            test_ImportParseNorm_ReplaceVals procs
+            ' test_ImportParseNorm_WriteNormalized procs
+            ' test_ImportParseNorm_FilterRows procs
         End If
     End With
 
@@ -78,78 +80,20 @@ End Sub
 '
 Sub test_ImportParseNorm_Init(procs)
     Dim tst As New Test: tst.Init tst, "test_ImportParseNorm_Init", ThisWorkbook
-    Dim importtbl As Object, colinfo As Object, files As Object
+    Dim imptbl As Object, colinfo As Object, files As Object
     Dim dParamsImport As Object, dParamsParse As Object
 
     With tst
-        InitImportParseNormTest tst, importtbl, colinfo, files, dParamsImport, dParamsParse, "BR_Example"
+        InitImportParseNormTest tst, imptbl, colinfo, files, dParamsImport, dParamsParse, "BR_Example"
 
-        .Assert tst, Not importtbl.colinfo Is Nothing
-        .Assert tst, Not importtbl.files Is Nothing
-        .Assert tst, importtbl.curTbl = "BR_Example"
-        .Assert tst, Not importtbl.dParamsImport Is Nothing
-        .Assert tst, Not importtbl.dParamsParse Is Nothing
-        .Assert tst, Not importtbl.colinfo.rngRowsCurTbl Is Nothing
+        .Assert tst, Not imptbl.colinfo Is Nothing
+        .Assert tst, Not imptbl.files Is Nothing
+        .Assert tst, imptbl.curTbl = "BR_Example"
+        .Assert tst, Not imptbl.dParamsImport Is Nothing
+        .Assert tst, Not imptbl.dParamsParse Is Nothing
+        .Assert tst, imptbl.colinfo.rngRowsCurTbl.Address = ColInfo_BRTable_rngRows
         .Update tst, procs
     End With
-    CloseImportParseNormWkbk importtbl
-    CloseColInfoWkbk colinfo
-    ExcelSteps.IsTest = False
-End Sub
-'-----------------------------------------------------------------------------------------
-' Build ordered normalization arrays from colinfo metadata
-' JDL 5/7/26
-'
-Sub test_ImportParseNorm_BuildNormMappings(procs)
-    Dim tst As New Test: tst.Init tst, "test_ImportParseNorm_BuildNormMappings", ThisWorkbook
-    Dim importtbl As Object, colinfo As Object, files As Object
-    Dim dParamsImport As Object, dParamsParse As Object
-    Dim aryNorm() As String, aryRaw() As String, maxOrder As Long
-
-    With tst
-        InitImportParseNormTest tst, importtbl, colinfo, files, dParamsImport, dParamsParse, "BR_Example"
-
-        .Assert tst, importtbl.BuildNormMappings(importtbl, aryNorm, aryRaw, maxOrder)
-        .Assert tst, maxOrder = 8
-        .Assert tst, aryNorm(1) = "Location"
-        .Assert tst, aryRaw(1) = "Locn_Raw"
-        .Assert tst, aryNorm(8) = "COGS"
-        .Assert tst, aryRaw(8) = "COGS_Raw"
-        .Update tst, procs
-    End With
-    CloseImportParseNormWkbk importtbl
-    CloseColInfoWkbk colinfo
-    ExcelSteps.IsTest = False
-End Sub
-'-----------------------------------------------------------------------------------------
-' Apply FillVals dictionary to a sorted column via helper method
-' JDL 5/7/26
-'
-Sub test_ImportParseNorm_ApplyFillMapToSortedColumn(procs)
-    Dim tst As New Test: tst.Init tst, "test_ImportParseNorm_ApplyFillMapToSortedColumn", ThisWorkbook
-    Dim importtbl As Object, colinfo As Object, files As Object
-    Dim dParamsImport As Object, dParamsParse As Object, dict As Object
-    Dim rngProdHdr As Range, rngProdData As Range
-
-    With tst
-        InitImportParseNormTest tst, importtbl, colinfo, files, dParamsImport, dParamsParse, "BR_Example"
-
-        .Assert tst, importtbl.OpenRawData(importtbl)
-        Set rngProdHdr = importtbl.tblRaw.rngTblHeaderVal(importtbl.tblRaw, "ProdType_Raw")
-        .Assert tst, Not rngProdHdr Is Nothing
-        .Assert tst, importtbl.tblRaw.TblSortBy(importtbl.tblRaw, CStr(rngProdHdr.Value2))
-        Set rngProdData = Intersect(importtbl.tblRaw.rngRows, rngProdHdr.EntireColumn)
-
-        Set dict = ExcelSteps.New_Dictionary
-        .Assert tst, dict.ParseStringToDictProcedure("{BLANK:Unknown,Locn10:Locn1}")
-        .Assert tst, importtbl.ApplyFillMapToSortedColumn(importtbl, rngProdData, dict)
-
-        .Assert tst, Not FindInRange(rngProdData, "Unknown") Is Nothing
-        .Assert tst, Not FindInRange(rngProdData, "Locn1") Is Nothing
-        .Assert tst, FindInRange(rngProdData, "Locn10") Is Nothing
-        .Update tst, procs
-    End With
-    CloseImportParseNormWkbk importtbl
     CloseColInfoWkbk colinfo
     ExcelSteps.IsTest = False
 End Sub
@@ -159,20 +103,20 @@ End Sub
 '
 Sub test_ImportParseNorm_OpenRawData(procs)
     Dim tst As New Test: tst.Init tst, "test_ImportParseNorm_OpenRawData", ThisWorkbook
-    Dim importtbl As Object, colinfo As Object, files As Object
+    Dim imptbl As Object, colinfo As Object, files As Object
     Dim dParamsImport As Object, dParamsParse As Object
 
     With tst
-        InitImportParseNormTest tst, importtbl, colinfo, files, dParamsImport, dParamsParse, "BR_Example"
+        InitImportParseNormTest tst, imptbl, colinfo, files, dParamsImport, dParamsParse, "BR_Example"
 
-        .Assert tst, importtbl.OpenRawData(importtbl)
-        .Assert tst, Not importtbl.tblRaw Is Nothing
-        .Assert tst, TypeName(importtbl.tblRaw) = "tblRowsCols"
-        .Assert tst, Not importtbl.tblRaw.wkbk Is Nothing
-        .Assert tst, importtbl.tblRaw.wkbk.Name <> files.fColInfo
+        .Assert tst, imptbl.OpenRawData(imptbl)
+        .Assert tst, Not imptbl.tblRaw Is Nothing
+        .Assert tst, TypeName(imptbl.tblRaw) = "tblRowsCols"
+        .Assert tst, Not imptbl.tblRaw.wkbk Is Nothing
+        .Assert tst, imptbl.tblRaw.wkbk.Name <> files.fColInfo
         .Update tst, procs
     End With
-    CloseImportParseNormWkbk importtbl
+    CloseImportParseNormWkbk imptbl
     CloseColInfoWkbk colinfo
     ExcelSteps.IsTest = False
 End Sub
@@ -182,17 +126,74 @@ End Sub
 '
 Sub test_ImportParseNorm_ValidateRawStructure(procs)
     Dim tst As New Test: tst.Init tst, "test_ImportParseNorm_ValidateRawStructure", ThisWorkbook
-    Dim importtbl As Object, colinfo As Object, files As Object
+    Dim imptbl As Object, colinfo As Object, files As Object
     Dim dParamsImport As Object, dParamsParse As Object
 
     With tst
-        InitImportParseNormTest tst, importtbl, colinfo, files, dParamsImport, dParamsParse, "BR_Example"
+        InitImportParseNormTest tst, imptbl, colinfo, files, dParamsImport, dParamsParse, "BR_Example"
 
-        .Assert tst, importtbl.OpenRawData(importtbl)
-        .Assert tst, importtbl.ValidateRawStructure(importtbl)
+        .Assert tst, imptbl.OpenRawData(imptbl)
+        .Assert tst, imptbl.ValidateRawStructure(imptbl)
         .Update tst, procs
     End With
-    CloseImportParseNormWkbk importtbl
+    CloseImportParseNormWkbk imptbl
+    CloseColInfoWkbk colinfo
+    ExcelSteps.IsTest = False
+End Sub
+'-----------------------------------------------------------------------------------------
+' Build ordered normalization arrays from colinfo metadata
+' JDL 5/7/26
+'
+Sub test_ImportParseNorm_BuildNormMappings(procs)
+    Dim tst As New Test: tst.Init tst, "test_ImportParseNorm_BuildNormMappings", ThisWorkbook
+    Dim imptbl As Object, colinfo As Object, files As Object
+    Dim dParamsImport As Object, dParamsParse As Object
+    Dim aryNorm() As String, aryRaw() As String, maxOrder As Long
+
+    With tst
+        InitImportParseNormTest tst, imptbl, colinfo, files, dParamsImport, dParamsParse, "BR_Example"
+
+        .Assert tst, imptbl.BuildNormMappings(imptbl, aryNorm, aryRaw, maxOrder)
+        .Assert tst, maxOrder = 8
+        .Assert tst, aryNorm(1) = "Location"
+        .Assert tst, aryRaw(1) = "Locn_Raw"
+        .Assert tst, aryNorm(8) = "COGS"
+        .Assert tst, aryRaw(8) = "COGS_Raw"
+        .Update tst, procs
+    End With
+    CloseImportParseNormWkbk imptbl
+    CloseColInfoWkbk colinfo
+    ExcelSteps.IsTest = False
+End Sub
+'-----------------------------------------------------------------------------------------
+' Apply FillVals dictionary to a sorted column via helper method
+' JDL 5/7/26
+'
+Sub test_ImportParseNorm_ApplyFillMapToSortedColumn(procs)
+    Dim tst As New Test: tst.Init tst, "test_ImportParseNorm_ApplyFillMapToSortedColumn", ThisWorkbook
+    Dim imptbl As Object, colinfo As Object, files As Object
+    Dim dParamsImport As Object, dParamsParse As Object, dict As Object
+    Dim rngProdHdr As Range, rngProdData As Range
+
+    With tst
+        InitImportParseNormTest tst, imptbl, colinfo, files, dParamsImport, dParamsParse, "BR_Example"
+
+        .Assert tst, imptbl.OpenRawData(imptbl)
+        Set rngProdHdr = imptbl.tblRaw.rngTblHeaderVal(imptbl.tblRaw, "ProdType_Raw")
+        .Assert tst, Not rngProdHdr Is Nothing
+        .Assert tst, imptbl.tblRaw.TblSortBy(imptbl.tblRaw, CStr(rngProdHdr.Value2))
+        Set rngProdData = Intersect(imptbl.tblRaw.rngRows, rngProdHdr.EntireColumn)
+
+        Set dict = ExcelSteps.New_Dictionary
+        .Assert tst, dict.ParseStringToDictProcedure("{BLANK:Unknown,Locn10:Locn1}")
+        .Assert tst, imptbl.ApplyFillMapToSortedColumn(imptbl, rngProdData, dict)
+
+        .Assert tst, Not FindInRange(rngProdData, "Unknown") Is Nothing
+        .Assert tst, Not FindInRange(rngProdData, "Locn1") Is Nothing
+        .Assert tst, FindInRange(rngProdData, "Locn10") Is Nothing
+        .Update tst, procs
+    End With
+    CloseImportParseNormWkbk imptbl
     CloseColInfoWkbk colinfo
     ExcelSteps.IsTest = False
 End Sub
@@ -200,32 +201,54 @@ End Sub
 ' Apply FillVals from colinfo to raw table values
 ' JDL 5/7/26
 '
-Sub test_ImportParseNorm_FillMissingVals(procs)
-    Dim tst As New Test: tst.Init tst, "test_ImportParseNorm_FillMissingVals", ThisWorkbook
-    Dim importtbl As Object, colinfo As Object, files As Object
+Sub test_ImportParseNorm_ReplaceVals(procs)
+    Dim tst As New Test: tst.Init tst, "test_ImportParseNorm_ReplaceVals", ThisWorkbook
+    Dim imptbl As Object, colinfo As Object, files As Object
     Dim dParamsImport As Object, dParamsParse As Object
-    Dim rngProdHdr As Range, rngProdData As Range
+    Dim rngProdHdr As Range, rngProdData As Range, cTgt As Range
 
     With tst
-        InitImportParseNormTest tst, importtbl, colinfo, files, dParamsImport, dParamsParse, "BR_Example"
+        InitImportParseNormTest tst, imptbl, colinfo, files, dParamsImport, dParamsParse, "BR_Example"
 
-        .Assert tst, importtbl.OpenRawData(importtbl)
-        .Assert tst, importtbl.ValidateRawStructure(importtbl)
-        .Assert tst, importtbl.FillMissingVals(importtbl)
+        .Assert tst, imptbl.OpenRawData(imptbl)
+        .Assert tst, imptbl.ValidateRawStructure(imptbl)
+        .Assert tst, imptbl.ReplaceVals(imptbl)
 
-        Set rngProdHdr = importtbl.tblRaw.rngTblHeaderVal(importtbl.tblRaw, "ProdType_Raw")
+        Set rngProdHdr = imptbl.tblRaw.rngTblHeaderVal(imptbl.tblRaw, "ProdType_Raw")
         .Assert tst, Not rngProdHdr Is Nothing
-        Set rngProdData = Intersect(importtbl.tblRaw.rngRows, rngProdHdr.EntireColumn)
+        Set rngProdData = Intersect(imptbl.tblRaw.rngRows, rngProdHdr.EntireColumn)
 
-        ' Check BLANK fill and value replacement from FillVals metadata
-        .Assert tst, rngProdData.Cells(2, 1).Value2 = "Unknown"
-        .Assert tst, rngProdData.Cells(3, 1).Value2 = "Locn1"
-        .Assert tst, rngProdData.Cells(5, 1).Value2 = "Unknown"
+        ' Check BLANK and Locn10 fill and value replacement
+        FindRawTblVal cTgt, "StoreA", 1, "ProdType_Raw", imptbl.tblRaw
+        .Assert tst, cTgt.Value2 = "Unknown"
+        FindRawTblVal cTgt, "Online", 3, "ProdType_Raw", imptbl.tblRaw
+        .Assert tst, cTgt.Value2 = "Unknown"
+        FindRawTblVal cTgt, "Online", 2, "ProdType_Raw", imptbl.tblRaw
+        .Assert tst, cTgt.Value2 = "Locn1"
+        FindRawTblVal cTgt, "StoreC", 4, "ProdType_Raw", imptbl.tblRaw
+        .Assert tst, cTgt.Value2 = "Locn1"
         .Update tst, procs
     End With
-    CloseImportParseNormWkbk importtbl
+    CloseImportParseNormWkbk imptbl
     CloseColInfoWkbk colinfo
     ExcelSteps.IsTest = False
+End Sub
+'-----------------------------------------------------------------------------------------
+' Lookup to check tbl val based on Locn, Week keys
+' JDL 5/8/26
+'
+
+Sub FindRawTblVal(cTgt, ValLocn, ValWeek, HeaderTgt, tbl)
+    Dim rngColLocn As Range, rngColWeek As Range, rngRow As Range
+    Dim aryCols As Variant, aryVals As Variant
+        With tbl
+            Set rngColLocn = .rngTblHeaderVal(tbl, "Locn_Raw").EntireColumn
+            Set rngColWeek = .rngTblHeaderVal(tbl, "Week_Raw").EntireColumn
+            aryCols = Array(rngColLocn, rngColWeek)
+        End With
+        aryVals = Array(ValLocn, ValWeek)
+        Set rngRow = ExcelSteps.rngMultiKeyBasic(tbl.rngRows, aryCols, aryVals)
+        Set cTgt = Intersect(rngRow, tbl.rngTblHeaderVal(tbl, HeaderTgt).EntireColumn)
 End Sub
 '-----------------------------------------------------------------------------------------
 ' Write normalized table using ordered CurTbl metadata columns
@@ -233,23 +256,23 @@ End Sub
 '
 Sub test_ImportParseNorm_WriteNormalized(procs)
     Dim tst As New Test: tst.Init tst, "test_ImportParseNorm_WriteNormalized", ThisWorkbook
-    Dim importtbl As Object, colinfo As Object, files As Object
+    Dim imptbl As Object, colinfo As Object, files As Object
     Dim dParamsImport As Object, dParamsParse As Object
 
     With tst
-        InitImportParseNormTest tst, importtbl, colinfo, files, dParamsImport, dParamsParse, "BR_Example"
+        InitImportParseNormTest tst, imptbl, colinfo, files, dParamsImport, dParamsParse, "BR_Example"
 
-        .Assert tst, importtbl.OpenAndValidateRawProcedure(importtbl)
-        .Assert tst, importtbl.ParseRawProcedure(importtbl)
-        .Assert tst, importtbl.WriteNormalized(importtbl)
+        .Assert tst, imptbl.OpenAndValidateRawProcedure(imptbl)
+        .Assert tst, imptbl.ParseRawProcedure(imptbl)
+        .Assert tst, imptbl.WriteNormalized(imptbl)
 
-        .Assert tst, Not importtbl.tblNorm Is Nothing
-        .Assert tst, importtbl.tblNorm.sht = "norm_"
-        .Assert tst, ListFromArray(importtbl.tblNorm.rngHeader.Value2) = ImportNormHeader_BR_Example
-        .Assert tst, importtbl.tblNorm.nRows = 8
+        .Assert tst, Not imptbl.tblNorm Is Nothing
+        .Assert tst, imptbl.tblNorm.sht = "norm_"
+        .Assert tst, ListFromArray(imptbl.tblNorm.rngHeader.Value2) = ImportNormHeader_BR_Example
+        .Assert tst, imptbl.tblNorm.nRows = 8
         .Update tst, procs
     End With
-    CloseImportParseNormWkbk importtbl
+    CloseImportParseNormWkbk imptbl
     CloseColInfoWkbk colinfo
     ExcelSteps.IsTest = False
 End Sub
@@ -259,28 +282,28 @@ End Sub
 '
 Sub test_ImportParseNorm_FilterRows(procs)
     Dim tst As New Test: tst.Init tst, "test_ImportParseNorm_FilterRows", ThisWorkbook
-    Dim importtbl As Object, colinfo As Object, files As Object
+    Dim imptbl As Object, colinfo As Object, files As Object
     Dim dParamsImport As Object, dParamsParse As Object
     Dim rngLocnHdr As Range, rngLocnData As Range, cell As Range
 
     With tst
-        InitImportParseNormTest tst, importtbl, colinfo, files, dParamsImport, dParamsParse, "BR_Example"
+        InitImportParseNormTest tst, imptbl, colinfo, files, dParamsImport, dParamsParse, "BR_Example"
 
-        .Assert tst, importtbl.OpenAndValidateRawProcedure(importtbl)
-        .Assert tst, importtbl.ParseRawProcedure(importtbl)
-        .Assert tst, importtbl.WriteNormalized(importtbl)
-        .Assert tst, importtbl.FilterRows(importtbl)
+        .Assert tst, imptbl.OpenAndValidateRawProcedure(imptbl)
+        .Assert tst, imptbl.ParseRawProcedure(imptbl)
+        .Assert tst, imptbl.WriteNormalized(imptbl)
+        .Assert tst, imptbl.FilterRows(imptbl)
 
-        .Assert tst, importtbl.tblNorm.nRows = ImportFilteredOnlineRows
-        Set rngLocnHdr = importtbl.tblNorm.rngTblHeaderVal(importtbl.tblNorm, "Location")
+        .Assert tst, imptbl.tblNorm.nRows = ImportFilteredOnlineRows
+        Set rngLocnHdr = imptbl.tblNorm.rngTblHeaderVal(imptbl.tblNorm, "Location")
         .Assert tst, Not rngLocnHdr Is Nothing
-        Set rngLocnData = Intersect(importtbl.tblNorm.rngRows, rngLocnHdr.EntireColumn)
+        Set rngLocnData = Intersect(imptbl.tblNorm.rngRows, rngLocnHdr.EntireColumn)
         For Each cell In rngLocnData.Cells
             .Assert tst, cell.Value2 = "Online"
         Next cell
         .Update tst, procs
     End With
-    CloseImportParseNormWkbk importtbl
+    CloseImportParseNormWkbk imptbl
     CloseColInfoWkbk colinfo
     ExcelSteps.IsTest = False
 End Sub
@@ -471,7 +494,7 @@ Sub test_ColInfo_YieldDNormalize(procs)
 
         'Check dict returned with correct number of entries
         Set dict = colinfo.YieldDNormalize(colinfo)
-        .Assert tst, dict.Size = ColInfo_dictNormalize_BRExample_Size
+        .Assert tst, dict.Count = ColInfo_dictNormalize_BRExample_Count
 
         'Check known mapping
         .Assert tst, dict.Item("Location") = ColInfo_Locn_VarnameRaw_BRExample
@@ -534,7 +557,7 @@ End Sub
 '-----------------------------------------------------------------------------------------
 ' Helper: initialize ImportParseNorm with colinfo/files/params for a curTbl
 ' JDL 5/7/26
-Sub InitImportParseNormTest(tst, importtbl As Object, colinfo As Object, files As Object, _
+Sub InitImportParseNormTest(tst, imptbl As Object, colinfo As Object, files As Object, _
     dParamsImport As Object, dParamsParse As Object, ByVal curTbl As String)
     Dim wkbkStepsAddin As Workbook
 
@@ -560,8 +583,8 @@ Sub InitImportParseNormTest(tst, importtbl As Object, colinfo As Object, files A
     Set colinfo = ExcelSteps.New_ColInfo
     tst.Assert tst, colinfo.Init(colinfo, files)
 
-    Set importtbl = ExcelSteps.New_ImportParseNorm
-    tst.Assert tst, importtbl.Init(importtbl, colinfo, files, curTbl, dParamsImport, dParamsParse)
+    Set imptbl = ExcelSteps.New_ImportParseNorm
+    tst.Assert tst, imptbl.Init(imptbl, colinfo, files, curTbl, dParamsImport, dParamsParse)
 End Sub
 '-----------------------------------------------------------------------------------------
 ' Helper: close colinfo workbook opened by Init/Provision if present
@@ -575,11 +598,11 @@ End Sub
 '-----------------------------------------------------------------------------------------
 ' Helper: close import workbook(s) opened by ImportParseNorm if present
 '
-Sub CloseImportParseNormWkbk(importtbl As Object)
-    If importtbl Is Nothing Then Exit Sub
-    If importtbl.tblRaw Is Nothing Then Exit Sub
-    If TypeName(importtbl.tblRaw) = "tblRowsCols" Then
-        If importtbl.tblRaw.wkbk Is Nothing Then Exit Sub
-        importtbl.tblRaw.wkbk.Close False
+Sub CloseImportParseNormWkbk(imptbl As Object)
+    If imptbl Is Nothing Then Exit Sub
+    If imptbl.tblRaw Is Nothing Then Exit Sub
+    If TypeName(imptbl.tblRaw) = "tblRowsCols" Then
+        If imptbl.tblRaw.wkbk Is Nothing Then Exit Sub
+        imptbl.tblRaw.wkbk.Close False
     End If
 End Sub

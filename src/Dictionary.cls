@@ -88,7 +88,7 @@ End Sub
 ' Get value by key
 ' JDL 8/6/25
 '
-Public Function Item(ByVal key As String) As Variant
+Public Function Item(ByVal key As String, Optional ByVal dflt As Variant) As Variant
     Dim index As Long
 
     index = FindIndex(key)
@@ -99,7 +99,7 @@ Public Function Item(ByVal key As String) As Variant
             Item = values(index)
         End If
     Else
-        Item = Empty
+        If IsMissing(dflt) Then Item = Empty Else Item = dflt
     End If
 End Function
 '-----------------------------------------------------------------------------------------------
@@ -113,8 +113,8 @@ End Function
 ' Get number of items
 ' JDL 8/6/25
 '
-Public Property Get Size() As Long
-    Size = itemCount
+Public Property Get Count() As Long
+    Count = itemCount
 End Property
 '-----------------------------------------------------------------------------------------------
 ' Get all keys as array
@@ -395,8 +395,8 @@ Public Function DetectValueType(ByVal valueStr As String, ByRef valParsed As Var
         Exit Function
     End If
 
-    ' valueStr is invalid: not a recognized type (string, boolean, double or empty)
-    If errs.IsFail(True, 1) Then GoTo ErrorExit
+    ' Unquoted text defaults to String
+    valParsed = sTrim
     Exit Function
 
 ErrorExit:

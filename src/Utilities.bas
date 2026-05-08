@@ -271,7 +271,7 @@ Function BuildHeaderListFromColInfo(wkbk, ByVal sTable) As String
         Set rngVals = .rngTblHeaderVal(tblCI, sTable)
         Set rngVals = Range(rngVals.Offset(1, 0), rngVals.End(xlDown))
         BuildHeaderListFromColInfo = ListFromArray(Intersect(rngVals.EntireRow, _
-            .colrngColName).value)
+            .colrngVarNorm).value)
     End With
     Exit Function
     

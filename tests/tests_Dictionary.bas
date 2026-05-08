@@ -22,7 +22,7 @@ Sub TestDriver_Dictionary()
             test_Item procs
             test_Exists procs
             test_Remove procs
-            test_Size procs
+            test_Count procs
             test_GetKeys procs
             test_Clear procs
             test_UpdateValue procs
@@ -60,12 +60,12 @@ Sub test_Add(procs)
     With tst
         'Add first item
         dict.Add "key1", "value1"
-        .Assert tst, dict.Size = 1
+        .Assert tst, dict.Count = 1
         .Assert tst, dict.Item("key1") = "value1"
         
         'Add second item
         dict.Add "key2", "value2"
-        .Assert tst, dict.Size = 2
+        .Assert tst, dict.Count = 2
         .Assert tst, dict.Item("key2") = "value2"
         
         'Add numeric value
@@ -142,23 +142,23 @@ Sub test_Remove(procs)
         dict.Add "key1", "value1"
         dict.Add "key2", "value2"
         dict.Add "key3", "value3"
-        .Assert tst, dict.Size = 3
+        .Assert tst, dict.Count = 3
         
         'Remove middle item
         dict.Remove "key2"
-        .Assert tst, dict.Size = 2
+        .Assert tst, dict.Count = 2
         .Assert tst, Not dict.Exists("key2")
         .Assert tst, dict.Exists("key1")
         .Assert tst, dict.Exists("key3")
         
         'Remove first item
         dict.Remove "key1"
-        .Assert tst, dict.Size = 1
+        .Assert tst, dict.Count = 1
         .Assert tst, dict.Exists("key3")
         
         'Remove last item
         dict.Remove "key3"
-        .Assert tst, dict.Size = 0
+        .Assert tst, dict.Count = 0
         
         .Update tst, procs
     End With
@@ -167,28 +167,28 @@ End Sub
 ' Test item count tracking
 ' JDL 1/30/26
 '
-Sub test_Size(procs)
-    Dim tst As New Test: tst.Init tst, "test_Size"
+Sub test_Count(procs)
+    Dim tst As New Test: tst.Init tst, "test_Count"
     Set ExcelSteps.errs = Nothing
     Dim dict As Object
     
     Set dict = ExcelSteps.New_Dictionary
     
     With tst
-        .Assert tst, dict.Size = 0
+        .Assert tst, dict.Count = 0
         
         dict.Add "item1", 1
-        .Assert tst, dict.Size = 1
+        .Assert tst, dict.Count = 1
         
         dict.Add "item2", 2
         dict.Add "item3", 3
-        .Assert tst, dict.Size = 3
+        .Assert tst, dict.Count = 3
         
         dict.Remove "item2"
-        .Assert tst, dict.Size = 2
+        .Assert tst, dict.Count = 2
         
         dict.Clear
-        .Assert tst, dict.Size = 0
+        .Assert tst, dict.Count = 0
         
         .Update tst, procs
     End With
@@ -233,17 +233,17 @@ Sub test_Clear(procs)
         dict.Add "key1", "value1"
         dict.Add "key2", "value2"
         dict.Add "key3", "value3"
-        .Assert tst, dict.Size = 3
+        .Assert tst, dict.Count = 3
         
         dict.Clear
-        .Assert tst, dict.Size = 0
+        .Assert tst, dict.Count = 0
         .Assert tst, Not dict.Exists("key1")
         .Assert tst, Not dict.Exists("key2")
         .Assert tst, Not dict.Exists("key3")
         
         'Can add items after clear
         dict.Add "new", "item"
-        .Assert tst, dict.Size = 1
+        .Assert tst, dict.Count = 1
         .Assert tst, dict.Item("new") = "item"
         
         .Update tst, procs
@@ -263,17 +263,17 @@ Sub test_UpdateValue(procs)
     With tst
         dict.Add "key1", "value1"
         .Assert tst, dict.Item("key1") = "value1"
-        .Assert tst, dict.Size = 1
+        .Assert tst, dict.Count = 1
         
         'Update with new value
         dict.Add "key1", "updated_value"
         .Assert tst, dict.Item("key1") = "updated_value"
-        .Assert tst, dict.Size = 1
+        .Assert tst, dict.Count = 1
         
         'Update with numeric value
         dict.Add "key1", 999
         .Assert tst, dict.Item("key1") = 999
-        .Assert tst, dict.Size = 1
+        .Assert tst, dict.Count = 1
         
         .Update tst, procs
     End With
@@ -303,7 +303,7 @@ Sub test_ObjectValues(procs)
         'Mix objects and values
         dict.Add "text", "hello"
         .Assert tst, dict.Item("text") = "hello"
-        .Assert tst, dict.Size = 3
+        .Assert tst, dict.Count = 3
         
         .Update tst, procs
     End With
@@ -326,7 +326,7 @@ Sub test_ExpandCapacity(procs)
             dict.Add sKey, "value" & i
         Next i
         
-        .Assert tst, dict.Size = 20
+        .Assert tst, dict.Count = 20
         
         'Verify all items still accessible
         .Assert tst, dict.Item("key1") = "value1"
@@ -396,33 +396,28 @@ End Sub
 
 '--------------------------------------------------------------------------------------
 '--------------------------------------------------------------------------------------
-' ParseStringToDictProcedure and related method tests
+' ParseStringToDictProcedure
 '--------------------------------------------------------------------------------------
 '--------------------------------------------------------------------------------------
-'--------------------------------------------------------------------------------------
-' Test full ParseStringToDictProcedure integration behavior
-' JDL 3/10/26
+' Test full ParseStringToDictProcedure
+' JDL 3/10/26; updated 5/8/26 test unquoted values
 '
 Sub test_ParseStringToDictProcedure(procs)
     Dim tst As New Test: tst.Init tst, "test_ParseStringToDictProcedure"
     Set ExcelSteps.errs = Nothing
-
     Dim dict As Object, jsonStr As String
 
     Set dict = ExcelSteps.New_Dictionary
 
     With tst
-        dict.Add "keep", "orig"
-        jsonStr = "{""name"":""Alice"", ""age"":25, ""active"":True, ""keep"":""updated""}"
+        jsonStr = "{""a"":oops,""b"":tRuE,""c"":23.5,""d"":""quoted"", e:unquoted}"
 
         .Assert tst, dict.ParseStringToDictProcedure(jsonStr)
-        .Assert tst, dict.Item("name") = "Alice"
-        .Assert tst, dict.Item("age") = 25
-        .Assert tst, dict.Item("active") = True
-        .Assert tst, dict.Item("keep") = "updated"
-
-        .Assert tst, Not dict.ParseStringToDictProcedure("{""bad"":oops}")
-
+        .Assert tst, dict.Item("a") = "oops"
+        .Assert tst, dict.Item("b") = True
+        .Assert tst, dict.Item("c") = 23.5
+        .Assert tst, dict.Item("d") = "quoted"
+        .Assert tst, dict.Item("e") = "unquoted"
         .Update tst, procs
     End With
 End Sub
@@ -524,7 +519,8 @@ Sub test_DetectValueType(procs)
         .Assert tst, dict.DetectValueType("", valParsed)
         .Assert tst, IsEmpty(valParsed)
 
-        .Assert tst, Not dict.DetectValueType("oops", valParsed)
+        .Assert tst, dict.DetectValueType("oops", valParsed)
+        .Assert tst, valParsed = "oops"
 
         .Update tst, procs
     End With
