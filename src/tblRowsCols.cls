@@ -136,7 +136,7 @@ End Property
 ' IsNamePrefix: Default False; toggles whether Excel Range names have sheet name as prefix
 ' IsPrefixSht: Default True; toggles whether name prefix is sheet name or table name
 '
-' Created:   4/8/21 JDL      Modified: 10/18/24
+' Created:   4/8/21 JDL      Modified: 5/11/26
 '
 Public Function Provision(ByRef tbl As tblRowsCols, wkbk, IsFormat, _
     Optional sht, Optional TblName, Optional Defn, Optional rcHome, Optional nRows, _
@@ -155,6 +155,7 @@ Public Function Provision(ByRef tbl As tblRowsCols, wkbk, IsFormat, _
                 
         'Set dimensions based either on Defn string or actual data
         If Not .SetDimensions(tbl) Then GoTo ErrorExit
+        if .IsBlankSht Then Exit Function
         
         'Set array of columnns and range names
         If Not .SetArysNamesRngs(tbl) Then GoTo ErrorExit

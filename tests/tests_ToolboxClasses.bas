@@ -7,7 +7,7 @@ Const ColInfo_BRTable_nrows As Long = 9 'n data  rows in BR_Example table in tes
 Const ColInfo_BRTable_rngRows As String = "$2:$10" '.tbl.rngRows address for 9 rows
 Const ColInfo_aryIndices_BRExample As String = "Location,ProdType,Year,SerialWeek"
 Const ColInfo_aryMetrics_BRExample As String = "Net_Sales,Discounts,Markdowns,COGS"
-Const ColInfo_colRng_BRExample As String = "$G:$G"
+Const ColInfo_colRng_BRExample As String = "$I:$I"
 Const ColInfo_dictNormalize_BRExample_Count As Long = 8
 Const ColInfo_Locn_VarnameRaw_BRExample As String = "Locn_Raw"
 Const ColInfo_Sales_VarnameRaw_BRExample As String = "Sales_Raw"
@@ -28,10 +28,10 @@ Sub TestDriver_ToolBox()
         .Init procs, ThisWorkbook, "Tests_ToolBox", "Tests_Toolbox"
         SetApplEnvir False, False, xlCalculationAutomatic
 
-        AllEnabled = False
+        AllEnabled = True
         .ProjFiles.Enabled = False
-        .ColInfo.Enabled = False
-        .ImportParseNorm.Enabled = True
+        .ColInfo.Enabled = True
+        .ImportParseNorm.Enabled = False
     End With
 
     With procs.ProjFiles
@@ -45,6 +45,7 @@ Sub TestDriver_ToolBox()
         If .Enabled Or AllEnabled Then
             procs.curProcedure = .name
             test_ColInfo_Init procs
+            test_ColInfo_Init_ThisWorkbook procs
             test_ColInfo_SetCurTbl procs
             test_ColInfo_YieldAryIndices procs
             test_ColInfo_YieldAryIndices_Empty procs
@@ -57,14 +58,14 @@ Sub TestDriver_ToolBox()
     With procs.ImportParseNorm
         If .Enabled Or AllEnabled Then
             procs.curProcedure = .name
-            ' test_ImportParseNorm_Init procs
-            ' test_ImportParseNorm_OpenRawData procs
-            ' test_ImportParseNorm_ValidateRawStructure procs
-            ' test_ImportParseNorm_BuildNormMappings procs
-            ' test_ImportParseNorm_ApplyFillMapToSortedColumn procs
+            test_ImportParseNorm_Init procs
+            test_ImportParseNorm_OpenRawData procs
+            test_ImportParseNorm_ValidateRawStructure procs
+            test_ImportParseNorm_BuildNormMappings procs
+            test_ImportParseNorm_ApplyFillMapToSortedColumn procs
             test_ImportParseNorm_ReplaceVals procs
-            ' test_ImportParseNorm_WriteNormalized procs
-            ' test_ImportParseNorm_FilterRows procs
+            test_ImportParseNorm_WriteNormalized procs
+            test_ImportParseNorm_FilterRows procs
         End If
     End With
 
@@ -331,7 +332,7 @@ Sub test_Init(procs)
         sep = Application.PathSeparator
         aryPath = Split(files.pathSrc, sep)
         dirNextToLast = aryPath(UBound(aryPath) - 1)
-        dirLast = aryPathv(UBound(aryPath))
+        dirLast = aryPath(UBound(aryPath))
         .Assert tst, dirLast = "" 'Proves trailing sep present
         .Assert tst, dirNextToLast = "src"
         
@@ -366,7 +367,6 @@ Sub test_ColInfo_Init(procs)
         ' Initialize files and check directories
         Set wkbkStepsAddin = GetWorkbookByVBProjectName(vba_project_name)
         .Assert tst, files.Init(files, wkbkStepsAddin, "test_data")
-        '.Assert tst, Left(files.pfColInfo, 2) = sep & sep
         .Assert tst, Not Dir(files.pfColInfo) = ""
         .Assert tst, Right(files.pfColInfo, Len(files.fColInfo)) = files.fColInfo
         
@@ -386,6 +386,44 @@ Sub test_ColInfo_Init(procs)
         .Update tst, procs
     End With
     CloseColInfoWkbk colinfo
+    ExcelSteps.IsTest = False
+End Sub
+'-----------------------------------------------------------------------------------------
+' Open colinfo_ from ThisWorkbook and provision colinfo.tbl
+' JDL 5/11/26
+'
+Sub test_ColInfo_Init_ThisWorkbook(procs)
+    Dim tst As New Test: tst.Init tst, "test_ColInfo_Init_ThisWorkbook", ThisWorkbook
+    Dim colinfo As Object, files As Object, wkbkStepsAddin As Workbook
+    Dim shtColInfo As Worksheet
+
+    With tst
+        ExcelSteps.IsTest = True
+        Set wkbkStepsAddin = GetWorkbookByVBProjectName(vba_project_name)
+        Set files = ExcelSteps.New_ProjFiles
+        .Assert tst, files.Init(files, wkbkStepsAddin, "test_data")
+
+        On Error Resume Next
+        Application.DisplayAlerts = False
+        ThisWorkbook.Worksheets("colinfo_").Delete
+        Application.DisplayAlerts = True
+        On Error GoTo 0
+
+        Set shtColInfo = ThisWorkbook.Worksheets.Add(After:=ThisWorkbook.Worksheets(ThisWorkbook.Worksheets.Count))
+        shtColInfo.Name = "colinfo_"
+
+        Set colinfo = ExcelSteps.New_ColInfo
+        .Assert tst, colinfo.Init(colinfo, files, , ThisWorkbook)
+        .Assert tst, Not colinfo.tbl Is Nothing
+        .Assert tst, colinfo.tbl.wkbk Is ThisWorkbook
+        .Update tst, procs
+    End With
+
+    On Error Resume Next
+    Application.DisplayAlerts = False
+    ThisWorkbook.Worksheets("colinfo_").Delete
+    Application.DisplayAlerts = True
+    On Error GoTo 0
     ExcelSteps.IsTest = False
 End Sub
 '-----------------------------------------------------------------------------------------

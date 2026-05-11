@@ -14,21 +14,26 @@ Public tbl As Object            ' tblRowsCols instance for ColInfo.xlsx
 Public curTbl As String         ' Name of current project table column in colinfo.tbl
 Public rngRowsCurTbl As Range   ' Row range for current table's included rows
 '-----------------------------------------------------------------------------------------
-' Open ColInfo.xlsx and provision colinfo.tbl; optionally call SetCurTbl
-' JDL 5/1/26; updated 5/6/26
+' Open ColInfo.xlsx or a provided workbook and provision colinfo.tbl; optionally call SetCurTbl
+' JDL 5/1/26; updated 5/11/26
 '
-Public Function Init(colinfo, files As Object, Optional curTbl As String) As Boolean
+Public Function Init(colinfo, files As Object, Optional curTbl As String, _
+    Optional wkbkColInfo As Workbook) As Boolean
     SetErrs Init: If errs.IsHandle Then On Error GoTo ErrorExit
-    Dim wkbkColInfo As Workbook, tblAlias As Object
+    Dim wkbkTarget As Workbook, tblAlias As Object
 
-    If errs.IsFail(Len(files.pfColInfo) = 0, 1) Then GoTo ErrorExit
-    If Not OpenFile(files.pfColInfo, wkbkColInfo) Then GoTo ErrorExit
-    If errs.IsFail(wkbkColInfo Is Nothing, 2) Then GoTo ErrorExit
+    If wkbkColInfo Is Nothing Then
+        If errs.IsFail(Len(files.pfColInfo) = 0, 1) Then GoTo ErrorExit
+        If Not OpenFile(files.pfColInfo, wkbkTarget) Then GoTo ErrorExit
+        If errs.IsFail(wkbkTarget Is Nothing, 2) Then GoTo ErrorExit
+    Else
+        Set wkbkTarget = wkbkColInfo
+    End If
 
     With colinfo
         Set .tbl = New tblRowsCols
         Set tblAlias = .tbl
-        If Not tblAlias.Provision(tblAlias, wkbkColInfo, False, sht:=shtColInfo, _
+        If Not tblAlias.Provision(tblAlias, wkbkTarget, False, sht:=shtColInfo, _
             IsSetColRngs:=True) Then GoTo ErrorExit
 
         ' If curTbl name specified, sort tbl by its column and set rngRows for its rows
