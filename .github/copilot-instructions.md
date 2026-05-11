@@ -1,44 +1,34 @@
 # Dashboard VBA Project - AI Coding Instructions
-updated 3/13/26 J.D. Landgrebe Data Delve LLC licensed under MIT License (ExcelSteps repository)
-
+updated 4/14/26
 ## Project Architecture
 
-Projects built in VBA have cross-platform compatibility (Windows/Mac Excel). A typical project consists of:
-- **ProjectName.xlsm** - Main project workbook (VBA Project: `ProjectName`)
-- **XLSteps.xlam** - ExcelSteps add-in (VBA Project: `ExcelSteps`)
-- **tests_ProjectName.xlsm** - Unit test suite workbook (VBA Project: `Tests`)
-VBA Project `ProjectName` has VBA Project `ExcelSteps` as a reference. `Tests` has `ProjectName` as a reference. We assume comprehensive unit testing in the test suite which contains one or more test modules grouped by topic. Within a test module, we use the Tests.Procedures class instance, procs to manage test groups and reporting.
+Three-workbook structure for cross-platform (Windows/Mac) compatibility:
+- **Dashboard.xlsm** — Main workbook (VBA Project: `VBAProject_Dashboard`)
+- **XLSteps.xlam** — ExcelSteps add-in (VBA Project: `ExcelSteps`)
+- **tests_Dashboard.xlsm** — Unit test suite (VBA Project: `Tests`)
 
-We use `xlwings edit VBA` tool to sync code modules between the project folder and Excel files. This allows AI to edit the code files and have the changes propagate into Excel. The `vs_code_setup.md` skill instructs on configuring VS Code for this. Code files (in the project's src and tests subfolders) have typical extensions: `.bas` for standard modules, `.cls` for class modules, and `.frm` for userforms.
+`VBAProject_Dashboard` references `ExcelSteps`; `Tests` references `VBAProject_Dashboard`.
 
-When editing VBA module files under active xlwings sync, prefer direct file patch edits (`apply_patch`) and avoid terminal-based rewrite commands (for example `Get-Content ... -replace ... | Set-Content ...`) because they can disrupt sync/watch behavior.
+Code files in `src/` and `tests/` use extensions `.bas` (standard modules), `.cls` (class modules), `.frm` (userforms). Before making code changes, confirm a VS Code Terminal is running with `xlwings vba edit` active for the target workbook. Stop and address this if not enabled.
 
 ## Core Data Management Pattern
 
-**Use structured data objects instead of ad hoc Excel ranges, arrays etc.:**
-Projects utilize a structured approach to data management through use of ExcelSteps addin classes for data objects. The project organizes data to be managed as tblRowsCols (rows by columns tables) and mdlScenario (alternate columns by rows format) objects.
-
-Programmatically, the Project workbook's code manages Scenario Models and Tables as a group of project-specific ExcelSteps data object instances called `mdls` and `tbls` for the `mdlScenario` and `tblRowsCols` instances, respectively. `mdls` and `tbls` are instances of ProjectName `Models.cls` and `Tables.cls`. The individual mdl and tbl objects are instanced by hard-coded name as attributes in these classes. For example, `mdls.WklyHist` might refer to a sales history Scenario Model. `tbls.Calendar` might refer to a calendar lookup table etc.
-
-The `InitAllTbls` and `InitAllMdls` functions initialize, provision and refresh all or a subset of the data objects. Initialize means instancing the data objects if they don't yet exist (e.g. `If mdls.WklyHist Is Nothing`). Provision means, calling the object's `.Provision` method to set wayfinding attributes such as `.wkbk`, `.sht`, `.wksht` and relevant range attributes. Refresh means calling the object's `.Refresh` method to update named ranges and recipe-stored (Project workbook's ExcelSteps Sheet) formulas and formatting for variables within the objects. 
+All data is managed through ExcelSteps structured objects — never ad hoc ranges or arrays:
+- **`tbls`** — instance of `Tables.cls`; collection of `tblRowsCols` objects (row×column tables)
+- **`mdls`** — instance of `Models.cls`; collection of `mdlScenario` objects (column×row scenario models)
 
 ```vb
-' Initialize global data objects
 Dim tbls As Object, mdls As Object
-If Not InitAllTbls(tbls) Then GoTo ErrorExit  ' Tables collection
-If Not InitAllMdls(mdls) Then GoTo ErrorExit  ' Models collection
+If Not InitAllTbls(tbls) Then GoTo ErrorExit
+If Not InitAllMdls(mdls) Then GoTo ErrorExit
 ```
-- **`tbls`** - Collection of `tblRowsCols` objects (row×column tables)
-- **`mdls`** - Collection of `mdlScenario` objects (column×row scenario models)
-- Use `tbls.Raw.rngHeader` instead of hardcoded ranges like `A1:Z1`
-- Use `mdls.params.ScenModelLoc(mdls.params, "variable_name")` for model lookups
 
-By default, the above example will initialize all tables and models defined in the project. By use case, you can also initialize specific tables/models by passing Boolean parameters to `InitAllTbls` and `InitAllMdls`. This example initializes just the project's params and Weekly Scenario models
+Use named object attributes instead of hardcoded ranges: `tbls.Raw.rngHeader`, `mdls.params.ScenModelLoc(mdls.params, "variable_name")`.
 
-The functions also have an IsRefresh argument to toggle refreshing, which is performance intensive and not always needed.
+`InitAllTbls`/`InitAllMdls` initialize (instance if `Is Nothing`), provision (set `.wkbk`, `.sht`, `.wksht`, ranges), and optionally refresh (update named ranges and formulas). Use named parameters to initialize a subset:
 
 ```vb
-InitMdls(mdls, IsAll:=False, IsParams:=True, IsWeekly:=True, IsRefresh:=True)
+InitAllMdls(mdls, IsAll:=False, IsParams:=True, IsWeekly:=True, IsRefresh:=True)
 ```
 
 ## Table and Model Types
@@ -91,41 +81,23 @@ End Function
 - Description never repeats function name
 - Hyphens line indicates maximum code width
 
-**VBA Quirks reminders:**
-A class attribute cannot be passed directly as a ByRef argument — VBA silently ignores the assignment. The preferred pattern is to set the class attribute first, then create a minimal local alias pointing to the same object solely for the ByRef call. Do NOT create a proxy local, do the work on the proxy, then assign to the attribute at the end.
+**ByRef alias pattern (VBA quirk):** A class attribute cannot be passed directly as ByRef — VBA silently ignores the assignment. Set the attribute first; create an alias only for the ByRef call. Do not create a proxy local, do work on it, then assign back to the attribute.
 
 ```vb
-' Incorrect - attribute cannot be passed directly as ByRef
-If Not SomeFunctionSetsAttr(obj.attr) Then GoTo ErrorExit
-
-' Avoid - proxy local created first, attribute assigned last
-Dim tempAttr As Object
-If Not SomeFunctionSetsAttr(tempAttr) Then GoTo ErrorExit
-Set obj.attr = tempAttr  ' redundant late assignment obscures intent
-
-' Preferred - set attribute directly; alias only for ByRef call constraint
+' Preferred
 Set obj.attr = ExcelSteps.New_tbl
 Dim tblAlias As Object: Set tblAlias = obj.attr
 If Not tblAlias.Provision(tblAlias, wkbk, False) Then GoTo ErrorExit
 ```
 
-See `Preferred Coding Patterns.md` (VBA_Development Obsidian vault) for the full set of preferred patterns including this one (point 10).
-
-## VBA Class Usage Patterns
-We use direct public attributes not Property Get/Let. Do not use Property Get/Let in code
-
 ## Key Driver Patterns
-Driver subs (e.g. user-initiated) in VBAProject_ProjectName follow this structure. 
-* SetErrs "driver" argument informs SetErrs that this is a driver subroutine not a function.
-* SetApplEnvir sets application environment (screen updating, events, calculation mode) for performance
-* errs.RecordErr single argument is subroutine name as String
 
 ```vb
 '--------------------------------------------------------------------------------------
 ' Short description of what sub/use case does (never repeat sub name)
 ' JDL MM/DD/YY
 '
-'Sub ImportSalesDataDriver()
+Sub ImportSalesDataDriver()
     SetErrs "driver": If errs.IsHandle Then On Error GoTo ErrorExit
     Dim wHist As Object, mdls As Object
     
@@ -152,98 +124,64 @@ End Sub
 - `errs.RecordErr` single argument logs error with sub name; causes reporting of nested errors from functions called within driver
 
 ## Data Object Initialization
-tblRowsCols and mdlScenario objects have `.Init()` and `.Provision()` methods. Init sets basic wayfinding attributes. Provision is more extensive and sets all relevant intra-object locations as ranges. Init is also called by Provision but can be called independently. It locates the object by setting its `.wkbk` (Workbook object), `.sht` (String sheet name) and .wksht (Worksheet object). tblRowsCols and mdlScenario have differing "Refresh" procedures that refresh/propagate specified formulas for calculated variables. mdlScenario `.Refresh` names variable (row-oriented) ranges and scenario column ranges. `tblRowsCols.Provision` optionally names column ranges for variables based on variable names in `.rngHeader`
 
-Default objects can be initialized by just `wkbk` and `sht` argument such as
+Default objects: `wkbk` and `sht` are sufficient:
 ```vb
 If Not tbls.Raw.Init(tbls.Raw, wkbk, "raw_data") Then GoTo ErrorExit
 ```
 
-Custom objects require either a definition string or explicit arguments to locate the object in the workbook and set its parameters. All definition string sub-parts have standalone argument counterparts, and arguments override specification by the defn string.
-
-mdlScenario Example with definition string (Refresh names ranges and propagates formulas). Docstrings in the classes give details about defn string format.
+Custom objects use a definition string (arguments override defn string). Docstrings in classes give format details:
 ```vb
 With mdlWHist
-    defnWklyHist As String = "Weekly:103,2:0:F:T:T:T:T:WklyHist"
-    If Not .Provision(mdlWHist, wkbk, defn:=defnWklyHist) Then GoTo ErrorExit
-    If Not .Refresh(mdlWHist) Then GoTo ErrorExit    
+    If Not .Provision(mdlWHist, wkbk, defn:="Weekly:103,2:0:F:T:T:T:T:WklyHist") Then GoTo ErrorExit
+    If Not .Refresh(mdlWHist) Then GoTo ErrorExit
 End With
 ```
 
-tblRowsCols Example with custom arguments (False argument specifies whether to also reformat the table)
 ```vb
 With tbls.ExampleTbl
-   If Not .Provision(tbls.ExampleTbl, ThisWorkbook, False, sht:="home_sheet", _
-      IsSetColNames:=False) Then GoTo ErrorExit
+    If Not .Provision(tbls.ExampleTbl, ThisWorkbook, False, sht:="home_sheet", _
+       IsSetColNames:=False) Then GoTo ErrorExit
 End With
 ```
 
 ## ExcelSteps Integration Patterns
-**Use ExcelSteps utilities instead of native VBA:**
 
+**Prefer ExcelSteps utilities over native VBA:**
 ```vb
-' Preferred find: works with hidden cells
-Set rng = ExcelSteps.FindInRange(searchRange, "value")
-
-'Avoid: Native Range Find that doesn't work with hidden cells
-Set rng = searchRange.Find("value")
+Set rng = ExcelSteps.FindInRange(searchRange, "value")  ' works with hidden cells
+' Not: searchRange.Find("value")
 ```
 
-**Data wayfinding in tblRowsCols:**
+**Wayfinding — tblRowsCols (call via `tbl.FunctionName`):**
 ```vb
-' Key utility functions for tblRowsCols
-Function TableLoc(rngCell, rngCol, Optional ishift = 0) As Variant
-Sub SetTableLoc(rngCell, rngCol, val, Optional ishift = 0)
-'rngCell is a cell within the table's data rows. The intersect of its entire row and rngCol 
-'locates the cell returned or whose value is set
-
-'Searches tbl.rngHeader for column header sVal
-Function rngTblHeaderVal(tbl, sVal) As Range 
-
-' Key utility functions for mdlScenario
-Function ScenModelLoc(mdl, sVar, Optional rngCol) As Range
-Sub SetScenModelLoc(mdl, sVar, val, Optional rngCol)
-'sVar is the name of a variable in the Scenario Model's .colrngVarNames column
-'rngCol is an optional scenario column range in the model (not specified for .IsCalc models where .colrngModel is single column)
+Function TableLoc(rngCell, rngCol, Optional ishift = 0) As Variant  ' get value at row/col intersection
+Sub SetTableLoc(rngCell, rngCol, val, Optional ishift = 0)           ' set value at row/col intersection
+Function rngTblHeaderVal(tbl, sVal) As Range                         ' find column range by header name
 ```
 
-General (utility functions and subs in ExcelSteps; call by ExcelSteps.utility_name())
+**Wayfinding — mdlScenario (call via `mdl.FunctionName`):**
 ```vb
-'Open file at fullpath (sets wkbkOpened if successful)
+Function ScenModelLoc(mdl, sVar, Optional rngCol) As Range  ' get variable range
+Sub SetScenModelLoc(mdl, sVar, val, Optional rngCol)         ' set variable value
+```
+
+**General utilities (call as `ExcelSteps.FunctionName`):**
+```vb
 Public Function OpenFile(ByVal fullpath As String, wkbkOpened As Workbook) As Boolean
-
-'Close and/or SaveAs wkbk to filepath (overwrites if exists)
-Public Function SaveAsCloseOverwrite(ByVal wkbk As Workbook, _
-            ByVal filepath As String, Optional IsSave As Boolean = True, _
-            Optional IsClose As Boolean = True) As Boolean
-
-'Return rng of contiguous, populated cells from cell range, rng1; 
-'Searches rng1 column (xlDown) if IsRows=True; rng1 row otherwise (xlToRight)
-'Returns multicell Range from rng1 to populated extent
-Function rngToExtent(rng1, IsRows) As Range
+Public Function SaveAsCloseOverwrite(ByVal wkbk As Workbook, ByVal filepath As String, _
+    Optional IsSave As Boolean = True, Optional IsClose As Boolean = True) As Boolean
+Function rngToExtent(rng1, IsRows) As Range  ' contiguous populated range from rng1
 ```
 
-- **Data Object Iteration**
-- Use `.rowCur` and `colCur` as temporary variables to track iteration within `tblRowsCols` and `mdlScenario` instances.
-- Use `.colrngModel` and `rngRows` attributes as overall Scenario Model column and row iteration range but column iteration begins at `.colrngFirstScenario` and needs to check inclusion in `.colrngPopCols` to skip blanks/unused columns. Similarly check inclusion in `.rngPopRows` for Scenario Model row iteration
-- tblRowsCols.rngHeader and .rngRows contains contiguous column and row blocks, so iteration can be continuous
-
+**Iteration:** Use `.rowCur`/`.colCur` as temporary iteration variables. For `mdlScenario`, iterate columns via `.colrngPopCols` (skips blanks) starting at `.colrngFirstScenario`; iterate rows via `.rngPopRows`. Handle multirange `.colrngModel`:
 ```vb
-' Use .colCur for Scenario columns
-Set mdl.colCur = mdl.rngPopCols.Columns(i)
-cellValue = mdl.ScenModelLoc(mdl, "variable_name", mdl.colCur)
-
-' Key utility functions - note .colrngModel may be multirange
-Function ScenModelLoc(mdl, sVar, Optional rngCol) As Range
-Sub SetScenModelLoc(mdl, sVar, val, Optional rngCol)
-
-' Handle multirange columns when iterating
 For Each colArea In mdl.colrngModel.Areas
     For Each col In colArea.Columns
-        ' Process each column
     Next col
 Next colArea
 ```
+`tblRowsCols.rngHeader` and `.rngRows` are contiguous, so iteration can be continuous.
 
 **Preferred Array/Range writing patterns:**
 Preferred for writing multiple header values
@@ -313,22 +251,11 @@ Sub test_FunctionName(procs)
     End With
 End Sub
 ```
-**Pattern for opening a test data file**
-Place in a helper sub if repeated in multiple tests
-```vb
-sep = Application.PathSeparator
-pathFile = .wkbkTest.Path & sep & "test_data_import" & sep & "ML - WeeklySales - Mockup.xlsx"
-.Assert tst, Len(Dir$(pathFile)) > 0
-.Assert tst, ExcelSteps.OpenFile(pathFile, wkbkData)
-.Assert tst, Not wkbkData Is Nothing
-```
-
-**Test driver organization:**
-Driver sub is at top of module and used to run tests in Procedure (e.g. procs) groups. 
-- Within the driver, new test calls (and new procs groups of tests) should be inserted at the end of the driver
-- All newly-written tests should be inserted immediately below the driver sub for navigation ease
-- procs Init second argument is test suite sheet name for writing test results; 3rd argument is test suite name used for MsgBox reporting of results to user.
-- Comments included here are documentation only. Do not include them in generated code
+**Test driver structure:**
+- Driver sub at top of module; new tests inserted immediately below it
+- New test calls added at end of their procs group in the driver
+- `procs.Init` args: 2nd = sheet name for results, 3rd = name for MsgBox reporting
+- Do not include explanatory comments shown here in generated code
 ```vb
 Sub TestingDriver_Dashboard()
     Dim procs As New Procedures, AllEnabled As Boolean
@@ -362,12 +289,13 @@ Dim pathname As String
 pathname = tst.wkbktest.Path & mdls.params.ScenModelLoc(mdls.params, "path_testing").Value
 ```
 
-## Cross-Platform Dictionary Usage
-**Use project's custom dictionary class instead of VBA Dictionary:**
+## Cross-Platform Dictionary
+
+Always use the custom dictionary class — not `Scripting.Dictionary` (Windows-only):
 ```vb
 Dim dict As Object
 Set dict = New dictionary_cls
-dict.Add "key", "value"  ' Cross-platform compatible
+dict.Add "key", "value"
 ```
 
 ## File Organization (using ProjectName "Dashboard" as example)
@@ -384,12 +312,6 @@ dict.Add "key", "value"  ' Cross-platform compatible
 - **Range objects**: Prefix with `rng` or `cell` (e.g., `rngHeader`, `rngRows`, `cellSrc` etc.)
 
 ## Common Integration Points
-- **File I/O**: Always use `ExcelSteps.OpenFile` and `SaveAsCloseOverwrite`
+- **File I/O**: Always use `ExcelSteps.OpenFile` and `ExcelSteps.SaveAsCloseOverwrite`
 - **Pivot tables**: Use class attributes pattern (`wHist.pivotTable`, `wHist.pivotCache`)
-- **Parameter blocks**: Adjacent to scenario models with `InitParamBlock` pattern
-
-## ExcelSteps and Test Suite Code Modules
-- **tblRowsCols.cls**: ExcelSteps Class module for tblRowsCols object
-- **mdlScenario.cls**: ExcelSteps Class module for mdlScenario object
-- **Dictionary.cls**: ExcelSteps Class module for cross-platform dictionary class
-- **Procedures.cls**: Test Suite Class module for Procedures object
+- **VBA classes**: Use direct public attributes — do not use `Property Get/Let`
