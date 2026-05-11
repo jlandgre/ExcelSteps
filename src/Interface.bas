@@ -147,3 +147,5 @@ Sub wkbkResetStatus(IsRefreshInit, wkbk, xCalculation, shtCurrent)
         If SheetExists(wkbk, shtCurrent) Then wkbk.Sheets(shtCurrent).Activate
     End If
 End Sub
+
+

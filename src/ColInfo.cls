@@ -11,7 +11,7 @@ Option Explicit
 'Version 5/5/26
 
 Public tbl As Object            ' tblRowsCols instance for ColInfo.xlsx
-Public CurTbl As String         ' Name of current project table column in colinfo.tbl
+Public curTbl As String         ' Name of current project table column in colinfo.tbl
 Public rngRowsCurTbl As Range   ' Row range for current table's included rows
 '-----------------------------------------------------------------------------------------
 ' Open ColInfo.xlsx and provision colinfo.tbl; optionally call SetCurTbl
@@ -50,14 +50,14 @@ Public Function SetCurTbl(colinfo, curTbl) As Boolean
     Dim rngStart As Range
 
     With colinfo
-        .CurTbl = curTbl
+        .curTbl = curTbl
 
         ' Check that .curTbl name found in table and set colrng for it
-        Set .tbl.colrngTblName = .tbl.rngTblHeaderVal(.tbl, .CurTbl).EntireColumn
+        Set .tbl.colrngTblName = .tbl.rngTblHeaderVal(.tbl, .curTbl).EntireColumn
         If errs.IsFail(.tbl.colrngTblName Is Nothing, 1) Then GoTo ErrorExit
 
         ' Sort by .curTbl column and set rngRowsCurTbl to its non-blank rows
-        If Not .tbl.TblSortBy(.tbl, .CurTbl) Then GoTo ErrorExit
+        If Not .tbl.TblSortBy(.tbl, .curTbl) Then GoTo ErrorExit
         Set rngStart = Intersect(.tbl.rngRows, .tbl.colrngTblName.EntireColumn).Cells(1, 1)
         Set .rngRowsCurTbl = rngToExtent(rngStart, True)
     End With
@@ -77,7 +77,7 @@ Public Function YieldAryIndices(colinfo) As Variant
     With colinfo
 
         ' Check that CurTbl is set
-        If errs.IsFail(Len(.CurTbl) = 0, 1) Then GoTo ErrorExit
+        If errs.IsFail(Len(.curTbl) = 0, 1) Then GoTo ErrorExit
 
         ' Build array of index variables from sorted tbl
         n = 0
@@ -107,7 +107,7 @@ Public Function YieldAryMetrics(colinfo) As Variant
     With colinfo
 
         ' Check that CurTbl is set
-        If errs.IsFail(Len(.CurTbl) = 0, 1) Then GoTo ErrorExit
+        If errs.IsFail(Len(.curTbl) = 0, 1) Then GoTo ErrorExit
 
         n = 0
         ReDim ary(0 To .rngRowsCurTbl.Rows.Count - 1)
@@ -140,7 +140,7 @@ Public Function YieldDNormalize(colinfo) As Object
     With colinfo
 
         ' Check that CurTbl is set
-        If errs.IsFail(Len(.CurTbl) = 0, 1) Then GoTo ErrorExit
+        If errs.IsFail(Len(.curTbl) = 0, 1) Then GoTo ErrorExit
         
         ' Build dictionary of VarNameNorm->VarNameRaw pairs from sorted tbl
         For Each rngRow In .rngRowsCurTbl.Rows
@@ -158,3 +158,5 @@ Public Function YieldDNormalize(colinfo) As Object
 ErrorExit:
     errs.RecordErr "ColInfo.YieldDNormalize"
 End Function
+
+

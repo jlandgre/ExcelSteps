@@ -55,8 +55,8 @@ End Function
 Public Function New_ProjFiles() As ProjFiles
     Set New_ProjFiles = New ProjFiles
 End Function
-Public Function New_ColInfo() As ColInfo
-    Set New_ColInfo = New ColInfo
+Public Function New_ColInfo() As colinfo
+    Set New_ColInfo = New colinfo
 End Function
 Public Function New_ImportParseNorm() As ImportParseNorm
     Set New_ImportParseNorm = New ImportParseNorm
@@ -64,6 +64,7 @@ End Function
 Public Function New_tblUnstructured() As tblUnstructured
     Set New_tblUnstructured = New tblUnstructured
 End Function
+
 
 
 

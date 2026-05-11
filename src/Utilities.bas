@@ -1,5 +1,5 @@
 Attribute VB_Name = "Utilities"
-'Version 1/29/26
+'Version 5/8/26
 'This module is part of the ExcelSteps open source project posted at:
 'https://github.com/jlandgre/ExcelSteps/. It is licensed under the MIT open source license
 Option Explicit
@@ -254,7 +254,7 @@ End Function
 '
 ' Created:   10/29/20 JDL      Modified: 7/9/21 Convert ColInfo to tblRowsCols
 '                                     2/28/23 Add error trapping and refactor
-'                                     8/13/25
+'                                     5/8/26
 '
 Function BuildHeaderListFromColInfo(wkbk, ByVal sTable) As String
 
@@ -1656,6 +1656,8 @@ Sub ActiveCellColor()
     Debug.Print "RGB: " & r & ", " & g & ", " & b
     Debug.Print "Color value: " & lngColor
 End Sub
+
+
 
 
 

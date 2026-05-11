@@ -36,3 +36,4 @@ Public Function Init(tblU, wkbk As Workbook, sht As String, Optional rngTable As
 ErrorExit:
   errs.RecordErr "tblUnstructured.Init", Init
 End Function
+

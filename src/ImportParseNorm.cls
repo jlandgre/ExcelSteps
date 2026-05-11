@@ -53,7 +53,7 @@ Public Function Init(imptbl, colinfo, files As Object, curTbl As String, _
   If errs.IsFail(Len(curTbl) = 0, 5) Then GoTo ErrorExit
 
   'Initialize colinfo and set rngRowsCurTbl for curTbl
-  If colinfo Is Nothing Then Set colinfo = New ColInfo
+  If colinfo Is Nothing Then Set colinfo = New colinfo
   With colinfo
     If .tbl Is Nothing Then
       If Not .Init(colinfo, files) Then GoTo ErrorExit
@@ -380,7 +380,7 @@ Public Function WriteNormFromMappings(imptbl, aryNorm() As String, aryRaw() As S
 
       Set rngSrc = Intersect(imptbl.tblParsed.rngRows, rngSrcHdr.EntireColumn)
       Set rngDest = wkshtNorm.Cells(2, j).Resize(rngSrc.Rows.Count, 1)
-      rngDest.Value = rngSrc.Value
+      rngDest.value = rngSrc.value
     End If
   Next i
   If errs.IsFail(j = 0, 2, imptbl.curTbl) Then GoTo ErrorExit
@@ -474,3 +474,4 @@ Private Function ApplyKeepOnlyFilter(imptbl, ByVal sVarNorm As String, ByVal kee
 ErrorExit:
   errs.RecordErr "ApplyKeepOnlyFilter", ApplyKeepOnlyFilter
 End Function
+
