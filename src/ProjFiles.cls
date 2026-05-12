@@ -22,6 +22,9 @@ Public pathColInfo As String ' path to ColInfo file
 Public fColInfo As String ' ColInfo filename (typically ColInfo.xlsx)
 Public pfColInfo As String ' ColInfo path + filename
 Public pfImportFile As String ' Full path to raw data import file
+Public fBRRaw As String       ' BR raw data filename
+Public pathBRRaw As String    ' Directory path for BR raw data
+Public pfBRRaw As String      ' Full path + filename for BR raw data
 '-----------------------------------------------------------------------------------------
 ' Set path/filename attributes for project workbook and test suite locations
 ' JDL 4/29/26; updated 5/1/26
