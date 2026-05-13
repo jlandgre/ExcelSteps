@@ -7,7 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'Version 5/8/26
+'Version 5/13/26
 Option Explicit
 
 'Table Locator Attributes
@@ -90,6 +90,7 @@ Public colrngValue As Range
 'ColInfo
 Public colrngTblName As Range
 Public colrngVarNorm As Range
+Public colrngRole As Range
 Public colrngVarRaw As Range
 Public colrngIsIndex As Range
 Public colrngVarDesc As Range
@@ -1219,6 +1220,7 @@ Public Function SetColRanges(ByRef tbl) As Boolean
             Set .colrngTblName = Nothing
             Set .colrngVarNorm = .rngTblHeaderVal(tbl, "VarNameNorm").EntireColumn
             Set .colrngVarRaw = .rngTblHeaderVal(tbl, "VarNameRaw").EntireColumn
+            Set .colrngRole = .rngTblHeaderVal(tbl, "Role").EntireColumn
             Set .colrngIsIndex = .rngTblHeaderVal(tbl, "IsIndex").EntireColumn
             Set .colrngVarDesc = .rngTblHeaderVal(tbl, "Description").EntireColumn
             Set .colrngVarUnits = .rngTblHeaderVal(tbl, "Units").EntireColumn

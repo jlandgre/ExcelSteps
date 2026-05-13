@@ -8,7 +8,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
-'Version 4/29/26
+'Version 5/12/26
 
 Public wkbkProj As Workbook ' Project workbook
 Public IsDevelopment As Boolean ' True if working in development, src/tests folder structure
@@ -22,20 +22,23 @@ Public pathColInfo As String ' path to ColInfo file
 Public fColInfo As String ' ColInfo filename (typically ColInfo.xlsx)
 Public pfColInfo As String ' ColInfo path + filename
 Public pfImportFile As String ' Full path to raw data import file
-Public fProj1 As String       ' Project-specific filename 1
-Public pathProj1 As String    ' Project-specific directory path 1
-Public pfProj1 As String      ' Project-specific full path + filename 1
-Public fProj2 As String       ' Project-specific filename 2
-Public pathProj2 As String    ' Project-specific directory path 2
-Public pfProj2 As String      ' Project-specific full path + filename 2
-Public fProj3 As String       ' Project-specific filename 3
-Public pathProj3 As String    ' Project-specific directory path 3
-Public pfProj3 As String      ' Project-specific full path + filename 3
+
+'Generic attribute sets for project-specific paths and filenames
+Public fProj1 As String
+Public pathProj1 As String
+Public pfProj1 As String
+Public fProj2 As String
+Public pathProj2 As String
+Public pfProj2 As String
+Public fProj3 As String
+Public pathProj3 As String
+Public pfProj3 As String
 '-----------------------------------------------------------------------------------------
 ' Set path/filename attributes for project workbook and test suite locations
-' JDL 4/29/26; updated 5/1/26
+' JDL 4/29/26; updated 5/12/26
 '
-Public Function Init(files, ByVal wkbk As Workbook, Optional subdir_tests As String) As Boolean
+Public Function Init(files, ByVal wkbk As Workbook, Optional subdir_tests As String, _
+    Optional IsTest As Boolean = False) As Boolean
     SetErrs Init: If errs.IsHandle Then On Error GoTo ErrorExit
     With files
         Set .wkbkProj = wkbk
@@ -45,7 +48,7 @@ Public Function Init(files, ByVal wkbk As Workbook, Optional subdir_tests As Str
     End With
     
     'Set paths and filenames
-    If Not SetGenericPaths(files) Then GoTo ErrorExit
+    If Not SetGenericPaths(files, IsTest) Then GoTo ErrorExit
     'If Not SetProjSpecificPaths(files) Then GoTo ErrorExit
     Exit Function
 
@@ -54,9 +57,9 @@ ErrorExit:
 End Function
 '-----------------------------------------------------------------------------------------
 ' Set generic paths and filenames
-' JDL 4/29/26; updated 5/1/26
+' JDL 4/29/26; updated 5/12/26
 '
-Private Function SetGenericPaths(files) As Boolean
+Private Function SetGenericPaths(files, IsTest As Boolean) As Boolean
     SetErrs SetGenericPaths: If errs.IsHandle Then On Error GoTo ErrorExit
     Dim sep As String, aryPath As Variant
     sep = Application.PathSeparator

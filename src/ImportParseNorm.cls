@@ -8,7 +8,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
-'Version 5/8/26
+'Version 5/13/26
 
 Public colinfo As Object
 Public files As Object
@@ -95,20 +95,23 @@ ErrorExit:
 End Function
 '-----------------------------------------------------------------------------------------
 ' Open raw file and provision raw table object in a temporary workbook copy
-' JDL 5/7/26
+' JDL 5/7/26; Updated 5/13/26
 '
 Public Function OpenRawData(imptbl) As Boolean
   SetErrs OpenRawData: If errs.IsHandle Then On Error GoTo ErrorExit
   Dim wkbkOpened As Workbook, wkbkTemp As Workbook
   Dim tblAlias As Object, tblUAlias As Object, shtRaw As String
 
-  If Not OpenFile(imptbl.files.pfImportFile, wkbkOpened) Then GoTo ErrorExit
-  If errs.IsFail(wkbkOpened Is Nothing, 1, imptbl.files.pfImportFile) Then GoTo ErrorExit
-
-  wkbkOpened.Worksheets(1).Copy
-  Set wkbkTemp = ActiveWorkbook
-  wkbkOpened.Close False
-  shtRaw = wkbkTemp.Worksheets(1).Name
+  If LCase$(CStr(imptbl.dParamsImport.Item("Filetype", ""))) = "xls" Then
+    If Not OpenFile(imptbl.files.pfImportFile, wkbkOpened) Then GoTo ErrorExit
+    If errs.IsFail(wkbkOpened Is Nothing, 1, imptbl.files.pfImportFile) Then GoTo ErrorExit
+    wkbkOpened.Worksheets(1).Copy
+    Set wkbkTemp = ActiveWorkbook
+    wkbkOpened.Close False
+    shtRaw = wkbkTemp.Worksheets(1).Name
+  Else
+    If errs.IsFail(True, 2, CStr(imptbl.dParamsImport.Item("Filetype"))) Then GoTo ErrorExit
+  End If
 
   With imptbl
     If LCase$(CStr(.dParamsParse.Item("RawShape", "rowscols"))) = "rowscols" Then
@@ -214,7 +217,6 @@ Public Function ApplyFillMapToSortedColumn(imptbl, rngDataCol As Range, dict As 
   If IsArray(aryKeys) Then
     For Each sKey In aryKeys
       valFill = dict.Item(CStr(sKey))
-      Debug.Print valFill, sKey
       If Not imptbl.ApplyFillKeyToSortedColumn(imptbl, rngDataCol, CStr(sKey), valFill) Then GoTo ErrorExit
     Next sKey
   End If
