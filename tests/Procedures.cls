@@ -41,7 +41,7 @@ Public PivotTable As Object '3/27/26
 
 ' Tests in tests_ToolboxClasses module
 Public ProjFiles As Object
-Public ColInfo As Object
+Public colinfo As Object
 Public ImportParseNorm As Object
 
 
@@ -120,8 +120,8 @@ Sub Init(procs, ByVal wkbk, ByVal shtT, test_suite_name)
         ' Tests_ToolboxClasses
         Set .ProjFiles = New Procedure
         .ProjFiles.name = "ProjFiles"
-        Set .ColInfo = New Procedure
-        .ColInfo.name = "ColInfo"
+        Set .colinfo = New Procedure
+        .colinfo.name = "ColInfo"
         Set .ImportParseNorm = New Procedure
         .ImportParseNorm.name = "ImportParseNorm"
         
@@ -206,6 +206,8 @@ Sub EvalOverall(procs)
 
     End With
 End Sub
+
+
 
 
 

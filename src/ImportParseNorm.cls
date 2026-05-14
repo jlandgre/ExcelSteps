@@ -8,7 +8,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
-'Version 5/13/26
+'Version 5/14/26
 
 Public colinfo As Object
 Public files As Object
@@ -78,14 +78,18 @@ ErrorExit:
 End Function
 '-----------------------------------------------------------------------------------------
 ' Open raw data and run raw structure checks and fill operations
-' JDL 5/7/26
+' JDL 5/7/26; Updated 5/14/26
 '
 Public Function OpenAndValidateRawProcedure(imptbl) As Boolean
   SetErrs OpenAndValidateRawProcedure: If errs.IsHandle Then On Error GoTo ErrorExit
 
   With imptbl
     If Not .OpenRawData(imptbl) Then GoTo ErrorExit
+        
+    'Validate rowscols (only supported RawShape currently)
     If Not .ValidateRawStructure(imptbl) Then GoTo ErrorExit
+
+    'Replace/fill values as specified in colinfo
     If Not .ReplaceVals(imptbl) Then GoTo ErrorExit
   End With
   Exit Function
@@ -131,30 +135,32 @@ ErrorExit:
 End Function
 '-----------------------------------------------------------------------------------------
 ' Validate that required raw columns are present for current colinfo table
-' JDL 5/7/26
+' JDL 5/7/26; Updated 5/14/26
 '
 Public Function ValidateRawStructure(imptbl) As Boolean
   SetErrs ValidateRawStructure: If errs.IsHandle Then On Error GoTo ErrorExit
-  Dim rngVarNormCol As Range, rngVarRawCol As Range, rngRow As Range, rngHdr As Range
-  Dim valNorm As Variant, valRaw As String
+  'Dim rngVarNormCol As Range, rngVarRawCol As Range
+  Dim valNorm As Variant, valRaw As String, rngRow As Range, rngHdr As Range
 
   With imptbl
-  If errs.IsFail(imptbl.tblRaw Is Nothing, 1) Then GoTo ErrorExit
-  If errs.IsFail(TypeName(imptbl.tblRaw) <> "tblRowsCols", 2) Then GoTo ErrorExit
-
-  Set rngVarNormCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, "VarNameNorm").EntireColumn
-  Set rngVarRawCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, "VarNameRaw").EntireColumn
-
-  For Each rngRow In imptbl.colinfo.rngRowsCurTbl.Rows
-    valNorm = Intersect(rngRow, rngVarNormCol).Value2
-    If Len(CStr(valNorm)) > 0 Then
-      valRaw = CStr(Intersect(rngRow, rngVarRawCol).Value2)
-      If errs.IsFail(Len(valRaw) = 0, 3, CStr(valNorm)) Then GoTo ErrorExit
-
-      Set rngHdr = imptbl.tblRaw.rngTblHeaderVal(imptbl.tblRaw, valRaw)
-      If errs.IsFail(rngHdr Is Nothing, 4, valRaw) Then GoTo ErrorExit
-    End If
-  Next rngRow
+      If errs.IsFail(imptbl.tblRaw Is Nothing, 1) Then GoTo ErrorExit
+      'If errs.IsFail(TypeName(imptbl.tblRaw) <> "tblRowsCols", 2) Then GoTo ErrorExit
+    
+      'Set rngVarNormCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, "VarNameNorm").EntireColumn
+      'Set rngVarRawCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, "VarNameRaw").EntireColumn
+    
+      For Each rngRow In imptbl.colinfo.rngRowsCurTbl.Rows
+        'valNorm = Intersect(rngRow, rngVarNormCol).Value2
+        valNorm = Intersect(rngRow, .colinfo.colrngVarNorm).Value2
+        If Len(CStr(valNorm)) > 0 Then
+          'valRaw = CStr(Intersect(rngRow, rngVarRawCol).Value2)
+          valRaw = CStr(Intersect(rngRow, .colrngVarRaw).Value2)
+          If errs.IsFail(Len(valRaw) = 0, 2, CStr(valNorm)) Then GoTo ErrorExit
+    
+          Set rngHdr = imptbl.tblRaw.rngTblHeaderVal(imptbl.tblRaw, valRaw)
+          If errs.IsFail(rngHdr Is Nothing, 3, valRaw) Then GoTo ErrorExit
+        End If
+      Next rngRow
   End With
   Exit Function
 
@@ -181,11 +187,11 @@ Public Function ReplaceVals(imptbl) As Boolean
 
         ' Set sRaw as colinfo row's raw data variable name
         sRaw = CStr(Intersect(rngRow, .colinfo.tbl.colrngVarRaw).Value2)
-        If errs.IsFail(Len(sRaw) = 0, 3) Then GoTo ErrorExit
+        If errs.IsFail(Len(sRaw) = 0, 1) Then GoTo ErrorExit
 
         ' Locate sRaw column in raw table
         Set rngRawHdr = .tblRaw.rngTblHeaderVal(.tblRaw, sRaw)
-        If errs.IsFail(rngRawHdr Is Nothing, 4, sRaw) Then GoTo ErrorExit
+        If errs.IsFail(rngRawHdr Is Nothing, 2, sRaw) Then GoTo ErrorExit
 
         'Sort so equal values are contiguous and can be replaced in blocks
         If Not .tblRaw.TblSortBy(.tblRaw, CStr(rngRawHdr.Value2)) Then GoTo ErrorExit
@@ -210,8 +216,7 @@ Public Function ApplyFillMapToSortedColumn(imptbl, rngDataCol As Range, dict As 
   SetErrs ApplyFillMapToSortedColumn: If errs.IsHandle Then On Error GoTo ErrorExit
   Dim aryKeys As Variant, sKey As Variant, valFill As Variant
 
-  If errs.IsFail(rngDataCol Is Nothing, 1) Then GoTo ErrorExit
-  If errs.IsFail(dict Is Nothing, 2) Then GoTo ErrorExit
+  If errs.IsFail(dict Is Nothing, 1) Then GoTo ErrorExit
 
   aryKeys = dict.GetKeys
   If IsArray(aryKeys) Then
@@ -260,21 +265,23 @@ ErrorExit:
 End Function
 '-----------------------------------------------------------------------------------------
 ' Parse raw data shape into parsed table object
-' JDL 5/7/26
+' JDL 5/7/26; Updated 5/14/26
 '
 Public Function ParseRawProcedure(imptbl) As Boolean
-  SetErrs ParseRawProcedure: If errs.IsHandle Then On Error GoTo ErrorExit
-
-  If LCase$(CStr(imptbl.dParamsParse.Item("RawShape", "rowscols"))) = "rowscols" Then
-    Set imptbl.tblParsed = imptbl.tblRaw
-  Else
-    If errs.IsFail(True, 1, CStr(imptbl.dParamsParse.Item("RawShape", "rowscols"))) Then GoTo ErrorExit
-  End If
-  Exit Function
-
+    SetErrs ParseRawProcedure: If errs.IsHandle Then On Error GoTo ErrorExit
+    
+    With imptbl
+        If CStr(.dParamsParse.Item("RawShape")) = "rowscols" Then
+            Set .tblParsed = .tblRaw
+        Else
+            If errs.IsFail(True, 1, CStr(.dParamsParse.Item("RawShape"))) Then GoTo ErrorExit
+        End If
+    End With
+    Exit Function
+    
 ErrorExit:
-  errs.RecordErr "ParseRawProcedure", ParseRawProcedure
-End Function
+    errs.RecordErr "ParseRawProcedure", ParseRawProcedure
+    End Function
 '-----------------------------------------------------------------------------------------
 ' Normalize parsed data and apply row filters
 ' JDL 5/7/26
@@ -294,62 +301,71 @@ End Function
 ' JDL 5/7/26
 '
 Public Function WriteNormalized(imptbl) As Boolean
-  SetErrs WriteNormalized: If errs.IsHandle Then On Error GoTo ErrorExit
-  Dim maxOrder As Long
-  Dim aryNorm() As String, aryRaw() As String
-
-  If errs.IsFail(imptbl.tblParsed Is Nothing, 1) Then GoTo ErrorExit
-  If errs.IsFail(TypeName(imptbl.tblParsed) <> "tblRowsCols", 2) Then GoTo ErrorExit
-
-  If Not imptbl.BuildNormMappings(imptbl, aryNorm, aryRaw, maxOrder) Then GoTo ErrorExit
-  If Not imptbl.WriteNormFromMappings(imptbl, aryNorm, aryRaw, maxOrder) Then GoTo ErrorExit
+    SetErrs WriteNormalized: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim maxOrder As Long
+    Dim aryNorm() As String, aryRaw() As String
+    
+    With imptbl
+        If errs.IsFail(.tblParsed Is Nothing, 1) Then GoTo ErrorExit
+        If errs.IsFail(TypeName(.tblParsed) <> "tblRowsCols", 2) Then GoTo ErrorExit
+        
+        If Not .BuildNormMappings(imptbl, aryNorm, aryRaw, maxOrder) Then GoTo ErrorExit
+        If Not .WriteNormFromMappings(imptbl, aryNorm, aryRaw, maxOrder) Then GoTo ErrorExit
+    End With
   Exit Function
 
 ErrorExit:
   errs.RecordErr "WriteNormalized", WriteNormalized
 End Function
 '-----------------------------------------------------------------------------------------
-' Build ordered VarNameNorm/VarNameRaw arrays from current table metadata
+' Build ordered VarNameNorm/VarNameRaw arrays from current table colinfo_ metadata
+' This is a generic activity; should be a ColInfo method
 ' JDL 5/7/26
 '
 Public Function BuildNormMappings(imptbl, ByRef aryNorm() As String, ByRef aryRaw() As String, _
-  ByRef maxOrder As Long) As Boolean
-  SetErrs BuildNormMappings: If errs.IsHandle Then On Error GoTo ErrorExit
-  Dim rngOrderCol As Range, rngVarNormCol As Range, rngVarRawCol As Range, rngRow As Range
-  Dim orderNum As Long, valOrder As Variant, sNorm As String, sRaw As String
+    ByRef maxOrder As Long) As Boolean
+    SetErrs BuildNormMappings: If errs.IsHandle Then On Error GoTo ErrorExit
+    'Dim rngOrderCol As Range, rngVarNormCol As Range, rngVarRawCol As Range
+    Dim orderNum As Long, valOrder As Variant, sNorm As String, sRaw As String, rngRow As Range
+    Dim rngOrderCol As Range
+    
+    Set rngOrderCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, imptbl.curTbl).EntireColumn
+    'Set rngVarNormCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, "VarNameNorm").EntireColumn
+    'Set rngVarRawCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, "VarNameRaw").EntireColumn
 
-  Set rngOrderCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, imptbl.curTbl).EntireColumn
-  Set rngVarNormCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, "VarNameNorm").EntireColumn
-  Set rngVarRawCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, "VarNameRaw").EntireColumn
+    With imptbl.colinfo
+        maxOrder = 0
+        For Each rngRow In .rngRowsCurTbl.Rows
+            valOrder = Intersect(rngRow, rngOrderCol).Value2
+            'sNorm = CStr(Intersect(rngRow, rngVarNormCol).Value2)
+            sNorm = CStr(Intersect(rngRow, .colrngVarNorm).Value2)
+            If Len(sNorm) > 0 And IsNumeric(valOrder) Then
+                orderNum = CLng(valOrder)
+                If orderNum > maxOrder Then maxOrder = orderNum
+            End If
+        Next rngRow
+        If errs.IsFail(maxOrder = 0, 1, imptbl.curTbl) Then GoTo ErrorExit
+        
+        ReDim aryNorm(1 To maxOrder)
+        ReDim aryRaw(1 To maxOrder)
 
-  maxOrder = 0
-  For Each rngRow In imptbl.colinfo.rngRowsCurTbl.Rows
-    valOrder = Intersect(rngRow, rngOrderCol).Value2
-    sNorm = CStr(Intersect(rngRow, rngVarNormCol).Value2)
-    If Len(sNorm) > 0 And IsNumeric(valOrder) Then
-      orderNum = CLng(valOrder)
-      If orderNum > maxOrder Then maxOrder = orderNum
-    End If
-  Next rngRow
-  If errs.IsFail(maxOrder = 0, 1, imptbl.curTbl) Then GoTo ErrorExit
-
-  ReDim aryNorm(1 To maxOrder)
-  ReDim aryRaw(1 To maxOrder)
-
-  For Each rngRow In imptbl.colinfo.rngRowsCurTbl.Rows
-    valOrder = Intersect(rngRow, rngOrderCol).Value2
-    sNorm = CStr(Intersect(rngRow, rngVarNormCol).Value2)
-    sRaw = CStr(Intersect(rngRow, rngVarRawCol).Value2)
-
-    If Len(sNorm) > 0 And IsNumeric(valOrder) Then
-      orderNum = CLng(valOrder)
-      If orderNum > 0 And orderNum <= maxOrder Then
-        If errs.IsFail(Len(sRaw) = 0, 2, sNorm) Then GoTo ErrorExit
-        aryNorm(orderNum) = sNorm
-        aryRaw(orderNum) = sRaw
-      End If
-    End If
-  Next rngRow
+        For Each rngRow In .rngRowsCurTbl.Rows
+            valOrder = Intersect(rngRow, rngOrderCol).Value2
+            'sNorm = CStr(Intersect(rngRow, rngVarNormCol).Value2)
+            'sRaw = CStr(Intersect(rngRow, rngVarRawCol).Value2)
+            sNorm = CStr(Intersect(rngRow, .colrngVarNorm).Value2)
+            sRaw = CStr(Intersect(rngRow, .colrngVarRaw).Value2)
+            
+            If Len(sNorm) > 0 And IsNumeric(valOrder) Then
+                orderNum = CLng(valOrder)
+                If orderNum > 0 And orderNum <= maxOrder Then
+                    If errs.IsFail(Len(sRaw) = 0, 2, sNorm) Then GoTo ErrorExit
+                    aryNorm(orderNum) = sNorm
+                    aryRaw(orderNum) = sRaw
+                End If
+            End If
+        Next rngRow
+    End With
   Exit Function
 
 ErrorExit:
@@ -357,123 +373,137 @@ ErrorExit:
 End Function
 '-----------------------------------------------------------------------------------------
 ' Write normalized sheet based on ordered mapping arrays
-' JDL 5/7/26; Updated 5/8/26
+' JDL 5/7/26; Updated 5/14/26
 '
 Public Function WriteNormFromMappings(imptbl, aryNorm() As String, aryRaw() As String, _
-  ByVal maxOrder As Long) As Boolean
-  SetErrs WriteNormFromMappings: If errs.IsHandle Then On Error GoTo ErrorExit
-  Dim wkshtNorm As Worksheet, normSht As String
-  Dim rngSrcHdr As Range, rngSrc As Range, rngDest As Range, tblAlias As Object
-  Dim i As Long, j As Long
+    ByVal maxOrder As Long) As Boolean
+    SetErrs WriteNormFromMappings: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim wkshtNorm As Worksheet, normSht As String, i As Long, j As Long
+    Dim rngSrcHdr As Range, rngSrc As Range, rngDest As Range ', tblAlias As Object
 
-  normSht = "norm_"
-  If SheetExists(imptbl.tblParsed.wkbk, normSht) Then DeleteSheet imptbl.tblParsed.wkbk, normSht
-  Set wkshtNorm = imptbl.tblParsed.wkbk.Worksheets.Add(After:=imptbl.tblParsed.wksht)
-  wkshtNorm.Name = normSht
-
-  j = 0
-  For i = 1 To maxOrder
-    If Len(aryNorm(i)) > 0 Then
-      j = j + 1
-      wkshtNorm.Cells(1, j).Value2 = aryNorm(i)
-
-      Set rngSrcHdr = imptbl.tblParsed.rngTblHeaderVal(imptbl.tblParsed, aryRaw(i))
-      If errs.IsFail(rngSrcHdr Is Nothing, 1, aryRaw(i)) Then GoTo ErrorExit
-
-      Set rngSrc = Intersect(imptbl.tblParsed.rngRows, rngSrcHdr.EntireColumn)
-      Set rngDest = wkshtNorm.Cells(2, j).Resize(rngSrc.Rows.Count, 1)
-      rngDest.value = rngSrc.value
-    End If
-  Next i
-  If errs.IsFail(j = 0, 2, imptbl.curTbl) Then GoTo ErrorExit
-
-  Set imptbl.tblNorm = New tblRowsCols
-  Set tblAlias = imptbl.tblNorm
-  If Not tblAlias.Provision(tblAlias, imptbl.tblParsed.wkbk, False, sht:=normSht, _
-    IsSetColRngs:=False) Then GoTo ErrorExit
-  Exit Function
+    With imptbl.tblParse
+        normSht = "norm_"
+        If SheetExists(.wkbk, normSht) Then DeleteSheet .wkbk, normSht
+        Set wkshtNorm = .wkbk.Worksheets.Add(After:=imptbl.tblParsed.wksht)
+        wkshtNorm.Name = normSht
+        
+        j = 0
+        For i = 1 To maxOrder
+            If Len(aryNorm(i)) > 0 Then
+                j = j + 1
+                wkshtNorm.Cells(1, j).Value2 = aryNorm(i)
+                
+                Set rngSrcHdr = .rngTblHeaderVal(imptbl.tblParsed, aryRaw(i))
+                If errs.IsFail(rngSrcHdr Is Nothing, 1, aryRaw(i)) Then GoTo ErrorExit
+                
+                Set rngSrc = Intersect(.rngRows, rngSrcHdr.EntireColumn)
+                Set rngDest = wkshtNorm.Cells(2, j).Resize(rngSrc.Rows.Count, 1)
+                rngDest.value = rngSrc.value
+            End If
+        Next i
+    End With
+  
+    With imptbl
+        If errs.IsFail(j = 0, 2, .curTbl) Then GoTo ErrorExit
+        Set .tblNorm = New tblRowsCols
+        'Set tblAlias = .tblNorm
+        If Not .tblNorm.Provision(.tblNorm, .tblParsed.wkbk, False, sht:=normSht, _
+            IsSetColRngs:=False) Then GoTo ErrorExit
+    End With
+    Exit Function
 
 ErrorExit:
   errs.RecordErr "WriteNormFromMappings", WriteNormFromMappings
 End Function
 '-----------------------------------------------------------------------------------------
 ' Apply row filters described by FilterVals metadata for current table
-' JDL 5/7/26
+' JDL 5/7/26; Updated 5/14/26
 '
 Public Function FilterRows(imptbl) As Boolean
-  SetErrs FilterRows: If errs.IsHandle Then On Error GoTo ErrorExit
-  Dim rngVarNormCol As Range, rngFilterValsCol As Range, rngRow As Range
-  Dim sNorm As String, sFilter As String, dict As Object
+    SetErrs FilterRows: If errs.IsHandle Then On Error GoTo ErrorExit
+    'Dim rngVarNormCol As Range, rngFilterValsCol As Range
+    Dim sNorm As String, sFilter As String, dict As Object, rngRow As Range
+    
+    If imptbl.tblNorm Is Nothing Then Exit Function
+    
+    'Set rngVarNormCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, "VarNameNorm").EntireColumn
+    'Set rngFilterValsCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, "FilterVals").EntireColumn
 
-  If imptbl.tblNorm Is Nothing Then Exit Function
-
-  Set rngVarNormCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, "VarNameNorm").EntireColumn
-  Set rngFilterValsCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, "FilterVals").EntireColumn
-
-  For Each rngRow In imptbl.colinfo.rngRowsCurTbl.Rows
-    sFilter = CStr(Intersect(rngRow, rngFilterValsCol).Value2)
-    If Len(sFilter) > 0 Then
-      sNorm = CStr(Intersect(rngRow, rngVarNormCol).Value2)
-      If errs.IsFail(Len(sNorm) = 0, 1) Then GoTo ErrorExit
-
-      Set dict = New Dictionary
-      If Not dict.ParseStringToDictProcedure(sFilter) Then GoTo ErrorExit
-
-      If dict.Exists("KeepOnly") Then
-        If Not ApplyKeepOnlyFilter(imptbl, sNorm, dict.Item("KeepOnly")) Then GoTo ErrorExit
-      End If
-    End If
-  Next rngRow
-  Exit Function
-
+    With imptbl.colinfo
+        For Each rngRow In .rngRowsCurTbl.Rows
+        'sFilter = CStr(Intersect(rngRow, rngFilterValsCol).Value2)
+        sFilter = CStr(Intersect(rngRow, .colrngFilterVals).Value2)
+            If Len(sFilter) > 0 Then
+                'sNorm = CStr(Intersect(rngRow, rngVarNormCol).Value2)
+                sNorm = CStr(Intersect(rngRow, .colrngVarNorm).Value2)
+                
+                Set dict = New Dictionary
+                If Not dict.ParseStringToDictProcedure(sFilter) Then GoTo ErrorExit
+                
+                If dict.Exists("KeepOnly") Then
+                    If Not ApplyKeepOnlyFilter(imptbl, sNorm, dict.Item("KeepOnly")) Then GoTo ErrorExit
+                End If
+            End If
+        Next rngRow
+    End With
+    Exit Function
+    
 ErrorExit:
-  errs.RecordErr "FilterRows", FilterRows
-End Function
+    errs.RecordErr "FilterRows", FilterRows
+    End Function
 '-----------------------------------------------------------------------------------------
 ' Keep only rows in tblNorm where sVarNorm column equals keepVal
 ' JDL 5/7/26
 '
 Private Function ApplyKeepOnlyFilter(imptbl, ByVal sVarNorm As String, ByVal keepVal As Variant) As Boolean
-  SetErrs ApplyKeepOnlyFilter: If errs.IsHandle Then On Error GoTo ErrorExit
-  Dim rngHdr As Range, rngDataCol As Range, cellFirst As Range, cellLast As Range
-  Dim cellStart As Range, cellEnd As Range, idx As Long, tblAlias As Object
-
-  If Not imptbl.tblNorm.TblSortBy(imptbl.tblNorm, sVarNorm) Then GoTo ErrorExit
-
-  Set rngHdr = imptbl.tblNorm.rngTblHeaderVal(imptbl.tblNorm, sVarNorm)
-  If errs.IsFail(rngHdr Is Nothing, 1, sVarNorm) Then GoTo ErrorExit
-
-  Set rngDataCol = Intersect(imptbl.tblNorm.rngRows, rngHdr.EntireColumn)
-  Set cellFirst = FindInRange(rngDataCol, keepVal)
-
-  If cellFirst Is Nothing Then
-    rngDataCol.EntireRow.Delete
-  Else
-    For idx = rngDataCol.Cells.Count To 1 Step -1
-      If CStr(rngDataCol.Cells(idx, 1).Value2) = CStr(keepVal) Then
-        Set cellLast = rngDataCol.Cells(idx, 1)
-        Exit For
-      End If
-    Next idx
-    If errs.IsFail(cellLast Is Nothing, 2, CStr(keepVal)) Then GoTo ErrorExit
-
-    Set cellStart = rngDataCol.Cells(1, 1)
-    Set cellEnd = rngDataCol.Cells(rngDataCol.Cells.Count, 1)
-
-    If cellLast.Row < cellEnd.Row Then
-      imptbl.tblNorm.wksht.Range(cellLast.Offset(1, 0), cellEnd).EntireRow.Delete
-    End If
-    If cellFirst.Row > cellStart.Row Then
-      imptbl.tblNorm.wksht.Range(cellStart, cellFirst.Offset(-1, 0)).EntireRow.Delete
-    End If
-  End If
-
-  Set tblAlias = imptbl.tblNorm
-  If Not tblAlias.Provision(tblAlias, imptbl.tblNorm.wkbk, False, _
-    sht:=imptbl.tblNorm.sht, IsSetColRngs:=False) Then GoTo ErrorExit
-  Exit Function
-
+    SetErrs ApplyKeepOnlyFilter: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim rngHdr As Range, rngDataCol As Range, cellFirst As Range, cellLast As Range
+    Dim cellStart As Range, cellEnd As Range, idx As Long, tblAlias As Object
+    
+    With imptbl.tblNorm
+        If Not .TblSortBy(imptbl.tblNorm, sVarNorm) Then GoTo ErrorExit
+    
+        Set rngHdr = .rngTblHeaderVal(imptbl.tblNorm, sVarNorm)
+        If errs.IsFail(rngHdr Is Nothing, 1, sVarNorm) Then GoTo ErrorExit
+    
+        Set rngDataCol = Intersect(.rngRows, rngHdr.EntireColumn)
+        Set cellFirst = FindInRange(rngDataCol, keepVal)
+    
+        If cellFirst Is Nothing Then
+            rngDataCol.EntireRow.Delete
+        Else
+            For idx = rngDataCol.Cells.Count To 1 Step -1
+                If CStr(rngDataCol.Cells(idx, 1).Value2) = CStr(keepVal) Then
+                    Set cellLast = rngDataCol.Cells(idx, 1)
+                    Exit For
+                End If
+            Next idx
+            
+            'Error if
+            If errs.IsFail(cellLast Is Nothing, 2, CStr(keepVal)) Then GoTo ErrorExit
+        
+            Set cellStart = rngDataCol.Cells(1, 1)
+            Set cellEnd = rngDataCol.Cells(rngDataCol.Cells.Count, 1)
+        
+            If cellLast.Row < cellEnd.Row Then
+                .wksht.Range(cellLast.Offset(1, 0), cellEnd).EntireRow.Delete
+            End If
+            
+            If cellFirst.Row > cellStart.Row Then
+                .wksht.Range(cellStart, cellFirst.Offset(-1, 0)).EntireRow.Delete
+            End If
+        End If
+    
+        ' Re-provision the normalized table after filtering
+        'Set tblAlias = imptbl.tblNorm
+        If Not .Provision(imptbl.tblNorm, .wkbk, False, sht:=.sht, _
+            IsSetColRngs:=False) Then GoTo ErrorExit
+    End With
+    Exit Function
+    
 ErrorExit:
-  errs.RecordErr "ApplyKeepOnlyFilter", ApplyKeepOnlyFilter
-End Function
+    errs.RecordErr "ApplyKeepOnlyFilter", ApplyKeepOnlyFilter
+    End Function
+
+
 

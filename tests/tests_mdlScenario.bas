@@ -374,7 +374,7 @@ Sub test_PrepExcelSteps1(procs)
                         tblSteps.colrngStrInput.NumberFormat, _
                         tblSteps.colrngNumFmt.NumberFormat, _
                         tblSteps.cellHome.CurrentRegion.Address, _
-                        tblSteps.rngrows.Address)
+                        tblSteps.rngRows.Address)
                         
         aryExpected = Array(sHeaderSteps, _
                             "@", _
@@ -415,7 +415,7 @@ Sub test_PrepExcelSteps2(procs)
                         tblSteps.colrngStrInput.NumberFormat, _
                         tblSteps.colrngNumFmt.NumberFormat, _
                         tblSteps.cellHome.CurrentRegion.Address, _
-                        tblSteps.rngrows.Address)
+                        tblSteps.rngRows.Address)
                         
         aryExpected = Array(sHeaderSteps, _
                             "@", _
@@ -743,7 +743,7 @@ Sub test_mdlRowDefaultModel2(procs)
         PopulateSMdl2a .wkbkTest.Sheets(shtMdl)
         .Assert tst, mdl.Provision(mdl, .wkbkTest, shtMdl)
         .Assert tst, mdl.rngPopRows.Address = "$D$2,$D$6"
-        .Assert tst, mdl.rngrows.Address = "$2:$6"
+        .Assert tst, mdl.rngRows.Address = "$2:$6"
         .Update tst, procs
     End With
 End Sub
@@ -830,7 +830,7 @@ Sub test_ProvisionSMdl1(procs)
                         mdl.IsRngNames, _
                         mdl.IsMdlNmPrefix, _
                         mdl.IsLiteModel, _
-                        mdl.rngrows.Address)
+                        mdl.rngRows.Address)
                         
         'Booleans: IsCalc, IsSuppHeader, IsRngNames, IsMdlNmPrefix, IsLiteModel
         aryExpected = Array(shtMdl, _
@@ -847,7 +847,7 @@ Sub test_ProvisionSMdl1(procs)
         aryVals = Array(mdl.rngHeader.Address, _
                         mdl.rngPopCols.Address, _
                         mdl.rngPopRows.Address, _
-                        mdl.rngrows.Address)
+                        mdl.rngRows.Address)
                         
         aryExpected = Array("$A$1:$G$1", _
                             "$I$2", _
@@ -905,7 +905,7 @@ Sub test_ProvisionSMdl2(procs)
         aryVals = Array(mdl.rngPopRows.Count, _
                         mdl.IsCalc, _
                         mdl.rngPopCols.Address, _
-                        mdl.rngrows.Address, _
+                        mdl.rngRows.Address, _
                         mdl.IsRngNames)
         aryExpected = Array(4, _
                             False, _
@@ -999,7 +999,7 @@ Sub test_ProvisionSMdl3(procs)
                             .cellHome.Address, _
                             .rngPopRows.Address, _
                             .rngPopCols.Address, _
-                            .rngrows.Address, _
+                            .rngRows.Address, _
                             .nRows)
             aryExpected = Array(shtMdl, _
                                 shtMdl, _
@@ -1328,7 +1328,7 @@ Sub test_ProvisionSMdl7(procs)
                         mdl.IsSuppHeader, _
                         mdl.IsRngNames, _
                         mdl.rngPopCols.Address, _
-                        mdl.rngrows.Address, _
+                        mdl.rngRows.Address, _
                         mdl.cellHome.Address)
         aryExpected = Array(3, _
                             True, _
@@ -1358,7 +1358,7 @@ Sub test_RefreshSMdl7(procs)
         mdl.ApplyBorderAroundModel mdl, IsBufferRow:=False, IsBufferCol:=True
         
         'Check that nrows=5 Defn param set rngRows and nrows properly
-        .TestAryVals tst, Array(mdl.rngrows.Address, mdl.nRows), Array("$4:$8", 5)
+        .TestAryVals tst, Array(mdl.rngRows.Address, mdl.nRows), Array("$4:$8", 5)
 
             
         'Test Header column and calculated cell styles; check ExcelSteps specified format

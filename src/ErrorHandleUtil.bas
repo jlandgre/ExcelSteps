@@ -1,12 +1,10 @@
 Attribute VB_Name = "ErrorHandleUtil"
-'Version 3/13/26
-'Import this module and ErrorHandling Class Module to install error handling in a project
-
+'Version 5/14/26 shtErrors lower case
 Option Explicit
 Public errs As Object
 
 'Error Handling Constants
-Public Const shtErrors As String = "Errors_"
+Public Const shtErrors As String = "errors_"
 Public Const sErrBase As String = "Base"
 Public Const sVBAErr As String = "Unknown VBA Error"
 Public Const sFileErrs As String = "Warnings_and_Errors.txt"

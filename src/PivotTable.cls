@@ -89,7 +89,6 @@ Public Function InitPivotTable(pvt, tblSrc, shtDest, _
         .isReplaceWithVals = True
         If .dictParams.Exists("isReplaceWithVals") Then _
             .isReplaceWithVals = CBool(.dictParams.Item("isReplaceWithVals"))
-
     End With
     Exit Function
 
@@ -205,7 +204,7 @@ End Function
 
 '--------------------------------------------------------------------------------------
 ' Normalize row/column field spec into comma-separated string
-' JDL 3/30/26
+' JDL 3/30/26; Updated 5/14/26
 '
 Private Function NormalizeFieldSpecs(fields, ByVal IsCols As Boolean, _
         fieldSpecsCsv As String) As Boolean
@@ -222,7 +221,7 @@ Private Function NormalizeFieldSpecs(fields, ByVal IsCols As Boolean, _
             If errs.IsFail(IsArray(fieldItem), 1) Then GoTo ErrorExit
 
             fieldName = Trim(CStr(fieldItem))
-            If errs.IsFail(Len(fieldName) < 1, 2) Then GoTo ErrorExit
+            If errs.IsFail(Len(fieldName) < 1, 2, fieldName) Then GoTo ErrorExit
             If Len(sOut) > 0 Then sOut = sOut & ","
             sOut = sOut & fieldName
         Next i
@@ -230,7 +229,7 @@ Private Function NormalizeFieldSpecs(fields, ByVal IsCols As Boolean, _
     ElseIf VarType(fields) = vbString Then
         fieldName = Trim(CStr(fields))
         If Not IsCols Then
-            If errs.IsFail(Len(fieldName) < 1, 3) Then GoTo ErrorExit
+            If errs.IsFail(Len(fieldName) < 1, 3, fieldName) Then GoTo ErrorExit
         End If
         sOut = fieldName
 

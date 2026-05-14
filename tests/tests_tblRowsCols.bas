@@ -436,7 +436,7 @@ Sub test_SetDimensions1(procs)
         'Check results of method
         .Assert tst, tbl.rngTable Is Nothing
         .Assert tst, tbl.rngHeader Is Nothing
-        .Assert tst, tbl.rngrows Is Nothing
+        .Assert tst, tbl.rngRows Is Nothing
     End With
     
     'tst with header-only sheet
@@ -452,7 +452,7 @@ Sub test_SetDimensions1(procs)
         'Check results of method
         .Assert tst, tbl.rngTable.Address = "$A$1:$C$1"
         .Assert tst, tbl.rngHeader.Address = "$A$1:$C$1"
-        .Assert tst, tbl.rngrows Is Nothing
+        .Assert tst, tbl.rngRows Is Nothing
 
         .Update tst, procs
     End With
@@ -476,7 +476,7 @@ Sub test_SetDimensions2(procs)
         'Check results of method
         .Assert tst, tbl.rngTable.Address = "$A$1:$C$4"
         .Assert tst, tbl.rngHeader.Address = "$A$1:$C$1"
-        .Assert tst, tbl.rngrows.Address = "$2:$4"
+        .Assert tst, tbl.rngRows.Address = "$2:$4"
 
         .Update tst, procs
     End With
@@ -504,7 +504,7 @@ Sub test_SetDimensions3(procs)
         'Check results of method
         .Assert tst, tbl.rngTable.Address = "$A$1:$C$5"
         .Assert tst, tbl.rngHeader.Address = "$A$1:$C$1"
-        .Assert tst, tbl.rngrows.Address = "$3:$5"
+        .Assert tst, tbl.rngRows.Address = "$3:$5"
 
         'Populate a 3-row table - offset the data one column (Blank col A)
         Set tbl = ExcelSteps.New_tbl
@@ -523,7 +523,7 @@ Sub test_SetDimensions3(procs)
         'Check results of method
         .Assert tst, tbl.rngTable.Address = "$B$1:$D$5"
         .Assert tst, tbl.rngHeader.Address = "$B$1:$D$1"
-        .Assert tst, tbl.rngrows.Address = "$3:$5"
+        .Assert tst, tbl.rngRows.Address = "$3:$5"
     
         .Update tst, procs
     End With
@@ -727,7 +727,7 @@ Sub test_SetNRows1(procs)
 
         'Check results of method
         .Assert tst, tbl.nRows = 0
-        .Assert tst, tbl.rngrows Is Nothing
+        .Assert tst, tbl.rngRows Is Nothing
         .Assert tst, tbl.lastRow = 0
     
         'tst with header-only sheet
@@ -741,7 +741,7 @@ Sub test_SetNRows1(procs)
         .Assert tst, tbl.SetNRows(tbl)
 
         .Assert tst, tbl.nRows = 0
-        .Assert tst, tbl.rngrows Is Nothing
+        .Assert tst, tbl.rngRows Is Nothing
         .Assert tst, tbl.lastRow = 0
 
         .Update tst, procs
@@ -766,7 +766,7 @@ Sub test_SetNRows2(procs)
         .Assert tst, tbl.SetNRows(tbl)
 
         .Assert tst, tbl.nRows = 3
-        .Assert tst, tbl.rngrows.Address = "$2:$4"
+        .Assert tst, tbl.rngRows.Address = "$2:$4"
         .Assert tst, tbl.lastRow = 4
 
         .Update tst, procs
@@ -796,7 +796,7 @@ Sub test_SetNRows3(procs)
 
         'Check results of method
         .Assert tst, tbl.nRows = 3
-        .Assert tst, tbl.rngrows.Address = "$3:$5"
+        .Assert tst, tbl.rngRows.Address = "$3:$5"
         .Assert tst, tbl.lastRow = 5
 
         .Update tst, procs
@@ -913,7 +913,7 @@ Sub test_SetNCols3(procs)
         .Assert tst, tbl.rngHeader.Address = "$B$1:$D$1"
         .Assert tst, tbl.lastcol = 4
         .Assert tst, tbl.lastRow = 5
-        .Assert tst, tbl.rngrows.Address = "$3:$5"
+        .Assert tst, tbl.rngRows.Address = "$3:$5"
 
         .Update tst, procs
     End With
@@ -946,7 +946,7 @@ Sub test_SetNCols4(procs)
         tst.Assert tst, .nRows = 10
         tst.Assert tst, .rngHeader.Address = "$A$1:$D$1"
         tst.Assert tst, .lastcol = 4
-        tst.Assert tst, .rngrows.Address = "$2:$11"
+        tst.Assert tst, .rngRows.Address = "$2:$11"
     End With
 
     tst.Update tst, procs
@@ -1518,7 +1518,7 @@ Sub test_RefreshTbl3(procs)
     
     'Check ExcelSteps values
     With tblSteps
-        tst.Assert tst, .rngrows.Address = "$2:$21"
+        tst.Assert tst, .rngRows.Address = "$2:$21"
         tst.Assert tst, .wksht.Cells(2, 1) = "SMdl"
     End With
     
@@ -1641,7 +1641,7 @@ Sub test_ProvisionTbl2EmptySpec(procs)
         .Assert tst, (tbl.cellHome.Address = "$A$2")
         .Assert tst, (tbl.nRows = 3)
         .Assert tst, (tbl.nCols = 4)
-        .Assert tst, (tbl.rngrows.Address = "$2:$4")
+        .Assert tst, (tbl.rngRows.Address = "$2:$4")
         .Assert tst, (tbl.rngTable.Address = "$A$1:$D$4")
         .Assert tst, (tbl.rngHeader.Address = "$A$1:$D$1")
     
@@ -1666,7 +1666,7 @@ Sub test_ProvisionTbl2EmptyTbl(procs)
     
     With tst
         .Assert tst, (tbl.rngTable Is Nothing)
-        .Assert tst, (tbl.rngrows Is Nothing)
+        .Assert tst, (tbl.rngRows Is Nothing)
         .Assert tst, (tbl.rngHeader Is Nothing)
         .Assert tst, (tbl.lastcol = 0)
         .Assert tst, (tbl.lastRow = 0)
@@ -1695,7 +1695,7 @@ Sub test_ProvisionTbl2HeaderOnly(procs)
     
     With tst
         .Assert tst, (tbl.rngTable.Address = "$A$1:$F$1")
-        .Assert tst, (tbl.rngrows Is Nothing)
+        .Assert tst, (tbl.rngRows Is Nothing)
         .Assert tst, (tbl.lastcol = 6)
         .Assert tst, (tbl.lastRow = 0)
         .Assert tst, (tbl.rngHeader.Address = "$A$1:$F$1")
@@ -1729,7 +1729,7 @@ Sub test_ProvisionTbl2(procs)
         .Assert tst, (tbl.rngHeader.Address = "$A$1:$F$1")
         .Assert tst, (tbl.nRows = 5)
         .Assert tst, (tbl.nCols = 6)
-        .Assert tst, (tbl.rngrows.Address = "$2:$6")
+        .Assert tst, (tbl.rngRows.Address = "$2:$6")
     
         .Update tst, procs
     End With
@@ -1804,7 +1804,7 @@ Sub test_ProvisionTbl(procs)
     PopulateTbl tst.wkbkTest, shtTbl
     With tbl
         tst.Assert tst, .Provision(tbl, tst.wkbkTest, IsFormat:=True, sht:=shtTbl)
-        tst.Assert tst, .rngrows.Address = "$2:$4"
+        tst.Assert tst, .rngRows.Address = "$2:$4"
         tst.Assert tst, .rngHeader.Address = "$A$1:$C$1"
     End With
     
@@ -1813,7 +1813,7 @@ Sub test_ProvisionTbl(procs)
     With tbl
         tst.Assert tst, .Provision(tbl, tst.wkbkTest, IsFormat:=True, sht:=shtTbl, _
             IsSetTblNames:=True, IsSetColNames:=True)
-        tst.Assert tst, .rngrows.Address = "$2:$4"
+        tst.Assert tst, .rngRows.Address = "$2:$4"
         tst.Assert tst, .rngHeader.Address = "$A$1:$C$1"
         tst.Assert tst, tst.wkbkTest.Names("SMdl").RefersTo = "=SMdl!$A:$C"
         tst.Assert tst, tst.wkbkTest.Names("SMdl_Header").RefersTo = "=SMdl!$1:$1"

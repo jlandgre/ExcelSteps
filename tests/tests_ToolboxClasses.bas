@@ -30,7 +30,7 @@ Sub TestDriver_ToolBox()
 
         AllEnabled = True
         .ProjFiles.Enabled = False
-        .ColInfo.Enabled = True
+        .colinfo.Enabled = True
         .ImportParseNorm.Enabled = False
     End With
 
@@ -41,7 +41,7 @@ Sub TestDriver_ToolBox()
         End If
     End With
 
-    With procs.ColInfo
+    With procs.colinfo
         If .Enabled Or AllEnabled Then
             procs.curProcedure = .name
             test_ColInfo_Init procs
@@ -114,7 +114,7 @@ Sub test_ImportParseNorm_OpenRawData(procs)
         .Assert tst, Not imptbl.tblRaw Is Nothing
         .Assert tst, TypeName(imptbl.tblRaw) = "tblRowsCols"
         .Assert tst, Not imptbl.tblRaw.wkbk Is Nothing
-        .Assert tst, imptbl.tblRaw.wkbk.Name <> files.fColInfo
+        .Assert tst, imptbl.tblRaw.wkbk.name <> files.fColInfo
         .Update tst, procs
     End With
     CloseImportParseNormWkbk imptbl
@@ -358,7 +358,7 @@ End Sub
 Sub test_ColInfo_Init(procs)
     Dim tst As New Test: tst.Init tst, "test_ColInfo_Init", ThisWorkbook
     Dim colinfo As Object, files As Object, wkbkStepsAddin As Workbook
-    Dim sep as string: sep = Application.PathSeparator
+    Dim sep As String: sep = Application.PathSeparator
 
     With tst
         ExcelSteps.IsTest = True
@@ -381,7 +381,7 @@ Sub test_ColInfo_Init(procs)
         .Assert tst, Not colinfo.tbl.rngRows Is Nothing
 
         'Check CurTbl empty when curTbl arg not passed
-        .Assert tst, colinfo.CurTbl = ""
+        .Assert tst, colinfo.curTbl = ""
         .Assert tst, colinfo.rngRowsCurTbl Is Nothing
         .Update tst, procs
     End With
@@ -410,7 +410,7 @@ Sub test_ColInfo_Init_ThisWorkbook(procs)
         On Error GoTo 0
 
         Set shtColInfo = ThisWorkbook.Worksheets.Add(After:=ThisWorkbook.Worksheets(ThisWorkbook.Worksheets.Count))
-        shtColInfo.Name = "colinfo_"
+        shtColInfo.name = "colinfo_"
 
         Set colinfo = ExcelSteps.New_ColInfo
         .Assert tst, colinfo.Init(colinfo, files, , ThisWorkbook)
@@ -438,11 +438,11 @@ Sub test_ColInfo_SetCurTbl(procs)
         InitColInfoTest tst, colinfo, files, "BR_Example"
 
         'Check CurTbl set
-        .Assert tst, colinfo.CurTbl = "BR_Example"
+        .Assert tst, colinfo.curTbl = "BR_Example"
 
         'Check rngRowsCurTbl address and n rows
         .Assert tst, Not colinfo.rngRowsCurTbl Is Nothing
-        .Assert tst, colinfo.rngRowsCurTbl.Rows.Count =ColInfo_BRTable_nrows
+        .Assert tst, colinfo.rngRowsCurTbl.Rows.Count = ColInfo_BRTable_nrows
         .Assert tst, colinfo.rngRowsCurTbl.Address = ColInfo_BRTable_rngRows
 
         'Check that .colrngTblName set to correct column range for "BR_Example"
@@ -469,7 +469,7 @@ Sub test_ColInfo_YieldAryIndices(procs)
         .Assert tst, UBound(ary) >= 0
 
         'Check first index matches expected (Location is first index in BR_Example)
-        .Assert tst, ListFromArray(ary) = ColInfo_aryIndices_BRExample 
+        .Assert tst, ListFromArray(ary) = ColInfo_aryIndices_BRExample
 
         .Update tst, procs
     End With
@@ -557,7 +557,7 @@ Sub test_ColInfo_SetCurTblReentrant(procs)
 
         'Switch to second table; check CurTbl and row count update
         .Assert tst, colinfo.SetCurTbl(colinfo, "Second_Tbl")
-        .Assert tst, colinfo.CurTbl = "Second_Tbl"
+        .Assert tst, colinfo.curTbl = "Second_Tbl"
         nRowsSecond = colinfo.rngRowsCurTbl.Rows.Count
         .Assert tst, nRowsSecond > 0
         .Assert tst, nRowsSecond <> nRowsFirst
@@ -644,3 +644,4 @@ Sub CloseImportParseNormWkbk(imptbl As Object)
         imptbl.tblRaw.wkbk.Close False
     End If
 End Sub
+

@@ -109,12 +109,12 @@ Sub test_Search7(procs)
         
         For j = 1 To n
             'Fix all formula cells once outside of loop
-            With Intersect(tbl.rngrows, tbl.wksht.Columns(4))
+            With Intersect(tbl.rngRows, tbl.wksht.Columns(4))
                 .Value2 = .Formula
             End With
             
             'Initialize to dummy range two rows below tbl.rngRows (Avoid If/Else in loop)
-            Set rngFormulaRows = tbl.rngrows.Rows(tbl.rngrows.Rows.Count).Offset(2, 0).Cells(1, 1)
+            Set rngFormulaRows = tbl.rngRows.Rows(tbl.rngRows.Rows.Count).Offset(2, 0).Cells(1, 1)
             
             'Iterate on var_1 through var_15
             For i = 1 To 15
@@ -129,7 +129,7 @@ Sub test_Search7(procs)
             Next i
             
             'Remove dummy range from result
-            Set rngFormulaRows = Intersect(rngFormulaRows, tbl.rngrows)
+            Set rngFormulaRows = Intersect(rngFormulaRows, tbl.rngRows)
 
         Next j
         timeEnd = Timer
@@ -163,12 +163,12 @@ Sub test_Search6(procs)
 
         For j = 1 To n
             'Fix all formula cells once outside of loop
-            With Intersect(tbl.rngrows, tbl.wksht.Columns(4))
+            With Intersect(tbl.rngRows, tbl.wksht.Columns(4))
                 .Value2 = .Formula
             End With
 
             'Initialize to dummy range two rows below tbl.rngRows (Avoid If/Else in loop)
-            Set rngFormulaRows = tbl.rngrows.Rows(tbl.rngrows.Rows.Count).Offset(2, 0).Cells(1, 1)
+            Set rngFormulaRows = tbl.rngRows.Rows(tbl.rngRows.Rows.Count).Offset(2, 0).Cells(1, 1)
             
             'Iterate on var_1 through var_15
             For i = 1 To 15
@@ -186,7 +186,7 @@ Sub test_Search6(procs)
             Next i
             
             'Remove dummy range from result
-            Set rngFormulaRows = Intersect(rngFormulaRows, tbl.rngrows)
+            Set rngFormulaRows = Intersect(rngFormulaRows, tbl.rngRows)
         Next j
         timeEnd = Timer
         
@@ -222,7 +222,7 @@ Sub test_Search5(procs)
         timeStart = Timer
         For j = 1 To n
             'Initialize to dummy range two rows below tbl.rngRows
-            Set rngFormulaRows = tbl.rngrows.Rows(tbl.rngrows.Rows.Count).Offset(2, 0).Cells(1, 1)
+            Set rngFormulaRows = tbl.rngRows.Rows(tbl.rngRows.Rows.Count).Offset(2, 0).Cells(1, 1)
             
             'Iterate on var_1 through var_15
             For i = 1 To 15
@@ -246,7 +246,7 @@ Sub test_Search5(procs)
             Next i
             
             'Remove dummy range from result
-            Set rngFormulaRows = Intersect(rngFormulaRows, tbl.rngrows)
+            Set rngFormulaRows = Intersect(rngFormulaRows, tbl.rngRows)
         Next j
         timeEnd = Timer
         
@@ -276,7 +276,7 @@ Sub test_Search4(procs)
         timeStart = Timer
         For j = 1 To n
             'Initialize to dummy range two rows below tbl.rngRows
-            Set rngFormulaRows = tbl.rngrows.Rows(tbl.rngrows.Rows.Count).Offset(2, 0).Cells(1, 1)
+            Set rngFormulaRows = tbl.rngRows.Rows(tbl.rngRows.Rows.Count).Offset(2, 0).Cells(1, 1)
             
             'Iterate on var_1 through var_15
             For i = 1 To 15
@@ -297,7 +297,7 @@ Sub test_Search4(procs)
             Next i
             
             'Remove dummy range from result
-            Set rngFormulaRows = Intersect(rngFormulaRows, tbl.rngrows)
+            Set rngFormulaRows = Intersect(rngFormulaRows, tbl.rngRows)
         Next j
         timeEnd = Timer
         
@@ -455,7 +455,7 @@ Sub helper_SetSimRecipeTbl(tst, tbl, rngStepsVars, colrngVarNames)
         tbl.sht = shtTesting
         
         'Set table rows range
-        Set tbl.rngrows = Range(tbl.wksht.Cells(2, 1), tbl.wksht.Columns(1).Cells(tbl.wksht.Rows.Count, 1).End(xlUp)).EntireRow
+        Set tbl.rngRows = Range(tbl.wksht.Cells(2, 1), tbl.wksht.Columns(1).Cells(tbl.wksht.Rows.Count, 1).End(xlUp)).EntireRow
         
         'Get range of rows with "tgt_sheet"
         Set rngStepsVars = KeyColRng(tbl, Array(tbl.wksht.Columns(1)), Array("tgt_sheet"))
@@ -827,7 +827,7 @@ Sub test_RngMultiKey_One(procs)
         'Set Key Col (array)
         Set r = tbl.rngTblHeaderVal(tbl, "Key_1")
         .Assert tst, (r.Address = "$A$1")
-        aryKeyCols = Array(Intersect(r.EntireColumn, tbl.rngrows))
+        aryKeyCols = Array(Intersect(r.EntireColumn, tbl.rngRows))
         aryKeyVals = Array("C")
 
         'Lookup 'C' from Key_1
@@ -861,9 +861,9 @@ Sub test_RngMultiKey_Two(procs)
     
         'Set Key Col (array)
         Set R1 = tbl.rngTblHeaderVal(tbl, "Key_1")
-        Set R1 = Intersect(R1.EntireColumn, tbl.rngrows)
+        Set R1 = Intersect(R1.EntireColumn, tbl.rngRows)
         Set R2 = tbl.rngTblHeaderVal(tbl, "Key_2")
-        Set R2 = Intersect(R2.EntireColumn, tbl.rngrows)
+        Set R2 = Intersect(R2.EntireColumn, tbl.rngRows)
         
         aryKeyCols = Array(R1, R2)
         aryKeyVals = Array("A", "AA")
@@ -897,13 +897,13 @@ Sub test_RngMultiKey_Four(procs)
     
         'Set Key Col array
         Set R1 = tbl.rngTblHeaderVal(tbl, "Key_1")
-        Set R1 = Intersect(R1.EntireColumn, tbl.rngrows)
+        Set R1 = Intersect(R1.EntireColumn, tbl.rngRows)
         Set R2 = tbl.rngTblHeaderVal(tbl, "Key_2")
-        Set R2 = Intersect(R2.EntireColumn, tbl.rngrows)
+        Set R2 = Intersect(R2.EntireColumn, tbl.rngRows)
         Set R3 = tbl.rngTblHeaderVal(tbl, "Key_3")
-        Set R3 = Intersect(R3.EntireColumn, tbl.rngrows)
+        Set R3 = Intersect(R3.EntireColumn, tbl.rngRows)
         Set R4 = tbl.rngTblHeaderVal(tbl, "Key_4")
-        Set R4 = Intersect(R4.EntireColumn, tbl.rngrows)
+        Set R4 = Intersect(R4.EntireColumn, tbl.rngRows)
         
         aryKeyCols = Array(R1, R2, R3, R4)
         aryKeyVals = Array("B", "BC", "X", 2)
@@ -939,11 +939,11 @@ Sub test_AryUniqueValsInRange(procs)
     
         'Set Key Col (array)
         Set R1 = tbl.rngTblHeaderVal(tbl, "Key_1")
-        Set R1 = Intersect(R1.EntireColumn, tbl.rngrows)
+        Set R1 = Intersect(R1.EntireColumn, tbl.rngRows)
         Set R2 = tbl.rngTblHeaderVal(tbl, "Key_2")
-        Set R2 = Intersect(R2.EntireColumn, tbl.rngrows)
+        Set R2 = Intersect(R2.EntireColumn, tbl.rngRows)
         Set R3 = tbl.rngTblHeaderVal(tbl, "Key_4")
-        Set R3 = Intersect(R3.EntireColumn, tbl.rngrows)
+        Set R3 = Intersect(R3.EntireColumn, tbl.rngRows)
         
         'Get array of unique vals from Key_2 column (contiguous range)
         aryUnique = aryUniqueValsInRange(R3)

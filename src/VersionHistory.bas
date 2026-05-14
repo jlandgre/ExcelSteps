@@ -84,6 +84,7 @@ Attribute VB_Name = "VersionHistory"
 '4/16/26 Fix bug/robustness issue with Dictionary.Add
 '4/27/26 Update ErrorHandling (version 4/28/26 has error handling enabled)
 '5/11/26 Validated ImportParseNorm.cls; updates to tblRowsCols.SetColRanges for ColInfo.cls
-'5/13/26 Update ImportParseNorm.cls and tblRowsCols.SetColRanges
+'5/14/26 Update ImportParseNorm.cls and tblRowsCols.SetColRanges; Update errors_ table
+
 
 

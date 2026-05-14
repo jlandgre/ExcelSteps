@@ -156,7 +156,7 @@ Public Function Provision(ByRef tbl As tblRowsCols, wkbk, IsFormat, _
                 
         'Set dimensions based either on Defn string or actual data
         If Not .SetDimensions(tbl) Then GoTo ErrorExit
-        if .IsBlankSht Then Exit Function
+        If .IsBlankSht Then Exit Function
         
         'Set array of columnns and range names
         If Not .SetArysNamesRngs(tbl) Then GoTo ErrorExit
@@ -1233,6 +1233,8 @@ Public Function SetColRanges(ByRef tbl) As Boolean
 ErrorExit:
     errs.RecordErr "SetColRanges", SetColRanges
 End Function
+
+
 
 
 

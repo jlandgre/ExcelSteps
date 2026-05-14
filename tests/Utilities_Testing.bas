@@ -378,3 +378,177 @@ Function GetWorkbookByVBProjectName(VBAProjectName As String) As Workbook
     Set GetWorkbookByVBProjectName = Nothing
 End Function
 
+'-----------------------------------------------------------------------------------------------
+' Parse a module file and generate Errors_ table rows for each Sub/Function and errs.IsFail call
+' JDL 04/20/26
+'
+Sub GenerateErrorsTable()
+    Dim moduleName As String, iBaseErrCode As Long
+    Dim sep As String, rootPath As String, srcPath As String, savePath As String
+    Dim fileNum As Integer, lineText As String, trimLine As String
+    Dim wkbkDest As Workbook, wksht As Worksheet
+    Dim iRowDest As Long, iCurCodeBase As Long, iStep As Long
+    Dim routineName As String, maxIsFail As Long, iFailCode As Long
+    Dim isInRoutine As Boolean, projName
+
+    moduleName = "tblUnstructured.cls"
+    iBaseErrCode = 2400
+    projName = "ExcelSteps"
+
+    ' Build path to src directory (sibling of tests directory)
+    sep = Application.PathSeparator
+    rootPath = Left(ThisWorkbook.Path, InStrRev(ThisWorkbook.Path, sep) - 1)
+    srcPath = rootPath & sep & "src" & sep & moduleName
+
+    ' Open module file for reading
+    fileNum = FreeFile
+    Open srcPath For Input As #fileNum
+
+    ' Create destination workbook; write headers
+    Set wkbkDest = Workbooks.Add
+    Set wksht = wkbkDest.Sheets(1)
+    wksht.name = "Errors_"
+    wksht.Range("A1").Resize(1, 6).Value = _
+        Split("iCode,Module,Routine,sMsg_String,iMsgDevUser,VBAProject", ",")
+
+    iRowDest = 2
+    iCurCodeBase = iBaseErrCode
+    isInRoutine = False
+    maxIsFail = 0
+
+    Do While Not EOF(fileNum)
+        Line Input #fileNum, lineText
+        trimLine = Trim(lineText)
+
+        ' Skip comment lines
+        If Left(trimLine, 1) <> "'" Then
+            If IsSubOrFunctionLine(trimLine) Then
+                ' Increment base code from previous routine before writing next base row
+                If isInRoutine Then
+                    iStep = 10
+                    If maxIsFail > 9 Then iStep = 20
+                    iCurCodeBase = iCurCodeBase + iStep
+                End If
+                routineName = ExtractRoutineName(trimLine)
+                isInRoutine = True
+                maxIsFail = 0
+
+                With wksht
+                    .Cells(iRowDest, 1).Value = iCurCodeBase
+                    .Cells(iRowDest, 2).Value = moduleName
+                    .Cells(iRowDest, 3).Value = routineName
+                    .Cells(iRowDest, 4).Value = "Base"
+                    .Cells(iRowDest, 5).Value = False
+                    .Cells(iRowDest, 6).Value = projName
+                End With
+                iRowDest = iRowDest + 1
+
+            ElseIf isInRoutine And InStr(trimLine, ".IsFail(") > 0 Then
+                iFailCode = ExtractIsFailCode(trimLine)
+                If iFailCode > 0 Then
+                    If iFailCode > maxIsFail Then maxIsFail = iFailCode
+                    With wksht
+                        .Cells(iRowDest, 1).Value = iCurCodeBase + iFailCode
+                        .Cells(iRowDest, 2).Value = moduleName
+                        .Cells(iRowDest, 3).Value = routineName
+                        .Cells(iRowDest, 4).Value = ""
+                        .Cells(iRowDest, 5).Value = True
+                        .Cells(iRowDest, 6).Value = projName
+                    End With
+                    iRowDest = iRowDest + 1
+                End If
+            End If
+        End If
+    Loop
+
+    Close #fileNum
+
+    ' Save and close destination workbook
+    savePath = ThisWorkbook.Path & sep & "ErrorsTable.xlsx"
+    Application.DisplayAlerts = False
+    wkbkDest.SaveAs savePath, xlOpenXMLWorkbook
+    Application.DisplayAlerts = True
+    wkbkDest.Close False
+
+    MsgBox "Done - ErrorsTable.xlsx written to " & ThisWorkbook.Path
+End Sub
+'-----------------------------------------------------------------------------------------------
+' True if trimmed line is a Sub or Function declaration (not a comment)
+'
+Private Function IsSubOrFunctionLine(ByVal trimLine As String) As Boolean
+    Dim upper As String
+    upper = UCase(trimLine)
+    IsSubOrFunctionLine = (upper Like "PUBLIC FUNCTION *" Or upper Like "PRIVATE FUNCTION *" Or _
+                           upper Like "PUBLIC SUB *" Or upper Like "PRIVATE SUB *" Or _
+                           upper Like "FUNCTION *" Or upper Like "SUB *")
+End Function
+'-----------------------------------------------------------------------------------------------
+' Extract routine name from a Sub or Function declaration line
+'
+Private Function ExtractRoutineName(ByVal trimLine As String) As String
+    Dim pos As Long, parenPos As Long, spacePos As Long
+    Dim upper As String
+    upper = UCase(trimLine)
+    If upper Like "PUBLIC *" Or upper Like "PRIVATE *" Then
+        pos = InStr(trimLine, " ")
+        trimLine = Trim(Mid(trimLine, pos + 1))
+    End If
+    pos = InStr(trimLine, " ")
+    trimLine = Trim(Mid(trimLine, pos + 1))
+    parenPos = InStr(trimLine, "(")
+    spacePos = InStr(trimLine, " ")
+    If parenPos = 0 Then parenPos = Len(trimLine) + 1
+    If spacePos = 0 Then spacePos = Len(trimLine) + 1
+    ExtractRoutineName = Left(trimLine, WorksheetFunction.Min(parenPos, spacePos) - 1)
+End Function
+'-----------------------------------------------------------------------------------------------
+' Extract integer iCode (2nd arg) from errs.IsFail(condition, iCode, ...) call
+'
+Private Function ExtractIsFailCode(ByVal trimLine As String) As Long
+    Dim pos As Long, afterOpen As String
+    Dim depth As Long, i As Long, ch As String
+    Dim firstComma As Long, secondComma As Long, secondArgEnd As Long
+    Dim secondArg As String, iCode As Long
+
+    pos = InStr(trimLine, "errs.IsFail(")
+    If pos = 0 Then Exit Function
+    afterOpen = Mid(trimLine, pos + Len("errs.IsFail("))
+
+    ' Walk chars tracking paren depth; find 1st and 2nd top-level commas
+    depth = 0: firstComma = 0: secondComma = 0
+    For i = 1 To Len(afterOpen)
+        ch = Mid(afterOpen, i, 1)
+        If ch = "(" Then depth = depth + 1
+        If ch = ")" Then
+            If depth = 0 Then Exit For
+            depth = depth - 1
+        End If
+        If ch = "," And depth = 0 Then
+            If firstComma = 0 Then
+                firstComma = i
+            ElseIf secondComma = 0 Then
+                secondComma = i
+                Exit For
+            End If
+        End If
+    Next i
+    If firstComma = 0 Then Exit Function
+
+    If secondComma > 0 Then
+        secondArgEnd = secondComma - 1
+    Else
+        ' Only two args: find closing paren
+        For i = firstComma + 1 To Len(afterOpen)
+            ch = Mid(afterOpen, i, 1)
+            If ch = ")" Then secondArgEnd = i - 1: Exit For
+        Next i
+    End If
+    If secondArgEnd <= firstComma Then Exit Function
+
+    secondArg = Trim(Mid(afterOpen, firstComma + 1, secondArgEnd - firstComma))
+    On Error Resume Next
+    iCode = CLng(secondArg)
+    On Error GoTo 0
+    ExtractIsFailCode = iCode
+End Function
+

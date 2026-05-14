@@ -167,7 +167,7 @@ Sub CheckMdlDestVarNames(Test, aryExpect)
 
     'Check mdlDest variable names column (Should have SMdlType2 names)
     With mdlDest_val
-        Set rng = Intersect(.rngrows, .colrngVarNames)
+        Set rng = Intersect(.rngRows, .colrngVarNames)
         Test.TestRngVals Test, rng, aryExpect
     End With
 
@@ -395,7 +395,7 @@ Sub CheckSMdlType2Cleared(Test, ByVal tbls, ByVal mdlDest)
     Dim rng As Range
     With Test
         'Check that model was cleared from ExcelSteps
-        .Assert Test, tbls.rngrows.Address = "$2:$3"
+        .Assert Test, tbls.rngRows.Address = "$2:$3"
         .Assert Test, IsEmpty(tbls.wksht.Cells(4, 2))
         
         'Check that model was cleared from SMdl sheet
@@ -429,7 +429,7 @@ Function test_DeleteTblImpTrailingBlankRows(wkbk, shtTests)
         defn_extra_rows = "SMdl:10,9:10:T:T:T:F:T:SMdlDest"
         Set mdlDest = ExcelSteps.New_mdl
         .Assert Test, mdlDest.InitSwapModels(mdlDest, tblImp, tbls, .wkbkTest, defn_extra_rows)
-        .Assert Test, mdlDest.rngrows.Address = "$10:$19"
+        .Assert Test, mdlDest.rngRows.Address = "$10:$19"
         .Assert Test, mdlDest.ReadModelName(mdlDest, tbls, ModelPrev)
         .Assert Test, mdlDest.TransferMdlDestRows(mdlDest, tblImp, tbls, ModelPrev)
         
@@ -437,12 +437,12 @@ Function test_DeleteTblImpTrailingBlankRows(wkbk, shtTests)
         Set rng = Range(tblImp.wksht.Rows(11), tblImp.wksht.Rows(13))
         Set rng = Intersect(rng, tblImp.colrngVarName)
         .TestRngVals Test, rng, Array("<blank>", "<blank>", "<blank>")
-        .Assert Test, tblImp.rngrows.Address = "$2:$13"
+        .Assert Test, tblImp.rngRows.Address = "$2:$13"
         
         'Check that trailing blanks get deleted
         .Assert Test, mdlDest.DeleteTblImpTrailingBlankRows(tblImp)
         .TestRangeIsEmpty Test, rng
-        .Assert Test, tblImp.rngrows.Address = "$2:$10"
+        .Assert Test, tblImp.rngRows.Address = "$2:$10"
         
         .Update Test
     End With
@@ -508,11 +508,11 @@ Function test_TblImportDeleteModel(wkbk, shtTests)
         PopulateMdlType2 tblImp
         .Assert Test, tblImp.Provision(tblImp, .wkbkTest, False, sht:=shtTblImp, nCols:=10, IsSetColRngs:=True)
 
-        .Assert Test, tblImp.rngrows.Address = "$2:$10"
+        .Assert Test, tblImp.rngRows.Address = "$2:$10"
 
         'Delete SMdlType2 from tblImport sheet
         .Assert Test, mdlDest.TblImportDeleteModel(tblImp, sMdl2)
-        .Assert Test, tblImp.rngrows.Address = "$2:$5"
+        .Assert Test, tblImp.rngRows.Address = "$2:$5"
         
         .Update Test
     End With
