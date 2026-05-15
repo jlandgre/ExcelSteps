@@ -99,12 +99,11 @@ ErrorExit:
 End Function
 '-----------------------------------------------------------------------------------------
 ' Open raw file and provision raw table object in a temporary workbook copy
-' JDL 5/7/26; Updated 5/13/26
+' JDL 5/7/26; Updated 5/15/26
 '
 Public Function OpenRawData(imptbl) As Boolean
   SetErrs OpenRawData: If errs.IsHandle Then On Error GoTo ErrorExit
   Dim wkbkOpened As Workbook, wkbkTemp As Workbook, shtRaw As String
-  'Dim tblAlias As Object, tblUAlias As Object
 
   If imptbl.dParamsImport.Item("FileType") = "xlsx" Then
     If Not OpenFile(imptbl.files.pfImportFile, wkbkOpened) Then GoTo ErrorExit
@@ -122,11 +121,10 @@ Public Function OpenRawData(imptbl) As Boolean
   With imptbl
     If LCase$(CStr(.dParamsParse.Item("RawShape", "rowscols"))) = "rowscols" Then
       Set .tblRaw = New tblRowsCols
-      'Set tblAlias = .tblRaw
-      If Not .tblRaw.Provision(.tblRaw, wkbkTemp, False, sht:=shtRaw, IsSetColRngs:=False) Then GoTo ErrorExit
+      If Not .tblRaw.Provision(.tblRaw, wkbkTemp, False, sht:=shtRaw, _
+        IsSetColRngs:=False) Then GoTo ErrorExit
     Else
       Set .tblRaw = New tblUnstructured
-      'Set tblUAlias = .tblRaw
       If Not .tblRaw.Init(.tblRaw, wkbkTemp, shtRaw) Then GoTo ErrorExit
     End If
   End With
@@ -137,25 +135,18 @@ ErrorExit:
 End Function
 '-----------------------------------------------------------------------------------------
 ' Validate that required raw columns are present for current colinfo table
-' JDL 5/7/26; Updated 5/14/26
+' JDL 5/7/26; Updated 5/15/26
 '
 Public Function ValidateRawStructure(imptbl) As Boolean
   SetErrs ValidateRawStructure: If errs.IsHandle Then On Error GoTo ErrorExit
-  'Dim rngVarNormCol As Range, rngVarRawCol As Range
   Dim valNorm As Variant, valRaw As String, rngRow As Range, rngHdr As Range
 
   With imptbl.colinfo
       If errs.IsFail(imptbl.tblRaw Is Nothing, 1) Then GoTo ErrorExit
-      'If errs.IsFail(TypeName(imptbl.tblRaw) <> "tblRowsCols", 2) Then GoTo ErrorExit
-    
-      'Set rngVarNormCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, "VarNameNorm").EntireColumn
-      'Set rngVarRawCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, "VarNameRaw").EntireColumn
     
       For Each rngRow In .rngRowsCurTbl.Rows
-        'valNorm = Intersect(rngRow, rngVarNormCol).Value2
         valNorm = Intersect(rngRow, .tbl.colrngVarNorm).Value2
         If Len(CStr(valNorm)) > 0 Then
-          'valRaw = CStr(Intersect(rngRow, rngVarRawCol).Value2)
           valRaw = CStr(Intersect(rngRow, .tbl.colrngVarRaw).Value2)
           If errs.IsFail(Len(valRaw) = 0, 2, CStr(valNorm)) Then GoTo ErrorExit
     
@@ -222,7 +213,8 @@ Public Function ApplyFillMapToSortedColumn(imptbl, rngDataCol As Range, dict As 
   If IsArray(aryKeys) Then
     For Each sKey In aryKeys
       valFill = dict.Item(CStr(sKey))
-      If Not imptbl.ApplyFillKeyToSortedColumn(imptbl, rngDataCol, CStr(sKey), valFill) Then GoTo ErrorExit
+      If Not imptbl.ApplyFillKeyToSortedColumn(imptbl, rngDataCol, CStr(sKey), _
+        valFill) Then GoTo ErrorExit
     Next sKey
   End If
   Exit Function
@@ -325,19 +317,15 @@ End Function
 Public Function BuildNormMappings(imptbl, ByRef aryNorm() As String, ByRef aryRaw() As String, _
     ByRef maxOrder As Long) As Boolean
     SetErrs BuildNormMappings: If errs.IsHandle Then On Error GoTo ErrorExit
-    'Dim rngOrderCol As Range, rngVarNormCol As Range, rngVarRawCol As Range
     Dim orderNum As Long, valOrder As Variant, sNorm As String, sRaw As String, rngRow As Range
     Dim rngOrderCol As Range
     
     Set rngOrderCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, imptbl.curTbl).EntireColumn
-    'Set rngVarNormCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, "VarNameNorm").EntireColumn
-    'Set rngVarRawCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, "VarNameRaw").EntireColumn
 
     With imptbl.colinfo
         maxOrder = 0
         For Each rngRow In .rngRowsCurTbl.Rows
             valOrder = Intersect(rngRow, rngOrderCol).Value2
-            'sNorm = CStr(Intersect(rngRow, rngVarNormCol).Value2)
             sNorm = CStr(Intersect(rngRow, .tbl.colrngVarNorm).Value2)
             If Len(sNorm) > 0 And IsNumeric(valOrder) Then
                 orderNum = CLng(valOrder)
@@ -351,8 +339,6 @@ Public Function BuildNormMappings(imptbl, ByRef aryNorm() As String, ByRef aryRa
 
         For Each rngRow In .rngRowsCurTbl.Rows
             valOrder = Intersect(rngRow, rngOrderCol).Value2
-            'sNorm = CStr(Intersect(rngRow, rngVarNormCol).Value2)
-            'sRaw = CStr(Intersect(rngRow, rngVarRawCol).Value2)
             sNorm = CStr(Intersect(rngRow, .tbl.colrngVarNorm).Value2)
             sRaw = CStr(Intersect(rngRow, .tbl.colrngVarRaw).Value2)
             
@@ -379,7 +365,7 @@ Public Function WriteNormFromMappings(imptbl, aryNorm() As String, aryRaw() As S
     ByVal maxOrder As Long) As Boolean
     SetErrs WriteNormFromMappings: If errs.IsHandle Then On Error GoTo ErrorExit
     Dim wkshtNorm As Worksheet, normSht As String, i As Long, j As Long
-    Dim rngSrcHdr As Range, rngSrc As Range, rngDest As Range ', tblAlias As Object
+    Dim rngSrcHdr As Range, rngSrc As Range, rngDest As Range
 
     With imptbl.tblParsed
         normSht = "norm_"
@@ -406,7 +392,6 @@ Public Function WriteNormFromMappings(imptbl, aryNorm() As String, aryRaw() As S
     With imptbl
         If errs.IsFail(j = 0, 2, .curTbl) Then GoTo ErrorExit
         Set .tblNorm = New tblRowsCols
-        'Set tblAlias = .tblNorm
         If Not .tblNorm.Provision(.tblNorm, .tblParsed.wkbk, False, sht:=normSht, _
             IsSetColRngs:=False) Then GoTo ErrorExit
     End With
@@ -421,20 +406,14 @@ End Function
 '
 Public Function FilterRows(imptbl) As Boolean
     SetErrs FilterRows: If errs.IsHandle Then On Error GoTo ErrorExit
-    'Dim rngVarNormCol As Range, rngFilterValsCol As Range
     Dim sNorm As String, sFilter As String, dict As Object, rngRow As Range
     
     If imptbl.tblNorm Is Nothing Then Exit Function
     
-    'Set rngVarNormCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, "VarNameNorm").EntireColumn
-    'Set rngFilterValsCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, "FilterVals").EntireColumn
-
     With imptbl.colinfo
         For Each rngRow In .rngRowsCurTbl.Rows
-        'sFilter = CStr(Intersect(rngRow, rngFilterValsCol).Value2)
         sFilter = CStr(Intersect(rngRow, .tbl.colrngFilterVals).Value2)
             If Len(sFilter) > 0 Then
-                'sNorm = CStr(Intersect(rngRow, rngVarNormCol).Value2)
                 sNorm = CStr(Intersect(rngRow, .tbl.colrngVarNorm).Value2)
                 
                 Set dict = New Dictionary
@@ -479,7 +458,6 @@ Private Function ApplyKeepOnlyFilter(imptbl, ByVal sVarNorm As String, ByVal kee
                 End If
             Next idx
             
-            'Error if
             If errs.IsFail(cellLast Is Nothing, 2, CStr(keepVal)) Then GoTo ErrorExit
         
             Set cellStart = rngDataCol.Cells(1, 1)
@@ -495,7 +473,6 @@ Private Function ApplyKeepOnlyFilter(imptbl, ByVal sVarNorm As String, ByVal kee
         End If
     
         ' Re-provision the normalized table after filtering
-        'Set tblAlias = imptbl.tblNorm
         If Not .Provision(imptbl.tblNorm, .wkbk, False, sht:=.sht, _
             IsSetColRngs:=False) Then GoTo ErrorExit
     End With
