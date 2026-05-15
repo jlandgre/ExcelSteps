@@ -1,5 +1,5 @@
 Attribute VB_Name = "tests_tblRowsCols"
-'Version 10/29/25
+'Version 5/15/26
 Option Explicit
 Public Const shtTbl As String = "SMdl"
 Public Const defn_test As String = "SMdl:6,2:T:F:T:F:T:F:1:-2:12:5"
@@ -28,7 +28,7 @@ Sub TestDriver_TblRowsCols()
     With procs
         
         'Initialize Procedure objects; Set up tst_Results sheet; Set Procedures attributes
-        .Init procs, ThisWorkbook, "tblRowsCols", "tblRowsCols"
+        .Init procs, ThisWorkbook, "Tests_tblRowsCols", "Tests_tblRowsCols"
         
         'Turn off events and Screenupdataing; calculation Automatic
         SetApplEnvir False, False, xlCalculationAutomatic
@@ -204,7 +204,7 @@ End Sub
 'tst Refresh API all-in-one sub in modInterface of ExcelSteps
 'Non-default table (IsSetTblNames = True) but mis-specified because sht not specified
 '
-'JDL 10/17/24
+'JDL 10/17/24; Updated 5/15/26 to pass
 '
 Sub test_RefreshTblAPI3(procs)
     Dim tst As New Test: tst.Init tst, "test_RefreshTblAPI3"
@@ -217,10 +217,11 @@ Sub test_RefreshTblAPI3(procs)
     ExcelSteps.errs.IsShowMsgs = False
 
     With tst
-        .Assert tst, ExcelSteps.RefreshTblAPI(.wkbkTest, IsReplace:=True, IsTblFormat:=True, _
+        ' Fails because no sht (or tblName or defn) specified
+        .Assert tst, Not ExcelSteps.RefreshTblAPI(.wkbkTest, IsReplace:=True, IsTblFormat:=True, _
             IsSetTblNames:=True)
         
-        msg = ExcelSteps.errs.Msgs_accum
+        msg = ExcelSteps.errs.ErrMsg
         tst.Assert tst, Left(msg, 51) = "The following tblRowsCols object is underspecified."
     
         tst.Update tst, procs

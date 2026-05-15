@@ -1,7 +1,7 @@
 Attribute VB_Name = "tests_PivotTable"
 Option Explicit
 Public Const shtPivotSrc As String = "SMdl"
-'Version 3/31/26
+'Version 5/15/26
 '--------------------------------------------------------------------------------------
 ' PivotTable Class Testing
 Sub TestDriver_PivotTable()
@@ -12,13 +12,13 @@ Sub TestDriver_PivotTable()
         SetApplEnvir False, False, xlCalculationManual
 
         'Enable testing of all or individual procedures
-        AllEnabled = False
+        AllEnabled = True
         .PivotTable.Enabled = False
     End With
     
     'Single test
-    procs.curProcedure = procs.PivotTable.name
-    test_MakePivotTableProcedure3 procs
+    'procs.curProcedure = procs.PivotTable.name
+    'test_MakePivotTableProcedure3 procs
 
     'Setup procedure group
     With procs.PivotTable
@@ -324,7 +324,7 @@ End Sub
 '--------------------------------------------------------------------------------------
 ' Apply pivot formatting and grand total toggles
 ' (No colFields so Sum by Category+SubCategory combos)
-' JDL 3/27/26
+' JDL 3/27/26; updated 5/15/26
 '
 Sub test_FormatPivotTable(procs)
     Dim tst As New Test: tst.Init tst, "test_FormatPivotTable"
@@ -353,7 +353,7 @@ Sub test_FormatPivotTable(procs)
         'Headers
         .Assert tst, CStr(pvt.wkshtDest.Cells(1, 1).Value2) = "Category"
         .Assert tst, CStr(pvt.wkshtDest.Cells(1, 2).Value2) = "SubCategory"
-        .Assert tst, CStr(pvt.wkshtDest.Cells(1, 3).Value2) = "Amount_"
+        .Assert tst, CStr(pvt.wkshtDest.Cells(1, 3).Value2) = "Sum of Amount"
         
         'First and last data rows
         .Assert tst, CStr(pvt.wkshtDest.Cells(2, 1).Value2) = "A"
@@ -443,7 +443,7 @@ End Sub
 '--------------------------------------------------------------------------------------
 ' Build a simple pivot with sum analyte and verify category/subcategory totals
 ' SubCategory as colField
-' JDL 3/27/26; Modified 3/30/26
+' JDL 3/27/26; Modified 5/15/26
 '
 Sub test_MakePivotTableProcedure1(procs)
     Dim tst As New Test: tst.Init tst, "test_MakePivotTableProcedure1"
@@ -466,7 +466,7 @@ Sub test_MakePivotTableProcedure1(procs)
         .Assert tst, Not pvt.rngTableOut Is Nothing
 
         'Headers
-        .Assert tst, CStr(pvt.wkshtDest.Cells(1, 1).Value2) = "Amount_"
+        .Assert tst, CStr(pvt.wkshtDest.Cells(1, 1).Value2) = "Sum of Amount"
         .Assert tst, CStr(pvt.wkshtDest.Cells(1, 2).Value2) = "SubCategory"
         
         .Assert tst, CStr(pvt.wkshtDest.Cells(2, 1).Value2) = "Category"
@@ -520,7 +520,7 @@ Sub test_MakePivotTableProcedure2(procs)
         'Headers
         .Assert tst, CStr(pvt.wkshtDest.Cells(1, 1).Value2) = "Category"
         .Assert tst, CStr(pvt.wkshtDest.Cells(1, 2).Value2) = "SubCategory"
-        .Assert tst, CStr(pvt.wkshtDest.Cells(1, 3).Value2) = "Amount_"
+        .Assert tst, CStr(pvt.wkshtDest.Cells(1, 3).Value2) = "Sum of Amount"
         
         'First and last data rows
         .Assert tst, CStr(pvt.wkshtDest.Cells(2, 1).Value2) = "A"

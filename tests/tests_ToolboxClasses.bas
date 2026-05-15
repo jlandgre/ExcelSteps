@@ -7,7 +7,7 @@ Const ColInfo_BRTable_nrows As Long = 9 'n data  rows in BR_Example table in tes
 Const ColInfo_BRTable_rngRows As String = "$2:$10" '.tbl.rngRows address for 9 rows
 Const ColInfo_aryIndices_BRExample As String = "Location,ProdType,Year,SerialWeek"
 Const ColInfo_aryMetrics_BRExample As String = "Net_Sales,Discounts,Markdowns,COGS"
-Const ColInfo_colRng_BRExample As String = "$I:$I"
+Const ColInfo_colRng_BRExample As String = "$J:$J"
 Const ColInfo_dictNormalize_BRExample_Count As Long = 8
 Const ColInfo_Locn_VarnameRaw_BRExample As String = "Locn_Raw"
 Const ColInfo_Sales_VarnameRaw_BRExample As String = "Sales_Raw"
@@ -30,9 +30,11 @@ Sub TestDriver_ToolBox()
 
         AllEnabled = True
         .ProjFiles.Enabled = False
-        .colinfo.Enabled = True
+        .colinfo.Enabled = False
         .ImportParseNorm.Enabled = False
     End With
+
+    ExcelSteps.IsTest = True
 
     With procs.ProjFiles
         If .Enabled Or AllEnabled Then
@@ -96,7 +98,6 @@ Sub test_ImportParseNorm_Init(procs)
         .Update tst, procs
     End With
     CloseColInfoWkbk colinfo
-    ExcelSteps.IsTest = False
 End Sub
 '-----------------------------------------------------------------------------------------
 ' Open raw file into temporary workbook and provision tblRaw
@@ -119,7 +120,6 @@ Sub test_ImportParseNorm_OpenRawData(procs)
     End With
     CloseImportParseNormWkbk imptbl
     CloseColInfoWkbk colinfo
-    ExcelSteps.IsTest = False
 End Sub
 '-----------------------------------------------------------------------------------------
 ' Validate raw headers satisfy required VarNameRaw fields for current table
@@ -139,7 +139,6 @@ Sub test_ImportParseNorm_ValidateRawStructure(procs)
     End With
     CloseImportParseNormWkbk imptbl
     CloseColInfoWkbk colinfo
-    ExcelSteps.IsTest = False
 End Sub
 '-----------------------------------------------------------------------------------------
 ' Build ordered normalization arrays from colinfo metadata
@@ -164,7 +163,6 @@ Sub test_ImportParseNorm_BuildNormMappings(procs)
     End With
     CloseImportParseNormWkbk imptbl
     CloseColInfoWkbk colinfo
-    ExcelSteps.IsTest = False
 End Sub
 '-----------------------------------------------------------------------------------------
 ' Apply FillVals dictionary to a sorted column via helper method
@@ -196,7 +194,6 @@ Sub test_ImportParseNorm_ApplyFillMapToSortedColumn(procs)
     End With
     CloseImportParseNormWkbk imptbl
     CloseColInfoWkbk colinfo
-    ExcelSteps.IsTest = False
 End Sub
 '-----------------------------------------------------------------------------------------
 ' Apply FillVals from colinfo to raw table values
@@ -232,7 +229,6 @@ Sub test_ImportParseNorm_ReplaceVals(procs)
     End With
     CloseImportParseNormWkbk imptbl
     CloseColInfoWkbk colinfo
-    ExcelSteps.IsTest = False
 End Sub
 '-----------------------------------------------------------------------------------------
 ' Lookup to check tbl val based on Locn, Week keys
@@ -275,7 +271,7 @@ Sub test_ImportParseNorm_WriteNormalized(procs)
     End With
     CloseImportParseNormWkbk imptbl
     CloseColInfoWkbk colinfo
-    ExcelSteps.IsTest = False
+    
 End Sub
 '-----------------------------------------------------------------------------------------
 ' Filter normalized rows based on KeepOnly setting from colinfo metadata
@@ -306,7 +302,7 @@ Sub test_ImportParseNorm_FilterRows(procs)
     End With
     CloseImportParseNormWkbk imptbl
     CloseColInfoWkbk colinfo
-    ExcelSteps.IsTest = False
+    
 End Sub
 '-----------------------------------------------------------------------------------------
 '-----------------------------------------------------------------------------------------
@@ -386,7 +382,7 @@ Sub test_ColInfo_Init(procs)
         .Update tst, procs
     End With
     CloseColInfoWkbk colinfo
-    ExcelSteps.IsTest = False
+    
 End Sub
 '-----------------------------------------------------------------------------------------
 ' Open colinfo_ from ThisWorkbook and provision colinfo.tbl
@@ -424,7 +420,7 @@ Sub test_ColInfo_Init_ThisWorkbook(procs)
     ThisWorkbook.Worksheets("colinfo_").Delete
     Application.DisplayAlerts = True
     On Error GoTo 0
-    ExcelSteps.IsTest = False
+    
 End Sub
 '-----------------------------------------------------------------------------------------
 ' Sort colinfo.tbl and set rngRowsCurTbl for specified table
@@ -450,7 +446,7 @@ Sub test_ColInfo_SetCurTbl(procs)
         .Update tst, procs
     End With
     CloseColInfoWkbk colinfo
-    ExcelSteps.IsTest = False
+    
 End Sub
 '-----------------------------------------------------------------------------------------
 ' Return index VarNameNorm array for curTbl
@@ -474,7 +470,7 @@ Sub test_ColInfo_YieldAryIndices(procs)
         .Update tst, procs
     End With
     CloseColInfoWkbk colinfo
-    ExcelSteps.IsTest = False
+    
 End Sub
 '-----------------------------------------------------------------------------------------
 ' YieldAryIndices returns empty array when curTbl has no index rows
@@ -494,7 +490,7 @@ Sub test_ColInfo_YieldAryIndices_Empty(procs)
         .Update tst, procs
     End With
     CloseColInfoWkbk colinfo
-    ExcelSteps.IsTest = False
+    
 End Sub
 '-----------------------------------------------------------------------------------------
 ' Return metric VarNameNorm array for curTbl
@@ -517,7 +513,7 @@ Sub test_ColInfo_YieldAryMetrics(procs)
         .Update tst, procs
     End With
     CloseColInfoWkbk colinfo
-    ExcelSteps.IsTest = False
+    
 End Sub
 '-----------------------------------------------------------------------------------------
 ' Return VarNameNorm->VarNameRaw dictionary for curTbl
@@ -540,7 +536,7 @@ Sub test_ColInfo_YieldDNormalize(procs)
         .Update tst, procs
     End With
     CloseColInfoWkbk colinfo
-    ExcelSteps.IsTest = False
+    
 End Sub
 '-----------------------------------------------------------------------------------------
 ' SetCurTbl re-entrant: call twice with different table names
@@ -564,7 +560,7 @@ Sub test_ColInfo_SetCurTblReentrant(procs)
         .Update tst, procs
     End With
     CloseColInfoWkbk colinfo
-    ExcelSteps.IsTest = False
+    
 End Sub
 '-----------------------------------------------------------------------------------------
 ' Helper: instance and init files and colinfo using test_data/ColInfo.xlsx

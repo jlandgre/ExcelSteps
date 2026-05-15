@@ -20,26 +20,26 @@ Sub TestDriver_Utilities()
     With procs.Utilities
         If .Enabled Or AllEnabled Then
             procs.curProcedure = .name
-            ' test_LastPopulatedCell1 procs
-            ' test_LastPopulatedCell2 procs
-            ' test_LastPopulatedCell3 procs
-            ' test_LastPopulatedCell4 procs
-            ' test_LastPopulatedCell5 procs
-            ' test_BuildMultiCellRange1 procs
-            ' test_BuildMultiCellRange2 procs
-            ' test_BuildMultiCellRange3 procs
-            ' test_BuildMultiCellRange4 procs
-            ' test_IsShtCaseErr procs
-            ' test_iCountAndDeleteStraySheets procs
-            ' test_PopRngMultiKeyTbl procs
-            ' test_RngMultiKey_One procs
-            ' test_RngMultiKey_Two procs
-            ' test_RngMultiKey_Four procs
-            ' test_AryUniqueValsInRange procs
-            ' test_TestAryVals procs
-            ' test_CkNumFmtMatch procs
-            ' test_TestRngVals procs
-            ' test_ConvertValToNumeric procs
+            test_LastPopulatedCell1 procs
+            test_LastPopulatedCell2 procs
+            test_LastPopulatedCell3 procs
+            test_LastPopulatedCell4 procs
+            test_LastPopulatedCell5 procs
+            test_BuildMultiCellRange1 procs
+            test_BuildMultiCellRange2 procs
+            test_BuildMultiCellRange3 procs
+            test_BuildMultiCellRange4 procs
+            test_IsShtCaseErr procs
+            test_iCountAndDeleteStraySheets procs
+            test_PopRngMultiKeyTbl procs
+            test_RngMultiKey_One procs
+            test_RngMultiKey_Two procs
+            test_RngMultiKey_Four procs
+            test_AryUniqueValsInRange procs
+            test_TestAryVals procs
+            test_CkNumFmtMatch procs
+            test_TestRngVals procs
+            test_ConvertValToNumeric procs
             test_FindInRange1 procs
             test_FindInRange2 procs
             test_FindInRange3 procs

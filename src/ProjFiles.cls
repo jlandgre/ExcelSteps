@@ -8,7 +8,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
-'Version 5/12/26
+'Version 5/15/26
 
 Public wkbkProj As Workbook ' Project workbook
 Public IsDevelopment As Boolean ' True if working in development, src/tests folder structure
@@ -57,7 +57,7 @@ ErrorExit:
 End Function
 '-----------------------------------------------------------------------------------------
 ' Set generic paths and filenames
-' JDL 4/29/26; updated 5/12/26
+' JDL 4/29/26; updated 5/15/26
 '
 Private Function SetGenericPaths(files, IsTest As Boolean) As Boolean
     SetErrs SetGenericPaths: If errs.IsHandle Then On Error GoTo ErrorExit
@@ -77,7 +77,8 @@ Private Function SetGenericPaths(files, IsTest As Boolean) As Boolean
             .pathTests = .pathRoot & "tests" & sep
         End If
     
-        If Not IsTest Then
+        ' For now, ignore IsTest legacy arg and use ExcelSteps.IsTest Public variable to toggle testing
+        If Not ExcelSteps.IsTest Then
             .pathData = .pathSrc
             .pathColInfo = .pathSrc
         ElseIf .subdir_tests = "" Then

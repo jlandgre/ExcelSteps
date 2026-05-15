@@ -1,6 +1,6 @@
 Attribute VB_Name = "tests_mdlImportRow"
 ' Version 1/28/26 refactor to use procs framework
-' 12/13/24 tblRowsCols mods
+' Needs debug 5/15/26; test_ReadMdlDestRow not working due to Populate issues
 Option Explicit
 '-----------------------------------------------------------------------------------------------
 ' Test suite for mdlImportRow Class
@@ -14,7 +14,7 @@ Sub TestDriver_mdlImportRow()
         SetApplEnvir False, False, xlCalculationAutomatic
         
         'Enable testing of all or individual procedures
-        AllEnabled = False
+        AllEnabled = True
         .mdlImportRow.Enabled = True
     End With
     

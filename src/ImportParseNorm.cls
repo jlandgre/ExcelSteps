@@ -103,29 +103,31 @@ End Function
 '
 Public Function OpenRawData(imptbl) As Boolean
   SetErrs OpenRawData: If errs.IsHandle Then On Error GoTo ErrorExit
-  Dim wkbkOpened As Workbook, wkbkTemp As Workbook
-  Dim tblAlias As Object, tblUAlias As Object, shtRaw As String
+  Dim wkbkOpened As Workbook, wkbkTemp As Workbook, shtRaw As String
+  'Dim tblAlias As Object, tblUAlias As Object
 
-  If LCase$(CStr(imptbl.dParamsImport.Item("Filetype", ""))) = "xls" Then
+  If imptbl.dParamsImport.Item("FileType") = "xlsx" Then
     If Not OpenFile(imptbl.files.pfImportFile, wkbkOpened) Then GoTo ErrorExit
     If errs.IsFail(wkbkOpened Is Nothing, 1, imptbl.files.pfImportFile) Then GoTo ErrorExit
+
+    ' Copy raw data to new workbook and close original
     wkbkOpened.Worksheets(1).Copy
     Set wkbkTemp = ActiveWorkbook
     wkbkOpened.Close False
     shtRaw = wkbkTemp.Worksheets(1).Name
   Else
-    If errs.IsFail(True, 2, CStr(imptbl.dParamsImport.Item("Filetype"))) Then GoTo ErrorExit
+    If errs.IsFail(True, 2, CStr(imptbl.dParamsImport.Item("FileType"))) Then GoTo ErrorExit
   End If
 
   With imptbl
     If LCase$(CStr(.dParamsParse.Item("RawShape", "rowscols"))) = "rowscols" Then
       Set .tblRaw = New tblRowsCols
-      Set tblAlias = .tblRaw
-      If Not tblAlias.Provision(tblAlias, wkbkTemp, False, sht:=shtRaw, IsSetColRngs:=False) Then GoTo ErrorExit
+      'Set tblAlias = .tblRaw
+      If Not .tblRaw.Provision(.tblRaw, wkbkTemp, False, sht:=shtRaw, IsSetColRngs:=False) Then GoTo ErrorExit
     Else
       Set .tblRaw = New tblUnstructured
-      Set tblUAlias = .tblRaw
-      If Not tblUAlias.Init(tblUAlias, wkbkTemp, shtRaw) Then GoTo ErrorExit
+      'Set tblUAlias = .tblRaw
+      If Not .tblRaw.Init(.tblRaw, wkbkTemp, shtRaw) Then GoTo ErrorExit
     End If
   End With
   Exit Function
@@ -142,19 +144,19 @@ Public Function ValidateRawStructure(imptbl) As Boolean
   'Dim rngVarNormCol As Range, rngVarRawCol As Range
   Dim valNorm As Variant, valRaw As String, rngRow As Range, rngHdr As Range
 
-  With imptbl
+  With imptbl.colinfo
       If errs.IsFail(imptbl.tblRaw Is Nothing, 1) Then GoTo ErrorExit
       'If errs.IsFail(TypeName(imptbl.tblRaw) <> "tblRowsCols", 2) Then GoTo ErrorExit
     
       'Set rngVarNormCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, "VarNameNorm").EntireColumn
       'Set rngVarRawCol = imptbl.colinfo.tbl.rngTblHeaderVal(imptbl.colinfo.tbl, "VarNameRaw").EntireColumn
     
-      For Each rngRow In imptbl.colinfo.rngRowsCurTbl.Rows
+      For Each rngRow In .rngRowsCurTbl.Rows
         'valNorm = Intersect(rngRow, rngVarNormCol).Value2
-        valNorm = Intersect(rngRow, .colinfo.colrngVarNorm).Value2
+        valNorm = Intersect(rngRow, .tbl.colrngVarNorm).Value2
         If Len(CStr(valNorm)) > 0 Then
           'valRaw = CStr(Intersect(rngRow, rngVarRawCol).Value2)
-          valRaw = CStr(Intersect(rngRow, .colrngVarRaw).Value2)
+          valRaw = CStr(Intersect(rngRow, .tbl.colrngVarRaw).Value2)
           If errs.IsFail(Len(valRaw) = 0, 2, CStr(valNorm)) Then GoTo ErrorExit
     
           Set rngHdr = imptbl.tblRaw.rngTblHeaderVal(imptbl.tblRaw, valRaw)
@@ -173,10 +175,8 @@ End Function
 '
 Public Function ReplaceVals(imptbl) As Boolean
   SetErrs ReplaceVals: If errs.IsHandle Then On Error GoTo ErrorExit
-  Dim rngRow As Range
-  Dim rngRawHdr As Range, rngDataCol As Range
+  Dim rngRow As Range, rngRawHdr As Range, rngDataCol As Range
   Dim sFill As String, sRaw As String, dict As Object
-
 
   With imptbl
     For Each rngRow In .colinfo.rngRowsCurTbl.Rows
@@ -190,7 +190,7 @@ Public Function ReplaceVals(imptbl) As Boolean
         If errs.IsFail(Len(sRaw) = 0, 1) Then GoTo ErrorExit
 
         ' Locate sRaw column in raw table
-        Set rngRawHdr = .tblRaw.rngTblHeaderVal(.tblRaw, sRaw)
+        Set rngRawHdr = .tblRaw.rngTblHeaderVal(imptbl.tblRaw, sRaw)
         If errs.IsFail(rngRawHdr Is Nothing, 2, sRaw) Then GoTo ErrorExit
 
         'Sort so equal values are contiguous and can be replaced in blocks
@@ -338,7 +338,7 @@ Public Function BuildNormMappings(imptbl, ByRef aryNorm() As String, ByRef aryRa
         For Each rngRow In .rngRowsCurTbl.Rows
             valOrder = Intersect(rngRow, rngOrderCol).Value2
             'sNorm = CStr(Intersect(rngRow, rngVarNormCol).Value2)
-            sNorm = CStr(Intersect(rngRow, .colrngVarNorm).Value2)
+            sNorm = CStr(Intersect(rngRow, .tbl.colrngVarNorm).Value2)
             If Len(sNorm) > 0 And IsNumeric(valOrder) Then
                 orderNum = CLng(valOrder)
                 If orderNum > maxOrder Then maxOrder = orderNum
@@ -353,8 +353,8 @@ Public Function BuildNormMappings(imptbl, ByRef aryNorm() As String, ByRef aryRa
             valOrder = Intersect(rngRow, rngOrderCol).Value2
             'sNorm = CStr(Intersect(rngRow, rngVarNormCol).Value2)
             'sRaw = CStr(Intersect(rngRow, rngVarRawCol).Value2)
-            sNorm = CStr(Intersect(rngRow, .colrngVarNorm).Value2)
-            sRaw = CStr(Intersect(rngRow, .colrngVarRaw).Value2)
+            sNorm = CStr(Intersect(rngRow, .tbl.colrngVarNorm).Value2)
+            sRaw = CStr(Intersect(rngRow, .tbl.colrngVarRaw).Value2)
             
             If Len(sNorm) > 0 And IsNumeric(valOrder) Then
                 orderNum = CLng(valOrder)
@@ -381,7 +381,7 @@ Public Function WriteNormFromMappings(imptbl, aryNorm() As String, aryRaw() As S
     Dim wkshtNorm As Worksheet, normSht As String, i As Long, j As Long
     Dim rngSrcHdr As Range, rngSrc As Range, rngDest As Range ', tblAlias As Object
 
-    With imptbl.tblParse
+    With imptbl.tblParsed
         normSht = "norm_"
         If SheetExists(.wkbk, normSht) Then DeleteSheet .wkbk, normSht
         Set wkshtNorm = .wkbk.Worksheets.Add(After:=imptbl.tblParsed.wksht)
@@ -432,10 +432,10 @@ Public Function FilterRows(imptbl) As Boolean
     With imptbl.colinfo
         For Each rngRow In .rngRowsCurTbl.Rows
         'sFilter = CStr(Intersect(rngRow, rngFilterValsCol).Value2)
-        sFilter = CStr(Intersect(rngRow, .colrngFilterVals).Value2)
+        sFilter = CStr(Intersect(rngRow, .tbl.colrngFilterVals).Value2)
             If Len(sFilter) > 0 Then
                 'sNorm = CStr(Intersect(rngRow, rngVarNormCol).Value2)
-                sNorm = CStr(Intersect(rngRow, .colrngVarNorm).Value2)
+                sNorm = CStr(Intersect(rngRow, .tbl.colrngVarNorm).Value2)
                 
                 Set dict = New Dictionary
                 If Not dict.ParseStringToDictProcedure(sFilter) Then GoTo ErrorExit
