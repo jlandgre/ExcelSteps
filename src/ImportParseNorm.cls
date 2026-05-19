@@ -8,7 +8,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
-'Version 5/15/26
+'Version 5/19/26
 
 Public colinfo As Object
 Public files As Object
@@ -402,11 +402,12 @@ ErrorExit:
 End Function
 '-----------------------------------------------------------------------------------------
 ' Apply row filters described by FilterVals metadata for current table
-' JDL 5/7/26; Updated 5/14/26
+' JDL 5/7/26; Updated 5/19/26
 '
 Public Function FilterRows(imptbl) As Boolean
     SetErrs FilterRows: If errs.IsHandle Then On Error GoTo ErrorExit
-    Dim sNorm As String, sFilter As String, dict As Object, rngRow As Range
+  Dim sNorm As String, sFilter As String, dict As Object, rngRow As Range
+  Dim IsKeepOnly As Boolean, IsKeepExcept As Boolean
     
     If imptbl.tblNorm Is Nothing Then Exit Function
     
@@ -418,9 +419,26 @@ Public Function FilterRows(imptbl) As Boolean
                 
                 Set dict = New Dictionary
                 If Not dict.ParseStringToDictProcedure(sFilter) Then GoTo ErrorExit
-                
-                If dict.Exists("KeepOnly") Then
-                    If Not ApplyKeepOnlyFilter(imptbl, sNorm, dict.Item("KeepOnly")) Then GoTo ErrorExit
+
+                IsKeepOnly = dict.Exists("KeepOnly")
+                IsKeepExcept = dict.Exists("KeepExcept")
+
+                ' Options are mutually exclusive so error if both
+                If errs.IsFail(IsKeepOnly And IsKeepExcept, 1, sNorm) Then GoTo ErrorExit
+
+                If IsKeepOnly Then
+                  If Not ApplyKeepOnlyFilter(imptbl, sNorm, dict.Item("KeepOnly")) Then GoTo ErrorExit
+                ElseIf IsKeepExcept Then
+                  If Not ApplyKeepExceptFilter(imptbl, sNorm, dict.Item("KeepExcept")) Then GoTo ErrorExit
+                End If
+
+                'Re-provision after filtering
+                If IsKeepOnly Or IsKeepExcept Then
+                  With imptbl.tblNorm
+                    If Not .Provision(imptbl.tblNorm, .wkbk, False, sht:=.sht, _
+                      IsSetColRngs:=False) Then GoTo ErrorExit
+                    If errs.IsFail(.rngRows Is Nothing, 2, sNorm) Then GoTo ErrorExit
+                  End With
                 End If
             End If
         Next rngRow
@@ -430,6 +448,46 @@ Public Function FilterRows(imptbl) As Boolean
 ErrorExit:
     errs.RecordErr "FilterRows", FilterRows
     End Function
+'-----------------------------------------------------------------------------------------
+' Remove rows in tblNorm where sVarNorm column matches any KeepExcept token
+' JDL 5/19/26
+'
+Private Function ApplyKeepExceptFilter(imptbl, ByVal sVarNorm As String, ByVal keepExceptVal As Variant) As Boolean
+  SetErrs ApplyKeepExceptFilter: If errs.IsHandle Then On Error GoTo ErrorExit
+  Dim rngHdr As Range, rngDataCol As Range, aryVals As Variant, sVal As Variant
+  Dim sValCmp As String, idx As Long
+
+  If errs.IsFail(Len(CStr(keepExceptVal)) = 0, 1, sVarNorm) Then GoTo ErrorExit
+
+  With imptbl.tblNorm
+    Set rngHdr = .rngTblHeaderVal(imptbl.tblNorm, sVarNorm)
+    If errs.IsFail(rngHdr Is Nothing, 2, sVarNorm) Then GoTo ErrorExit
+
+    Set rngDataCol = Intersect(.rngRows, rngHdr.EntireColumn)
+    aryVals = Split(CStr(keepExceptVal), ",")
+
+    For Each sVal In aryVals
+      sValCmp = CStr(sVal)
+      If errs.IsFail(Len(sValCmp) = 0, 3, CStr(keepExceptVal)) Then GoTo ErrorExit
+
+      For idx = rngDataCol.Cells.Count To 1 Step -1
+        If sValCmp = "BLANK" Then
+          If Len(CStr(rngDataCol.Cells(idx, 1).Value2)) = 0 Then
+            rngDataCol.Cells(idx, 1).EntireRow.Delete
+          End If
+        Else
+          If CStr(rngDataCol.Cells(idx, 1).Value2) = sValCmp Then
+            rngDataCol.Cells(idx, 1).EntireRow.Delete
+          End If
+        End If
+      Next idx
+    Next sVal
+  End With
+  Exit Function
+
+ErrorExit:
+  errs.RecordErr "ApplyKeepExceptFilter", ApplyKeepExceptFilter
+End Function
 '-----------------------------------------------------------------------------------------
 ' Keep only rows in tblNorm where sVarNorm column equals keepVal
 ' JDL 5/7/26

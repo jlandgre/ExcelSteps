@@ -1,5 +1,5 @@
 Attribute VB_Name = "Constants"
-'Version 5/6/26
+'Version 5/19/26
 'This module is part of the ExcelSteps open source project posted at:
 'https://github.com/jlandgre/ExcelSteps/. It is licensed under the MIT open source license
 

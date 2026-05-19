@@ -1,6 +1,6 @@
 Attribute VB_Name = "tests_ToolboxClasses"
 Option Explicit
-'Version 5/8/26
+'Version 5/19/26
 
 ' colinfo_ mockup data
 Const ColInfo_BRTable_nrows As Long = 9 'n data  rows in BR_Example table in test_data/ColInfo.xlsx
@@ -14,13 +14,16 @@ Const ColInfo_Sales_VarnameRaw_BRExample As String = "Sales_Raw"
 
 'ImportParseNorm test data
 Const ImportFile_BR_Example As String = "BR_Raw_Mockup.xlsx"
+Const ImportFile_BR_KeepExcept As String = "BR_Raw_Mockup_KeepExcept.xlsx"
 Const ImportFile_SecondTbl As String = "Second_Raw_Mockup.xlsx"
 Const ImportNormHeader_BR_Example As String = "Location,ProdType,Year,SerialWeek,Net_Sales,Discounts,Markdowns,COGS"
 Const ImportFilteredOnlineRows As Long = 5
+Const ImportFilteredKeepExceptBlankRows As Long = 8
+Const ImportFilteredKeepExceptBlankOnlineRows As Long = 3
 
 '-----------------------------------------------------------------------------------------
 ' Validate ProjFiles and ColInfo classes
-' JDL 4/29/26; Updated 5/6/26
+' JDL 4/29/26; Updated 5/19/26
 '
 Sub TestDriver_ToolBox()
     Dim procs As New Procedures, AllEnabled As Boolean
@@ -31,7 +34,7 @@ Sub TestDriver_ToolBox()
         AllEnabled = True
         .ProjFiles.Enabled = False
         .colinfo.Enabled = False
-        .ImportParseNorm.Enabled = False
+        .ImportParseNorm.Enabled = True
     End With
 
     ExcelSteps.IsTest = True
@@ -68,6 +71,8 @@ Sub TestDriver_ToolBox()
             test_ImportParseNorm_ReplaceVals procs
             test_ImportParseNorm_WriteNormalized procs
             test_ImportParseNorm_FilterRows procs
+            test_ImportParseNorm_KeepExcept_BLANK procs
+            test_ImportParseNorm_KeepExcept_BLANK_Online procs
         End If
     End With
 
@@ -303,6 +308,91 @@ Sub test_ImportParseNorm_FilterRows(procs)
     CloseImportParseNormWkbk imptbl
     CloseColInfoWkbk colinfo
     
+End Sub
+'-----------------------------------------------------------------------------------------
+' Filter normalized rows with KeepExcept BLANK from colinfo metadata
+' JDL 5/19/26
+'
+Sub test_ImportParseNorm_KeepExcept_BLANK(procs)
+    Dim tst As New Test: tst.Init tst, "test_ImportParseNorm_KeepExcept_BLANK", ThisWorkbook
+    Dim imptbl As Object, colinfo As Object, files As Object
+    Dim dParamsImport As Object, dParamsParse As Object
+    Dim rngLocnHdr As Range, rngLocnData As Range, cell As Range, rngLocnRow As Range
+
+    With tst
+        InitImportParseNormTest tst, imptbl, colinfo, files, dParamsImport, dParamsParse, "BR_Example"
+
+        files.pfImportFile = files.pathData & ImportFile_BR_KeepExcept
+        .Assert tst, Len(Dir(files.pfImportFile)) > 0
+
+        Set rngLocnRow = FindInRange(colinfo.tbl.colrngVarNorm, "Location")
+        .Assert tst, Not rngLocnRow Is Nothing
+        Intersect(rngLocnRow.EntireRow, colinfo.tbl.colrngFilterVals).Value2 = "{KeepExcept:""BLANK""}"
+
+        .Assert tst, imptbl.OpenAndValidateRawProcedure(imptbl)
+        .Assert tst, imptbl.ParseRawProcedure(imptbl)
+        .Assert tst, imptbl.WriteNormalized(imptbl)
+        .Assert tst, imptbl.FilterRows(imptbl)
+
+        .Assert tst, imptbl.tblNorm.nRows = ImportFilteredKeepExceptBlankRows
+        Set rngLocnHdr = imptbl.tblNorm.rngTblHeaderVal(imptbl.tblNorm, "Location")
+        .Assert tst, Not rngLocnHdr Is Nothing
+        Set rngLocnData = Intersect(imptbl.tblNorm.rngRows, rngLocnHdr.EntireColumn)
+        For Each cell In rngLocnData.Cells
+            .Assert tst, Len(CStr(cell.Value2)) > 0
+        Next cell
+        .Update tst, procs
+    End With
+    CloseImportParseNormWkbk imptbl
+    CloseColInfoWkbk colinfo
+
+End Sub
+'-----------------------------------------------------------------------------------------
+' Filter normalized rows with KeepExcept BLANK and Online from colinfo metadata
+' JDL 5/19/26
+'
+Sub test_ImportParseNorm_KeepExcept_BLANK_Online(procs)
+    Dim tst As New Test: tst.Init tst, "test_ImportParseNorm_KeepExcept_BLANK_Online", ThisWorkbook
+    Dim imptbl As Object, colinfo As Object, files As Object
+    Dim dParamsImport As Object, dParamsParse As Object
+    Dim rngLocnHdr As Range, rngLocnData As Range, cell As Range, rngLocnRow As Range
+    Dim dictSeen As Object
+
+    With tst
+        InitImportParseNormTest tst, imptbl, colinfo, files, dParamsImport, dParamsParse, "BR_Example"
+
+        files.pfImportFile = files.pathData & ImportFile_BR_KeepExcept
+        .Assert tst, Len(Dir(files.pfImportFile)) > 0
+
+        Set rngLocnRow = FindInRange(colinfo.tbl.colrngVarNorm, "Location")
+        .Assert tst, Not rngLocnRow Is Nothing
+        Intersect(rngLocnRow.EntireRow, colinfo.tbl.colrngFilterVals).Value2 = "{KeepExcept:""BLANK,Online""}"
+
+        .Assert tst, imptbl.OpenAndValidateRawProcedure(imptbl)
+        .Assert tst, imptbl.ParseRawProcedure(imptbl)
+        .Assert tst, imptbl.WriteNormalized(imptbl)
+        .Assert tst, imptbl.FilterRows(imptbl)
+
+        .Assert tst, imptbl.tblNorm.nRows = ImportFilteredKeepExceptBlankOnlineRows
+        Set rngLocnHdr = imptbl.tblNorm.rngTblHeaderVal(imptbl.tblNorm, "Location")
+        .Assert tst, Not rngLocnHdr Is Nothing
+        Set rngLocnData = Intersect(imptbl.tblNorm.rngRows, rngLocnHdr.EntireColumn)
+
+        Set dictSeen = ExcelSteps.New_Dictionary
+        For Each cell In rngLocnData.Cells
+            .Assert tst, CStr(cell.Value2) = "StoreA" Or CStr(cell.Value2) = "StoreB" Or _
+              CStr(cell.Value2) = "StoreC"
+            dictSeen.Add CStr(cell.Value2), True
+        Next cell
+        .Assert tst, dictSeen.Count = 3
+        .Assert tst, dictSeen.Exists("StoreA")
+        .Assert tst, dictSeen.Exists("StoreB")
+        .Assert tst, dictSeen.Exists("StoreC")
+        .Update tst, procs
+    End With
+    CloseImportParseNormWkbk imptbl
+    CloseColInfoWkbk colinfo
+
 End Sub
 '-----------------------------------------------------------------------------------------
 '-----------------------------------------------------------------------------------------
