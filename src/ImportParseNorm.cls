@@ -162,7 +162,7 @@ ErrorExit:
 End Function
 '-----------------------------------------------------------------------------------------
 ' Apply FillVals mappings from colinfo rows to raw data columns using sort/block ops
-' JDL 5/7/26
+' JDL 5/7/26; Updated 5/21/26
 '
 Public Function ReplaceVals(imptbl) As Boolean
   SetErrs ReplaceVals: If errs.IsHandle Then On Error GoTo ErrorExit
@@ -180,16 +180,23 @@ Public Function ReplaceVals(imptbl) As Boolean
         sRaw = CStr(Intersect(rngRow, .colinfo.tbl.colrngVarRaw).Value2)
         If errs.IsFail(Len(sRaw) = 0, 1) Then GoTo ErrorExit
 
+        ' Parse fill map first so BLANK handling can run before sort
+        Set dict = New Dictionary
+        If Not dict.ParseStringToDictProcedure(sFill) Then GoTo ErrorExit
+
         ' Locate sRaw column in raw table
         Set rngRawHdr = .tblRaw.rngTblHeaderVal(imptbl.tblRaw, sRaw)
         If errs.IsFail(rngRawHdr Is Nothing, 2, sRaw) Then GoTo ErrorExit
+
+        ' Normalize LEN=0 values to true blanks before sort when BLANK is requested
+        If dict.Exists("BLANK") Then
+          If Not .ClearLenZeroVals(imptbl, rngRawHdr) Then GoTo ErrorExit
+        End If
 
         'Sort so equal values are contiguous and can be replaced in blocks
         If Not .tblRaw.TblSortBy(.tblRaw, CStr(rngRawHdr.Value2)) Then GoTo ErrorExit
         Set rngDataCol = Intersect(.tblRaw.rngRows, rngRawHdr.EntireColumn)
 
-        Set dict = New Dictionary
-        If Not dict.ParseStringToDictProcedure(sFill) Then GoTo ErrorExit
         If Not .ApplyFillMapToSortedColumn(imptbl, rngDataCol, dict) Then GoTo ErrorExit
       End If
     Next rngRow
@@ -198,6 +205,39 @@ Public Function ReplaceVals(imptbl) As Boolean
 
 ErrorExit:
   errs.RecordErr "ReplaceVals", ReplaceVals
+End Function
+'-----------------------------------------------------------------------------------------
+' Clear LEN=0 vals in specified col so they become true blanks (ISBLANK=TRUE) before sort
+' JDL 5/21/26
+'
+Public Function ClearLenZeroVals(imptbl, rngRawHdr As Range) As Boolean
+  SetErrs ClearLenZeroVals: If errs.IsHandle Then On Error GoTo ErrorExit
+  Dim rngDataCol As Range, rngVisible As Range
+  Dim fieldIdx As Long, isAutoFilter As Boolean
+
+  With imptbl.tblRaw
+    If errs.IsFail(.rngTable Is Nothing, 1) Then GoTo ErrorExit
+
+    Set rngDataCol = Intersect(.rngRows, rngRawHdr.EntireColumn)
+    If errs.IsFail(rngDataCol Is Nothing, 2, CStr(rngRawHdr.Value2)) Then GoTo ErrorExit
+
+    fieldIdx = rngRawHdr.Column - .rngTable.Column + 1
+    isAutoFilter = .wksht.AutoFilterMode
+
+    .rngTable.AutoFilter Field:=fieldIdx, Criteria1:="="
+    Set rngVisible = Nothing
+    On Error Resume Next
+    Set rngVisible = rngDataCol.SpecialCells(xlCellTypeVisible)
+    On Error GoTo ErrorExit
+    If Not rngVisible Is Nothing Then rngVisible.ClearContents
+
+    If .wksht.FilterMode Then .wksht.ShowAllData
+    If Not isAutoFilter Then .wksht.AutoFilterMode = False
+  End With
+  Exit Function
+
+ErrorExit:
+  errs.RecordErr "ClearLenZeroVals", ClearLenZeroVals
 End Function
 '-----------------------------------------------------------------------------------------
 ' Apply parsed FillVals dictionary to a sorted data column
@@ -539,6 +579,8 @@ Private Function ApplyKeepOnlyFilter(imptbl, ByVal sVarNorm As String, ByVal kee
 ErrorExit:
     errs.RecordErr "ApplyKeepOnlyFilter", ApplyKeepOnlyFilter
     End Function
+
+
 
 
 
