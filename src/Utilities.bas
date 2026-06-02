@@ -336,6 +336,85 @@ Function ListFromArray(ary, Optional sDelim, Optional IsFormatted As Boolean) As
     ListFromArray = lst
 End Function
 '-------------------------------------------------------------------------------------
+' Compare two arrays for exact shape/value equality (supports 1D and 2D arrays)
+' JDL 6/2/26
+'
+Public Function CompareArrays(ary1 As Variant, ary2 As Variant) As Boolean
+    SetErrs CompareArrays: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim nDims As Long, i As Long, j As Long
+
+    If errs.IsFail(Not IsArray(ary1), 1) Then GoTo ErrorExit
+    If errs.IsFail(Not IsArray(ary2), 2) Then GoTo ErrorExit
+
+    nDims = AryNumDims(ary1)
+    If errs.IsFail(nDims <> AryNumDims(ary2), 3) Then GoTo ErrorExit
+
+    If nDims = 1 Then
+        If errs.IsFail(LBound(ary1) <> LBound(ary2), 4) Then GoTo ErrorExit
+        If errs.IsFail(UBound(ary1) <> UBound(ary2), 5) Then GoTo ErrorExit
+
+        For i = LBound(ary1) To UBound(ary1)
+            If errs.IsFail(Not CompareVals(ary1(i), ary2(i)), 6) Then GoTo ErrorExit
+        Next i
+
+    ElseIf nDims = 2 Then
+        If errs.IsFail(LBound(ary1, 1) <> LBound(ary2, 1), 7) Then GoTo ErrorExit
+        If errs.IsFail(UBound(ary1, 1) <> UBound(ary2, 1), 8) Then GoTo ErrorExit
+        If errs.IsFail(LBound(ary1, 2) <> LBound(ary2, 2), 9) Then GoTo ErrorExit
+        If errs.IsFail(UBound(ary1, 2) <> UBound(ary2, 2), 10) Then GoTo ErrorExit
+
+        For i = LBound(ary1, 1) To UBound(ary1, 1)
+            For j = LBound(ary1, 2) To UBound(ary1, 2)
+                If errs.IsFail(Not CompareVals(ary1(i, j), ary2(i, j)), 11) Then GoTo ErrorExit
+            Next j
+        Next i
+
+    Else
+        If errs.IsFail(True, 12) Then GoTo ErrorExit
+    End If
+
+    CompareArrays = True
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "CompareArrays", CompareArrays
+End Function
+'-------------------------------------------------------------------------------------
+' Return True if values are equal, handling Empty/Error and numeric coercion
+' JDL 6/2/26
+'
+Private Function CompareVals(v1 As Variant, v2 As Variant) As Boolean
+    If IsError(v1) Or IsError(v2) Then
+        CompareVals = (IsError(v1) And IsError(v2) And CLng(v1) = CLng(v2))
+        Exit Function
+    End If
+
+    If IsEmpty(v1) Or IsEmpty(v2) Then
+        CompareVals = (IsEmpty(v1) And IsEmpty(v2))
+        Exit Function
+    End If
+
+    If IsNumeric(v1) And IsNumeric(v2) Then
+        CompareVals = (CDbl(v1) = CDbl(v2))
+    Else
+        CompareVals = (CStr(v1) = CStr(v2))
+    End If
+End Function
+'-------------------------------------------------------------------------------------
+' Return number of dimensions in an array
+' JDL 6/2/26
+'
+Private Function AryNumDims(ary As Variant) As Long
+    Dim i As Long
+    On Error GoTo ExitPoint
+    For i = 1 To 60
+        Call LBound(ary, i)
+    Next i
+
+ExitPoint:
+    AryNumDims = i - 1
+End Function
+'-------------------------------------------------------------------------------------
 ' Set range for last used cell in a row or col (works with hidden or col outline cells)
 ' Inputs: cellHome [Range] home (left-most) cell in row to be searched
 '         xlDirection [Integer xlToRight or xlDown enumeration]

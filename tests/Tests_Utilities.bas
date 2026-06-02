@@ -44,6 +44,7 @@ Sub TestDriver_Utilities()
             test_FindInRange2 procs
             test_FindInRange3 procs
             test_FindInRange4 procs
+            test_CompareArrays procs
         End If
     End With
     
@@ -1271,6 +1272,40 @@ Sub test_FindInRange4(procs)
         If Not r Is Nothing Then .Assert tst, r.Address = "$B$2"
 
         RevealWkshtCells wksht
+        .Update tst, procs
+    End With
+End Sub
+'-------------------------------------------------------------------------------------------------------
+' CompareArrays utility tests (1D/2D, mismatch value, mismatch shape)
+' JDL 6/2/26
+'
+Sub test_CompareArrays(procs)
+    Dim tst As New Test: tst.Init tst, "test_CompareArrays"
+    Dim ary1 As Variant, ary2 As Variant, wksht As Worksheet
+
+    With tst
+        '1D equal
+        ary1 = Split("a,b,c", ",")
+        ary2 = Split("a,b,c", ",")
+        .Assert tst, ExcelSteps.CompareArrays(ary1, ary2)
+
+        '1D value mismatch
+        ary2 = Split("a,b,d", ",")
+        .Assert tst, Not ExcelSteps.CompareArrays(ary1, ary2)
+
+        '2D equal from ranges
+        Set wksht = .wkbkTest.Sheets(shtTesting)
+        ClearTestSheetAndNames wksht
+        wksht.Range("A1:B2").Value2 = Array(Array(1, 2), Array(3, 4))
+        wksht.Range("D1:E2").Value2 = Array(Array(1, 2), Array(3, 4))
+        ary1 = wksht.Range("A1:B2").Value2
+        ary2 = wksht.Range("D1:E2").Value2
+        .Assert tst, ExcelSteps.CompareArrays(ary1, ary2)
+
+        '2D shape mismatch
+        ary2 = wksht.Range("D1:E1").Value2
+        .Assert tst, Not ExcelSteps.CompareArrays(ary1, ary2)
+
         .Update tst, procs
     End With
 End Sub
