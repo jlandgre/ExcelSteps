@@ -1,5 +1,5 @@
 Attribute VB_Name = "Utilities"
-'Version 5/8/26
+'Version 6/2/26
 'This module is part of the ExcelSteps open source project posted at:
 'https://github.com/jlandgre/ExcelSteps/. It is licensed under the MIT open source license
 Option Explicit
@@ -1735,11 +1735,4 @@ Sub ActiveCellColor()
     Debug.Print "RGB: " & r & ", " & g & ", " & b
     Debug.Print "Color value: " & lngColor
 End Sub
-
-
-
-
-
-
-
 

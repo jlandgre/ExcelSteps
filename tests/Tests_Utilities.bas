@@ -1,5 +1,5 @@
 Attribute VB_Name = "Tests_Utilities"
-'Version 1/28/26
+'Version 6/2/26
 Option Explicit
 Const shtTesting As String = "SMdl"
 '-----------------------------------------------------------------------------------------------
@@ -1315,8 +1315,4 @@ Sub Helper_SetTestSht(tst, tbl, wksht, cellHome)
     Set wksht = tst.wkbkTest.Sheets(shtTesting)
     Set cellHome = wksht.Cells(1, 1)
 End Sub
-
-
-
-
 
