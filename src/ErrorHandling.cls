@@ -33,7 +33,7 @@ Public IsUserFacing As Boolean 'True for user-facing error messaging (versus VBA
                                'tracing reporting)
 Public IsTesting As Boolean 'Flag to report ErrMsg if testing individual function etc.
 Public Locn As String 'Current sub or function Error locn
-Public iCodeLocal As Integer 'Raw error code - integer set in routine where error occurs
+Public iCodeLocal As Integer 'Raw error codex - integer set in routine where error occurs
 Public iCodeBase As Integer
 Public iCodeReport As Integer 'Lookup table error code (composite sub/function base code + iCode)
 Public ErrParam As String 'Optional param value to report in messaging; typically assign in code

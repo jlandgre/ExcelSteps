@@ -1,5 +1,5 @@
 Attribute VB_Name = "Utilities"
-'Version 6/2/26
+'Version 6/11/26
 'This module is part of the ExcelSteps open source project posted at:
 'https://github.com/jlandgre/ExcelSteps/. It is licensed under the MIT open source license
 Option Explicit
@@ -408,7 +408,7 @@ Private Function AryNumDims(ary As Variant) As Long
     Dim i As Long
     On Error GoTo ExitPoint
     For i = 1 To 60
-        Call LBound(ary, i)
+        'Call LBound(ary, i)
     Next i
 
 ExitPoint:
@@ -1545,30 +1545,59 @@ End Function
 ' wkbk - Workbook to save
 ' pf - Full path including filename
 '
-' JDL 10/14/25
+' JDL 10/14/25; Updated 6/11/26
 '
 Public Function SafeSaveAs(wkbk As Workbook, ByVal pf As String) As Boolean
     SetErrs SafeSaveAs: If errs.IsHandle Then On Error GoTo ErrorExit
     Dim folder As String, fname As String, sep As String, isMac As Boolean
-    Dim isICloud As Boolean
+    Dim isCloud As Boolean
+    
+    'xxx
+    Dim rng As Range
+    With errs.wkbkE.Sheets("params")
+        Set rng = Range(.Cells(1, 11), .Cells(5, 11))
+    End With
+    rng.Clear
+    rng.Cells(1).Value2 = pf
+    errs.wkbkE.Save
     
     If Not SetSep(sep) Then GoTo ErrorExit
     If Not SetFolderFile(pf, folder, fname, sep) Then GoTo ErrorExit
-    If errs.IsFail(Len(Dir(folder, vbDirectory)) = 0, 1, pf) Then GoTo ErrorExit
     
     ' Detect platform and cloud storage
     isMac = (InStr(1, Application.OperatingSystem, "Macintosh", vbTextCompare) > 0)
-    isICloud = IsICloudPath(pf)
+    isCloud = isCloudPath(pf)
+    
+    ' Check that the file exists (6/11/26 Dir doesn't work in Windows with Parallels)
+    If Not isMac Then
+        If errs.IsFail(Not CreateObject("Scripting.FileSystemObject").FolderExists(folder), 1, pf) Then GoTo ErrorExit
+    Else
+        If errs.IsFail(Len(Dir(folder, vbDirectory)) = 0, 1, pf) Then GoTo ErrorExit
+    End If
+    
+    'xxx
+    rng.Cells(2) = isMac
+    rng.Cells(3) = isCloud
+    errs.wkbkE.Save
     
     ' Mac + iCloud: ensure we have write access (Can migrate err.Raise to use errs.IsFail)
-    If isMac And isICloud Then
+    If isMac And isCloud Then
         If errs.IsFail(Not EnsureFolderAccess(folder), 1, pf) Then GoTo ErrorExit
     End If
+    
+    'xxx
+    rng.Cells(4) = "after EnsureFolderAccess"
+    errs.wkbkE.Save
     
     ' Save the file
     Application.DisplayAlerts = False
     wkbk.SaveCopyAs fileName:=pf
     Application.DisplayAlerts = True
+    
+    'xxx
+    rng.Cells(5) = "after SaveCopyAs"
+    errs.wkbkE.Save
+    
     Exit Function
     
 ErrorExit:
@@ -1713,11 +1742,15 @@ ErrorExit:
 End Function
 
 '-------------------------------------------------------------------------------------
-' Detect iCloud Drive paths
-' JDL 10/14/25
+' Detect Cloud Drive paths
+' JDL 10/14/25; updated 6/11/26
 '
-Private Function IsICloudPath(ByVal pf As String) As Boolean
-    IsICloudPath = (InStr(1, pf, "/Library/Mobile Documents/", vbTextCompare) > 0)
+Private Function isCloudPath(ByVal pf As String) As Boolean
+    Dim cond1 As Boolean, cond2 As Boolean, cond3 As Boolean
+    cond1 = (InStr(1, pf, "/Library/Mobile Documents/", vbTextCompare) > 0)
+    cond2 = (InStr(1, pf, "iCloud", vbTextCompare) > 0)
+    cond3 = (InStr(1, pf, "CloudStorage", vbTextCompare) > 0)
+    isCloudPath = cond1 Or cond2 Or cond3
 End Function
 '-------------------------------------------------------------------------------------
 ' Get color of active cell in RGB format (for automating manually formatted cells)
