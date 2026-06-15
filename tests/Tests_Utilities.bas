@@ -45,6 +45,7 @@ Sub TestDriver_Utilities()
             test_FindInRange3 procs
             test_FindInRange4 procs
             test_CompareArrays procs
+            test_ResolvePath procs
         End If
     End With
     
@@ -1306,6 +1307,38 @@ Sub test_CompareArrays(procs)
         ary2 = wksht.Range("D1:E1").Value2
         .Assert tst, Not ExcelSteps.CompareArrays(ary1, ary2)
 
+        .Update tst, procs
+    End With
+End Sub
+'-------------------------------------------------------------------------------------------------------
+' Return path normalized for current OS and anchored if relative
+' JDL 6/15/26
+'
+Sub test_ResolvePath(procs)
+    Dim tst As New Test: tst.Init tst, "test_ResolvePath"
+    Dim sep As String, basePath As String, expected As String, uncPath As String
+
+    With tst
+        ' Configure base path to emulate resolving from a project src folder
+        sep = Application.PathSeparator
+        basePath = ThisWorkbook.Path & sep & ".." & sep & "src"
+
+        ' Relative Windows and Mac paths anchor to supplied basePath and collapse parent tokens
+        expected = ThisWorkbook.Path & sep & "test_data" & sep & "xyz.xlsm"
+        .Assert tst, ExcelSteps.ResolvePath("../tests/test_data/xyz.xlsm", basePath) = expected
+        .Assert tst, ExcelSteps.ResolvePath("..\tests\test_data\xyz.xlsm", basePath) = expected
+
+        ' Absolute Windows path keeps drive root and normalizes separators for current OS
+        expected = "C:" & sep & "Temp" & sep & "xyz.xlsm"
+        .Assert tst, ExcelSteps.ResolvePath("C:\Temp\xyz.xlsm", basePath) = expected
+
+        ' Absolute Mac path keeps root and normalizes separators for current OS
+        expected = sep & "Users" & sep & "Shared" & sep & "xyz.xlsm"
+        .Assert tst, ExcelSteps.ResolvePath("/Users/Shared/xyz.xlsm", basePath) = expected
+
+        ' UNC path is preserved on non-Windows systems to avoid corrupting server/share syntax
+        uncPath = "\\Server\Share\xyz.xlsm"
+        .Assert tst, ExcelSteps.ResolvePath(uncPath, basePath) = uncPath
         .Update tst, procs
     End With
 End Sub

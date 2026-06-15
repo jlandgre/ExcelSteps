@@ -4,7 +4,7 @@ Attribute VB_Name = "Constants"
 'https://github.com/jlandgre/ExcelSteps/. It is licensed under the MIT open source license
 
 Option Explicit
-Public Const Version As String = "version 5/19/26"
+Public Const Version As String = "version 6/15/26"
 Public Const iMinRows As Integer = 10
 Public Const sRefreshSuffix As String = "_t"
 

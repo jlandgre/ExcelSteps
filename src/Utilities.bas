@@ -1,5 +1,5 @@
 Attribute VB_Name = "Utilities"
-'Version 6/11/26
+'Version 6/15/26
 'This module is part of the ExcelSteps open source project posted at:
 'https://github.com/jlandgre/ExcelSteps/. It is licensed under the MIT open source license
 Option Explicit
@@ -402,13 +402,14 @@ Private Function CompareVals(v1 As Variant, v2 As Variant) As Boolean
 End Function
 '-------------------------------------------------------------------------------------
 ' Return number of dimensions in an array
-' JDL 6/2/26
+' JDL 6/2/26; updated 6/15/26
 '
 Private Function AryNumDims(ary As Variant) As Long
-    Dim i As Long
+    Dim i As Long, lb As Long
+
     On Error GoTo ExitPoint
     For i = 1 To 60
-        'Call LBound(ary, i)
+        lb = LBound(ary, i)
     Next i
 
 ExitPoint:
@@ -1389,6 +1390,111 @@ Public Function CreatePathForOS(pathname As String) As Boolean
     
 ErrorExit:
     errs.RecordErr "CreatePathForOS", CreatePathForOS
+End Function
+'-------------------------------------------------------------------------------------
+' Return path normalized for current OS and anchored if relative
+' JDL 6/15/26
+'
+Public Function ResolvePath(ByVal sPathInput As String, Optional ByVal basePath As String = "") As String
+    SetErrs "non-bool": If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim sep As String, sPath As String, isAbsPath As Boolean, isUncPath As Boolean
+
+    ' Clean input before classifying path type
+    sep = Application.PathSeparator
+    sPath = Trim$(sPathInput)
+    If Len(sPath) = 0 Then Exit Function
+
+    ' Identify paths that should not be anchored to basePath
+    isUncPath = Left$(sPath, 2) = "\\"
+    isAbsPath = isUncPath Or InStr(1, sPath, ":", vbTextCompare) > 0 Or _
+        Left$(sPath, 1) = "/" Or Left$(sPath, 1) = sep
+
+    ' Normalize separators except UNC paths on non-Windows systems
+    If Not isUncPath Or sep = "\" Then
+        If Not CreatePathForOS(sPath) Then Exit Function
+    End If
+
+    ' Preserve UNC paths on non-Windows systems instead of corrupting server/share syntax
+    If isUncPath And sep <> "\" Then
+        ResolvePath = sPath
+        Exit Function
+    End If
+
+    ' Anchor relative paths, then collapse any . or .. segments
+    If Not isAbsPath Then
+        If Len(basePath) = 0 Then basePath = ThisWorkbook.Path
+        If Not CreatePathForOS(basePath) Then Exit Function
+        sPath = basePath & sep & sPath
+    End If
+    ResolvePath = NormalizePathSegments(sPath, sep)
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "ResolvePath"
+End Function
+'-------------------------------------------------------------------------------------
+' Collapse current and parent directory tokens in a normalized path
+' JDL 6/15/26
+'
+Private Function NormalizePathSegments(ByVal pathname As String, ByVal sep As String) As String
+    SetErrs "non-bool": If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim prefix As String, pathBody As String, parts As Variant, part As Variant
+    Dim stack As Collection, idx As Long, result As String
+
+    ' Preserve UNC server/share prefix while normalizing remaining segments
+    If Left$(pathname, 2) = "\\" Then
+        prefix = "\\"
+        pathBody = Mid$(pathname, 3)
+
+    ' Preserve Windows drive prefix such as C: or C:\
+    ElseIf Mid$(pathname, 2, 1) = ":" Then
+        prefix = Left$(pathname, 2)
+        pathBody = Mid$(pathname, 3)
+        If Left$(pathBody, 1) = sep Then
+            prefix = prefix & sep
+            pathBody = Mid$(pathBody, 2)
+        End If
+
+    ' Preserve current-OS absolute root prefix
+    ElseIf Left$(pathname, 1) = sep Then
+        prefix = sep
+        pathBody = Mid$(pathname, 2)
+
+    ' Treat remaining paths as relative
+    Else
+        pathBody = pathname
+    End If
+
+    ' Build segment stack while resolving . and .. tokens
+    Set stack = New Collection
+    parts = Split(pathBody, sep)
+    For Each part In parts
+        Select Case CStr(part)
+            Case "", "."
+            Case ".."
+                ' Parent token removes prior segment unless relative path has no parent
+                If stack.Count > 0 Then
+                    stack.Remove stack.Count
+                ElseIf Len(prefix) = 0 Then
+                    stack.Add CStr(part)
+                End If
+            Case Else
+                ' Normal path token is retained in order
+                stack.Add CStr(part)
+        End Select
+    Next part
+
+    ' Reconstruct path with original absolute or drive prefix
+    result = prefix
+    For idx = 1 To stack.Count
+        If Len(result) > 0 And Right$(result, 1) <> sep Then result = result & sep
+        result = result & CStr(stack.Item(idx))
+    Next idx
+    NormalizePathSegments = result
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "NormalizePathSegments"
 End Function
 '-------------------------------------------------------------------------------------
 ' Converts path separators in pathname to OS-appropriate separator
