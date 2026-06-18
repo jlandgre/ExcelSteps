@@ -85,7 +85,7 @@ Attribute VB_Name = "VersionHistory"
 '4/27/26 Update ErrorHandling (version 4/28/26 has error handling enabled)
 '5/11/26 Validated ImportParseNorm.cls; updates to tblRowsCols.SetColRanges for ColInfo.cls
 '5/14/26 Update ImportParseNorm.cls and tblRowsCols.SetColRanges; Update errors_ table
-'6/15/26 Add Utilities.ResolvePath; Validate CompareArrays
+'6/18/26 Add Utilities.ResolvePath; Validate CompareArrays; update Addin official date to 6/18/26
 
 
 
