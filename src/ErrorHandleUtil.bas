@@ -28,7 +28,7 @@ Sub SetErrs(CallingFunction, Optional wkbkE As Workbook = Nothing)
         If wkbkE Is Nothing Then Set wkbkE = ThisWorkbook
         
         'True/False = Master switch for enabling error handling in project
-        errs.Init wkbkE, IsHandle:=False
+        errs.Init wkbkE, IsHandle:=True
 
         'Set defaults by calling mode
         If IsDriver Then

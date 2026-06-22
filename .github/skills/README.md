@@ -11,3 +11,4 @@ Use lowercase snake_case filenames for all skill notes (easy to remember and ret
 - `create_new_test_procedure.md` — workflow for adding new tests.
 - `update_errors_table.md` — process for maintaining error tracking artifacts.
 - `vs_code_setup.md` — editor/workspace setup guidance.
+- `vba-project-changes/SKILL.md` — staged workflow for planning and delivering VBA project + test changes.

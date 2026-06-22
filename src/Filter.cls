@@ -132,16 +132,16 @@ Sub AddToTable(cls)
                 
                 '1=Multi AND; 2=Multi OR
                 If aryOper(i) = 1 Or aryOper(i) = 2 Then
-                    .rngFilter.AutoFilter field:=(i + 1), Criteria1:=aryCrit1(i), _
+                    .rngFilter.AutoFilter Field:=(i + 1), Criteria1:=aryCrit1(i), _
                         Operator:=val(aryOper(i)), Criteria2:=aryCrit2(i)
                         
                 '0=Single criterion;
                 ElseIf aryOper(i) = 0 Then
-                    .rngFilter.AutoFilter field:=(i + 1), Criteria1:=aryCrit1(i)
+                    .rngFilter.AutoFilter Field:=(i + 1), Criteria1:=aryCrit1(i)
                     
                 '7=List of filtered values;
                 ElseIf aryOper(i) = 7 Then
-                    .rngFilter.AutoFilter field:=(i + 1), _
+                    .rngFilter.AutoFilter Field:=(i + 1), _
                     Criteria1:=Split(aryCrit1(i), ";"), Operator:=xlFilterValues
                 End If
             End If

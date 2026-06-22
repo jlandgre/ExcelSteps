@@ -255,6 +255,7 @@ End Sub
 - Driver sub at top of module; new tests inserted immediately below it
 - New test calls added at end of their procs group in the driver
 - `procs.Init` args: 2nd = sheet name for results, 3rd = name for MsgBox reporting
+- For new or modified public procedures in project code, add at least one test; for new feature classes, include one test per public method and wire each test call in the driver procs group.
 - Do not include explanatory comments shown here in generated code
 ```vb
 Sub TestingDriver_Dashboard()

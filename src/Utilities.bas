@@ -1875,3 +1875,5 @@ Sub ActiveCellColor()
     Debug.Print "Color value: " & lngColor
 End Sub
 
+
+

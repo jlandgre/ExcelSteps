@@ -61,7 +61,7 @@ Sub Populate(clsT, wkbk, Optional shtT, Optional sName, Optional wkbkTest, Optio
         If Not IsMissing(sFileTest) Then .sFileTest = sFileTest
         If Not IsMissing(shtT) Then .shtT = shtT
         If Not IsMissing(sName) Then .name = sName
-        .valExpected = Expected(clsT)
+        .valExpected = expected(clsT)
     End With
 End Sub
 '-----------------------------------------------------------------------------------------------
@@ -106,7 +106,7 @@ End Sub
 '
 '   JDL 11/10/21 Modified:
 '
-Function Expected(clsT)
+Function expected(clsT)
     Dim c As Range
     
     With clsT
@@ -115,7 +115,7 @@ Function Expected(clsT)
     End With
     
     If c Is Nothing Then Exit Function
-    Expected = c.Offset(0, 1)
+    expected = c.Offset(0, 1)
 End Function
 '-----------------------------------------------------------------------------------------------
 'Purpose: Assert that specified Boolean test is True

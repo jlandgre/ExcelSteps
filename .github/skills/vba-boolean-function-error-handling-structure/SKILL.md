@@ -1,6 +1,6 @@
 ---
 name: vba-boolean-function-error-handling-structure
-description: Correct SetErrs and RecordErr call patterns for Boolean-returning VBA functions in the ExcelSteps error handling framework. Use when writing or reviewing functions that return Boolean, when wiring up If Not FunctionCall() Then GoTo ErrorExit chains, or when a function must signal success/failure to its caller.
+description: Correct SetErrs and RecordErr call patterns for Boolean-returning VBA functions in the ExcelSteps error handling framework. Use when writing or reviewing functions that return Boolean, when wiring up If Not FunctionCall() Then GoTo ErrorExit chains, when a function must signal success/failure to its caller, or when seeing redundant FunctionName = True assignments on the success path.
 ---
 
 # Boolean Function Error Handling Structure

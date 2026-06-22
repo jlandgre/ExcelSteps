@@ -13,6 +13,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+
 'ExcelSteps_frmRefresh.vb
 'Version 10/24/24
 Option Explicit
@@ -595,3 +596,6 @@ Private Sub CkBoxRepl_8_Click()
     End If
 End Sub
 
+Private Sub UserForm_Click()
+
+End Sub
