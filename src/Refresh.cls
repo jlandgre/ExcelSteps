@@ -190,13 +190,20 @@ Function RefreshTblFromRecipe(tblT, tblSteps, sht) As Boolean
     For Each r In rngRecipeActions
         Set tblSteps.rowCur = r.EntireRow
         Set Step = New RecipeStep
-        If Not Step.Read(Step, tblSteps) Then GoTo ErrorExit
+        If Not Step.Read(Step, tblSteps) Then GoTo RecordComment
         If Not Step.RunActions(Step, tblT, tblSteps) Then GoTo ErrorExit
     Next r
     
     'Recalculate the application and set formatting/values for col_Insert columns
     If Not SetInsertFormatsAndVals(tblT, tblSteps, rngRecipeActions) Then GoTo ErrorExit
     Exit Function
+
+'Put an error message comment in the recipe's row
+RecordComment:
+    errs.LookupCommentMsg Intersect(tblSteps.rowCur, tblSteps.colrngStep), "RecipeStep_Comments"
+    errs.iCodeLocal = 1
+    errs.ErrParam = sht
+    GoTo ErrorExit
     
 ErrorExit:
     errs.RecordErr "RefreshTblFromRecipe", RefreshTblFromRecipe
@@ -241,6 +248,8 @@ Function SetInsertFormatsAndVals(tblT, tblSteps, rngRecipeActions) As Boolean
                         Application.CutCopyMode = False
                     End If
                 End With
+                If IsKeyInColl(Step.Actions, sAHorizAlign) Then _
+                    If Not Step.HorizAlign(Step, tblT) Then GoTo ErrorExit
             End If
 
         End If
@@ -300,6 +309,8 @@ End Function
 '
 Function PrepExcelStepsSht(refr, tblSteps, Optional IsReformat = False) As Boolean
     SetErrs PrepExcelStepsSht: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim IsAddParams As Boolean
+
     With refr
     
         'If no Steps sheet, add and initialize before Provision
@@ -310,6 +321,8 @@ Function PrepExcelStepsSht(refr, tblSteps, Optional IsReformat = False) As Boole
         'Check for existence of header values
         ElseIf .wkbkS.Sheets(.shtS).Cells(1, 1).value <> "Sheet" Then
             IsReformat = True
+        ElseIf .wkbkS.Sheets(.shtS).Cells(1, 10).value <> "Params" Then
+            If .wkbkS.Sheets(.shtS).Cells(1, 9).value = "Width" Then IsAddParams = True
         End If
         
         If IsReformat Then
@@ -321,6 +334,7 @@ Function PrepExcelStepsSht(refr, tblSteps, Optional IsReformat = False) As Boole
             If Not .AddStepsShtDropdowns(tblSteps) Then GoTo ErrorExit
             If Not .StepsShtMiscFormat(tblSteps) Then GoTo ErrorExit
         Else
+            If IsAddParams Then If Not .AddParamsColumn(refr) Then GoTo ErrorExit
             If Not tblSteps.Provision(tblSteps, .wkbkS, False, sht:=.shtS, IsSetColRngs:=True) Then GoTo ErrorExit
             
             'Customize rngRows to include last populated row since  may be blank rows
@@ -339,18 +353,45 @@ ErrorExit:
     errs.RecordErr "PrepExcelStepsSht", PrepExcelStepsSht
 End Function
 '------------------------------------------------------------------------------------------------
+' Add Params header to legacy ExcelSteps recipe sheet
+' JDL 6/22/26
+'
+Public Function AddParamsColumn(refr) As Boolean
+    SetErrs AddParamsColumn: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim rngParams As Range
+
+    With refr.wkbkS.Sheets(refr.shtS)
+        If errs.IsFail(.Cells(1, 9).value <> "Width", 1) Then GoTo ErrorExit
+        If errs.IsFail(Len(.Cells(1, 10).value) > 0, 2) Then GoTo ErrorExit
+
+        Set rngParams = .Cells(1, 10)
+        rngParams.value = "Params"
+        .Range(rngParams.Offset(1, 0), .Cells(.Rows.Count, rngParams.Column)).ClearContents
+    End With
+
+    With rngParams
+        .Style = "Accent2"
+        .EntireColumn.Font.Size = 9
+        .EntireColumn.ColumnWidth = 32
+        .EntireColumn.WrapText = True
+        .WrapText = True
+    End With
+    Exit Function
+    
+ErrorExit:
+    errs.RecordErr "AddParamsColumn", AddParamsColumn
+End Function
+'------------------------------------------------------------------------------------------------
 ' Set ExcelSteps sheet headers and header format
 ' JDL 12/15/22   Modified 10/18/24 JDL cleanup
 '
 Public Function SetStepsShtHeader(refr) As Boolean
 
     SetErrs SetStepsShtHeader: If errs.IsHandle Then On Error GoTo ErrorExit
-    Dim ary As Variant, lstHeaders As String, rngHeader As Range
+    Dim ary As Variant, rngHeader As Range
 
     'Create array of header strings and populate into first row
-    lstHeaders = "Sheet,Column,Step,Formula/List Name/Sort-by," _
-        & "After End or Rename Column,Keep Formulas,Comment,Number Format,Width"
-    ary = Split(lstHeaders, ",")
+    ary = Split(sHeaderSteps, ",")
     With refr.wkbk.Sheets(refr.shtS)
        Set rngHeader = Range(.Cells(1, 1), .Cells(1, UBound(ary) + 1))
     End With
@@ -374,14 +415,14 @@ End Function
 Public Function FormatStepsShtWidths(refr) As Boolean
 
     SetErrs FormatStepsShtWidths: If errs.IsHandle Then On Error GoTo ErrorExit
-    Dim iWidth As Variant, i As Integer
+    Dim iWidth As Variant, idx As Long
 
     'Set column widths and column formats
     With refr.wkbk.Sheets(refr.shtS)
-        i = 1
-        For Each iWidth In Array(12, 12, 12, 32, 12, 7, 12, 7, 7)
-            .Columns(i).EntireColumn.ColumnWidth = iWidth
-            i = i + 1
+        idx = 1
+        For Each iWidth In Array(12, 12, 12, 32, 12, 7, 12, 7, 7, 32)
+            .Columns(idx).EntireColumn.ColumnWidth = iWidth
+            idx = idx + 1
         Next iWidth
     End With
     Exit Function
@@ -407,6 +448,12 @@ Public Function FormatStepsShtColumns(refr) As Boolean
         
         Set r = .Find("Comment", LookAt:=xlWhole)
         r.EntireColumn.WrapText = True
+
+        Set r = .Find("Params", LookAt:=xlWhole)
+        If Not r Is Nothing Then
+            r.EntireColumn.NumberFormat = "@"
+            r.EntireColumn.WrapText = True
+        End If
     End With
     Exit Function
     

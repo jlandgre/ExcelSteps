@@ -379,7 +379,7 @@ Sub test_PrepExcelSteps1(procs)
         aryExpected = Array(sHeaderSteps, _
                             "@", _
                             "@", _
-                            "$A$1:$I$2", _
+                            "$A$1:$J$2", _
                             "$2:$21")
         .TestAryVals tst, aryVals, aryExpected
             
@@ -420,7 +420,7 @@ Sub test_PrepExcelSteps2(procs)
         aryExpected = Array(sHeaderSteps, _
                             "@", _
                             "@", _
-                            "$A$1:$I$3", _
+                            "$A$1:$J$3", _
                             "$2:$3")
         .TestAryVals tst, aryVals, aryExpected
             

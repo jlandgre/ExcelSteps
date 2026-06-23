@@ -75,6 +75,7 @@ Public colrngKeep As Range
 Public colrngComment As Range
 Public colrngNumFmt As Range
 Public colrngWidth As Range
+Public colrngParams As Range
 
 'shtTblImp col ranges
 Public colrngMdlName As Range
@@ -1202,6 +1203,7 @@ Public Function SetColRanges(ByRef tbl) As Boolean
             Set .colrngComment = .cellHome.Offset(0, 6).EntireColumn
             Set .colrngNumFmt = .cellHome.Offset(0, 7).EntireColumn
             Set .colrngWidth = .cellHome.Offset(0, 8).EntireColumn
+            Set .colrngParams = .cellHome.Offset(0, 9).EntireColumn
 
         ElseIf .TblName = shtTblImp Then
             Set .colrngMdlName = .cellHome.Offset(0, 0).EntireColumn

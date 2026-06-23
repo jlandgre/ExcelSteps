@@ -23,6 +23,9 @@ Public NumFmt As String
 Public sSortBy As String
 Public sLstRngName As String
 Public Width As Variant
+Public paramsJSON As String
+Public paramsDict As Object
+Public HorizAlignVal As Variant
 Public Actions As Collection
 '------------------------------------------------------------------------------------------------
 'Read RecipeStep Attributes and Create Collection of Actions
@@ -66,6 +69,7 @@ Function Read(Step, tblSteps) As Boolean
         If IsKeyInColl(.Actions, sAComment) Then .sComment = Intersect(tblSteps.rowCur, tblSteps.colrngComment)
         If IsKeyInColl(.Actions, sANumFmt) Then .NumFmt = Intersect(tblSteps.rowCur, tblSteps.colrngNumFmt)
         If IsKeyInColl(.Actions, sAWidth) Then .Width = Intersect(tblSteps.rowCur, tblSteps.colrngWidth)
+        If Not Params(Step, tblSteps) Then GoTo ErrorExit
     End With
     Exit Function
 
@@ -103,6 +107,88 @@ ErrorExit:
     errs.RecordErr "CreateActionsColl", CreateActionsColl
 End Function
 '------------------------------------------------------------------------------------------------
+' Read optional params string and add matching actions
+' JDL 6/22/26
+'
+Function Params(Step, tblSteps) As Boolean
+    SetErrs Params: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim sParams As String
+
+    With Step
+        If .sType <> sAFormat And .sType <> sAInsert Then Exit Function
+
+        sParams = Intersect(tblSteps.rowCur, tblSteps.colrngParams)
+        If Len(sParams) < 1 Then Exit Function
+
+        .paramsJSON = sParams
+        Set .paramsDict = New Dictionary
+        If Not .paramsDict.ParseStringToDictProcedure(.paramsJSON) Then
+            If errs.IsFail(True, 19, .paramsJSON) Then GoTo ErrorExit
+        End If
+        If Not ParamKeys(Step) Then GoTo ErrorExit
+
+        If .paramsDict.Exists("HorizAlign") Then
+            Select Case CStr(.paramsDict.Item("HorizAlign"))
+                Case "xlHAlignCenter"
+                    .HorizAlignVal = xlHAlignCenter
+                Case "xlHAlignLeft"
+                    .HorizAlignVal = xlHAlignLeft
+                Case "xlHAlignRight"
+                    .HorizAlignVal = xlHAlignRight
+                Case "xlHAlignGeneral"
+                    .HorizAlignVal = xlHAlignGeneral
+                Case Else
+                    If errs.IsFail(True, 18, CStr(.paramsDict.Item("HorizAlign"))) Then GoTo ErrorExit
+            End Select
+        End If
+        If Not ParamActions(Step) Then GoTo ErrorExit
+    End With
+    Exit Function
+    
+ErrorExit:
+    errs.RecordErr "Params", Params
+End Function
+'------------------------------------------------------------------------------------------------
+' Validate params dictionary keys
+' JDL 6/22/26
+'
+Function ParamKeys(Step) As Boolean
+    SetErrs ParamKeys: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim key As Variant
+
+    If Step.paramsDict Is Nothing Then Exit Function
+    If Step.paramsDict.Count = 0 Then Exit Function
+
+    'Validate each key against the supported params list
+    For Each key In Step.paramsDict.GetKeys
+        Select Case CStr(key)
+            Case "HorizAlign"
+            Case Else
+                If errs.IsFail(True, 17, CStr(key)) Then GoTo ErrorExit
+        End Select
+    Next key
+    Exit Function
+    
+ErrorExit:
+    errs.RecordErr "ParamKeys", ParamKeys
+End Function
+'------------------------------------------------------------------------------------------------
+' Add params-derived actions to action collection
+' JDL 6/22/26
+'
+Function ParamActions(Step) As Boolean
+    SetErrs ParamActions: If errs.IsHandle Then On Error GoTo ErrorExit
+
+    With Step
+        If .paramsDict Is Nothing Then Exit Function
+        If .paramsDict.Exists("HorizAlign") Then .Actions.Add sAHorizAlign, sAHorizAlign
+    End With
+    Exit Function
+    
+ErrorExit:
+    errs.RecordErr "ParamActions", ParamActions
+End Function
+'------------------------------------------------------------------------------------------------
 ' Run Step's Actions
 ' JDL 12/16/22   Modified 6/9/23 JDL cleanup
 '
@@ -127,6 +213,8 @@ Function RunActions(Step, tbl, tblSteps) As Boolean
         If act = sADropdown Then If Not AddValLst(Step, tbl) Then GoTo RecordComment
         If act = sASort Then If Not SortBy(Step, tbl) Then GoTo RecordComment
         If act = sACondFmt Then If Not CondFormat(Step, tbl) Then GoTo RecordComment
+        If act = sAHorizAlign And Step.sType <> sAInsert Then _
+            If Not HorizAlign(Step, tbl) Then GoTo RecordComment
         
         '1/10/25
         If act = sADelFlagRows Then If Not DeleteFlaggedRows(Step, tbl) Then GoTo RecordComment
@@ -145,6 +233,27 @@ RecordComment:
     
 ErrorExit:
     errs.RecordErr "RunActions", RunActions
+End Function
+'------------------------------------------------------------------------------------------------
+' Apply horizontal alignment to a column's data rows
+' JDL 6/22/26
+'
+Function HorizAlign(Step, tbl) As Boolean
+
+    SetErrs HorizAlign: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim r As Range
+
+    If tbl.rngRows Is Nothing Then Exit Function
+    With Step
+        If errs.IsFail(Len(.sColName) < 1, 1) Then GoTo ErrorExit
+        Set r = FindInRange(tbl.rngHeader, .sColName)
+        If errs.IsFail(r Is Nothing, 2) Then GoTo ErrorExit
+        Intersect(r.EntireColumn, tbl.rngRows).HorizontalAlignment = .HorizAlignVal
+    End With
+    Exit Function
+    
+ErrorExit:
+    HorizAlign = False
 End Function
 '------------------------------------------------------------------------------------------------
 ' Delete rows where column contains specified value
@@ -338,7 +447,6 @@ End Function
 
 '------------------------------------------------------------------------------------------------
 ' Performs Sort Step - modified to handle tables not homed to A1
-'
 ' Modified 6/9/23 JDL cleanup
 '
 Function SortBy(Step, tbl) As Integer
@@ -380,7 +488,6 @@ ErrorExit:
 End Function
 '------------------------------------------------------------------------------------------------
 'Add dropdown validation list to column's data
-'
 ' Modified 6/9/23 JDL cleanup
 '
 Function AddValLst(Step, tbl) As Boolean
@@ -408,7 +515,6 @@ ErrorExit:
 End Function
 '------------------------------------------------------------------------------------------------
 ' Split Screen Columns - 7/29/21 (moved to RecipeStep Class 12/19/22)
-'
 ' Modified 6/9/23 JDL cleanup
 '
 Function SplitColumns(Step, tbl) As Boolean
@@ -437,7 +543,6 @@ ErrorExit:
 End Function
 '------------------------------------------------------------------------------------------------
 ' Freeze table Row 1 (calls tblRowsCols method)
-'
 ' Modified 6/9/23 JDL cleanup
 '
 Function FreezeRow1(Step, tbl) As Boolean

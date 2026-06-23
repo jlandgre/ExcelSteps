@@ -42,6 +42,7 @@ Public Const sACondFmt As String = "Col_CondFormat"
 Public Const sADropdown As String = "Col_Dropdown"
 Public Const sANumFmt As String = "Col_NumFormat"
 Public Const sAWidth As String = "Col_Width"
+Public Const sAHorizAlign As String = "Col_HorizAlign"
 'Public Const sANameRows As String = "Tbl_NameRowsBy"
 Public Const sASort As String = "Tbl_Sort"
 Public Const sAFreezeRow1 As String = "Tbl_FreezeRow1"
@@ -78,7 +79,7 @@ Public Const sHeaderMdlImport As String = "Model,Grp,Subgrp,Description,Variable
 '    & "Col_Comment,Col_CondFormat,Col_Dropdown,Col_NumFormat,Col_Width," _
 '    & "Tbl_FreezeRow1,Tbl_Sort,Tbl_SplitCols,Delete_FlagRows,Delete_RowsWithVal"
 Public Const sHeaderSteps As String = "Sheet,Column,Step,Formula/List Name/Sort-by," _
-    & "After End or Rename Column,Keep Formulas,Comment,Number Format,Width"
+    & "After End or Rename Column,Keep Formulas,Comment,Number Format,Width,Params"
 
 
 

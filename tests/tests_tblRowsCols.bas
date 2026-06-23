@@ -34,13 +34,13 @@ Sub TestDriver_TblRowsCols()
         SetApplEnvir False, False, xlCalculationAutomatic
         
         'Enable/disable all or groups of tests by procedure
-        AllEnabled = True
+        AllEnabled = False
         .tblInit.Enabled = False
         .tblSetDimensions.Enabled = False
         .tblSetArysNamesRngs.Enabled = False
         .tblFormat.Enabled = False
         .tblProvision.Enabled = False
-        .tblRefresh.Enabled = False
+        .tblRefresh.Enabled = True
         .tblRefreshAPI.Enabled = False
     End With
     
@@ -121,6 +121,11 @@ Sub TestDriver_TblRowsCols()
         If .Enabled Or AllEnabled Then
             procs.curProcedure = .name
             test_PrepExcelStepsSht procs
+            test_AddParamsColumn procs
+            test_HorizAlignFormat procs
+            test_HorizAlignInsert procs
+            test_UnsupportedParamKey procs
+            test_UnsupportedHorizAlign procs
             test_RefreshTbl2 procs
             test_RefreshTbl3 procs
         End If
@@ -1499,6 +1504,119 @@ End Sub
 '-----------------------------------------------------------------------------------------------
 'Testing for Refresh.RefreshRC() (refresh from ExcelSteps sheet)
 '-----------------------------------------------------------------------------------------------
+'-----------------------------------------------------------------------------------------
+'Apply horizontal alignment params on a Col_Format recipe row
+'JDL 6/22/26
+'
+Sub test_HorizAlignFormat(procs)
+    Dim tst As New Test: tst.Init tst, "test_HorizAlignFormat"
+    Dim refr As Object, tblSteps As Object
+
+    PrepParamsRefreshTest tst, refr, tblSteps
+    tst.wkbkTest.Sheets(shtSteps).Cells(2, 10).Value = "{HorizAlign:xlHAlignCenter}"
+
+    With refr
+        .IsReplace = True
+        .IsTblFormat = True
+        tst.Assert tst, .RefreshRC(refr, tblSteps, sht:=shtTbl)
+    End With
+
+    With tst.wkbkTest.Sheets(shtTbl)
+        tst.Assert tst, .Cells(2, 5).HorizontalAlignment = xlHAlignCenter
+    End With
+
+    tst.Update tst, procs
+End Sub
+'-----------------------------------------------------------------------------------------
+'Apply horizontal alignment params on a Col_Insert recipe row
+'JDL 6/22/26
+'
+Sub test_HorizAlignInsert(procs)
+    Dim tst As New Test: tst.Init tst, "test_HorizAlignInsert"
+    Dim refr As Object, tblSteps As Object
+
+    PrepParamsRefreshTest tst, refr, tblSteps
+    tst.wkbkTest.Sheets(shtSteps).Cells(3, 10).Value = "{HorizAlign:xlHAlignCenter}"
+
+    With refr
+        .IsReplace = True
+        .IsTblFormat = True
+        tst.Assert tst, .RefreshRC(refr, tblSteps, sht:=shtTbl)
+    End With
+
+    With tst.wkbkTest.Sheets(shtTbl)
+        tst.Assert tst, .Cells(2, 7).HorizontalAlignment = xlHAlignCenter
+        tst.Assert tst, .Cells(2, 7).Formula = "=@Data_2 + @Data_3"
+    End With
+
+    tst.Update tst, procs
+End Sub
+'-----------------------------------------------------------------------------------------
+'Fail refresh when params contains an unsupported key
+'JDL 6/22/26
+'
+Sub test_UnsupportedParamKey(procs)
+    Dim tst As New Test: tst.Init tst, "test_UnsupportedParamKey"
+    Dim refr As Object, tblSteps As Object
+
+    PrepParamsRefreshTest tst, refr, tblSteps
+    tst.wkbkTest.Sheets(shtSteps).Cells(2, 10).Value = "{HorizontalAlign:xlHAlignCenter}"
+    InitErrsForRecipeFailureTest
+
+    With refr
+        .IsReplace = True
+        .IsTblFormat = True
+        tst.Assert tst, Not .RefreshRC(refr, tblSteps, sht:=shtTbl)
+    End With
+
+    With tst.wkbkTest.Sheets(shtSteps)
+        tst.Assert tst, Not .Cells(2, 3).Comment Is Nothing
+    End With
+
+    tst.Update tst, procs
+End Sub
+'-----------------------------------------------------------------------------------------
+'Fail refresh when HorizAlign params contains an unsupported enum name
+'JDL 6/22/26
+'
+Sub test_UnsupportedHorizAlign(procs)
+    Dim tst As New Test: tst.Init tst, "test_UnsupportedHorizAlign"
+    Dim refr As Object, tblSteps As Object
+
+    PrepParamsRefreshTest tst, refr, tblSteps
+    tst.wkbkTest.Sheets(shtSteps).Cells(2, 10).Value = "{HorizAlign:xlHAlignMiddle}"
+    InitErrsForRecipeFailureTest
+
+    With refr
+        .IsReplace = True
+        .IsTblFormat = True
+        tst.Assert tst, Not .RefreshRC(refr, tblSteps, sht:=shtTbl)
+    End With
+
+    With tst.wkbkTest.Sheets(shtSteps)
+        tst.Assert tst, Not .Cells(2, 3).Comment Is Nothing
+    End With
+
+    tst.Update tst, procs
+End Sub
+'-----------------------------------------------------------------------------------------
+'Prepare table and ExcelSteps recipe for params refresh tests
+'JDL 6/22/26
+'
+Sub PrepParamsRefreshTest(tst, ByRef refr, ByRef tblSteps)
+    PopulateTbl2 tst.wkbkTest, shtTbl
+    PrepBlankStepsForTesting tst.wkbkTest, refr, tblSteps
+    PopulateStepsTblRefresh tst.wkbkTest, shtTbl
+End Sub
+'-----------------------------------------------------------------------------------------
+'Initialize errors for tests that intentionally fail recipe refresh
+'JDL 6/22/26
+'
+Sub InitErrsForRecipeFailureTest()
+    Set ExcelSteps.errs = ExcelSteps.New_ErrorHandling
+    ExcelSteps.errs.Init wkbkE:=ExcelSteps.ThisWorkbook
+    ExcelSteps.errs.IsShowMsgs = False
+End Sub
 '-----------------------------------------------------------------------------
 'Refresh rows/columns table - Two-row ExcelSteps sheet
 '
@@ -1609,8 +1727,43 @@ Sub test_PrepExcelStepsSht(procs)
         
     With tst
         .Assert tst, tst.wkbkTest.Sheets(shtSteps).Cells(1, 1) = "Sheet"
-        .Assert tst, tblSteps.nCols = 9
+        .Assert tst, tst.wkbkTest.Sheets(shtSteps).Cells(1, 10) = "Params"
+        .Assert tst, tblSteps.nCols = 10
         
+        .Update tst, procs
+    End With
+End Sub
+'-----------------------------------------------------------------------------------------
+'Add Params column to a legacy ExcelSteps recipe sheet
+'JDL 6/22/26
+'
+Sub test_AddParamsColumn(procs)
+    Dim tst As New Test: tst.Init tst, "test_AddParamsColumn"
+    Dim refr As Object, tblSteps As Object
+    Set refr = ExcelSteps.New_Refresh
+    Set tblSteps = ExcelSteps.New_tbl
+
+    With refr
+        tst.Assert tst, .InitTbl(refr, wkbk:=tst.wkbkTest, IsReplace:=True, IsTblFormat:=True)
+        If Not SheetExists(.wkbk, shtSteps) Then _
+            AddSheet .wkbk, shtSteps, .wkbk.Sheets(.wkbk.Sheets.Count).Name
+    End With
+
+    With tst.wkbkTest.Sheets(shtSteps)
+        .Cells.Clear
+        .Range(.Cells(1, 1), .Cells(1, 9)).Value = Split("Sheet,Column,Step," _
+            & "Formula/List Name/Sort-by,After End or Rename Column,Keep Formulas," _
+            & "Comment,Number Format,Width", ",")
+        .Cells(2, 1).Value = shtTbl
+        .Cells(2, 10).Value = "legacy stale params"
+    End With
+
+    With tst
+        .Assert tst, refr.PrepExcelStepsSht(refr, tblSteps)
+        .Assert tst, .wkbkTest.Sheets(shtSteps).Cells(1, 10).Value = "Params"
+        .Assert tst, Len(.wkbkTest.Sheets(shtSteps).Cells(2, 10).Value) = 0
+        .Assert tst, .wkbkTest.Sheets(shtSteps).Cells(2, 1).Value = shtTbl
+        .Assert tst, tblSteps.nCols = 10
         .Update tst, procs
     End With
 End Sub
