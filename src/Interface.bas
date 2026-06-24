@@ -1,5 +1,5 @@
 Attribute VB_Name = "Interface"
-'Version 1/29/26
+'Version 6/24/26
 Option Explicit
 '---------------------------------------------------------------------------------------------
 '---------------------------------------------------------------------------------------------
@@ -126,6 +126,50 @@ Function RefreshTblAPI(wkbkR, IsReplace, IsTblFormat, _
 ErrorExit:
     errs.RecordErr "RefreshTblAPI", RefreshTblAPI
 End Function
+'-----------------------------------------------------------------------------------------------------
+'Reset all block variables for a Lite Scenario Model
+'JDL 6/24/26; Updated 6/24/26
+'
+Function ResetAllBlockVarsAPI(wkbkR, sht, Optional ByVal mdlName As String = "", Optional cellHome, _
+    Optional IsCalc, Optional IsSuppHeader, Optional Defn) As Boolean
+    SetErrs ResetAllBlockVarsAPI: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim mdl As New mdlScenario
+
+    If Len(mdlName) > 0 Then
+        If Not mdl.Provision(mdl, wkbkR, sht:=sht, IsLiteModel:=True, _
+            mdlName:=mdlName, cellHome:=cellHome, IsCalc:=IsCalc, _
+            IsSuppHeader:=IsSuppHeader, Defn:=Defn) Then GoTo ErrorExit
+    Else
+        If Not mdl.Provision(mdl, wkbkR, sht:=sht, IsLiteModel:=True, _
+            cellHome:=cellHome, IsCalc:=IsCalc, IsSuppHeader:=IsSuppHeader, _
+            Defn:=Defn) Then GoTo ErrorExit
+    End If
+    If Not mdl.ResetAllBlockVars(mdl) Then GoTo ErrorExit
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "ResetAllBlockVarsAPI", ResetAllBlockVarsAPI
+End Function
+'-----------------------------------------------------------------------------------------------------
+'Reset all block variables on the active Lite Scenario Model sheet
+'JDL 6/24/26; Updated 6/24/26
+'
+Sub ResetAllBlockVarsDriver()
+    SetErrs "driver", ThisWorkbook: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim wkbk As Workbook, sht As String
+
+    Set wkbk = ActiveWorkbook
+    sht = ActiveSheet.Name
+    SetApplEnvir False, False, xlCalculationManual
+    If Not ResetAllBlockVarsAPI(wkbk, sht) Then GoTo ErrorExit
+
+    SetApplEnvir True, True, xlCalculationAutomatic
+    Exit Sub
+
+ErrorExit:
+    errs.RecordErr "ResetAllBlockVarsDriver"
+    SetApplEnvir True, True, xlCalculationAutomatic
+End Sub
 '---------------------------------------------------------------------------------------------
 ' Set application status to optimize performance and remember initial, active sheet
 ' JDL updated 12/19/22; 12/13/24 add check of whether shtCurrent is initialized before setting

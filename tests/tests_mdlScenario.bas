@@ -1,6 +1,6 @@
 Attribute VB_Name = "tests_mdlScenario"
 Option Explicit
-'Version 10/29/25 Refactor for .Provision + .Refresh performance
+'Version 6/24/26
 '-----------------------------------------------------------------------------------------------
 'Definition for testing parsing - non-default model with $I$4 cellHome
 Public Const defn_val As String = "SMdl:4,9:0:T:F:T:T:T"
@@ -9,7 +9,7 @@ Public Const defn_val_mdlName As String = "SMdl:4,9:0:T:T:T:F:T:SMdlType2"
 Public Const shtMdl As String = "SMdl"
 '-----------------------------------------------------------------------------------------------
 ' New Test suite for mdlScenario and Refresh Classes
-' JDL 12/15/21  Refactored 10/21/24 to use Procedures class
+' JDL 12/15/21  Refactored 10/21/24 to use Procedures class; Updated 6/24/26
 Sub TestDriver_mdlScenario()
     Dim procs As New Procedures, AllEnabled As Boolean
     
@@ -22,11 +22,12 @@ Sub TestDriver_mdlScenario()
         SetApplEnvir False, False, xlCalculationAutomatic
         
         'Enable/disable all or groups of tests by procedure
-        AllEnabled = True
+        AllEnabled = False
         .mdlInit.Enabled = False
         .mdlRow.Enabled = False
         .mdlVariations.Enabled = False
-        .mdlDropdowns.Enabled = True
+        .mdlDropdowns.Enabled = False
+        .mdlBlockVars.Enabled = True
         .mdlRefreshSpeed.Enabled = False
     End With
         
@@ -103,6 +104,15 @@ Sub TestDriver_mdlScenario()
         test_AddDropdownSMdl2 procs 'Default Model - Multi-column
         test_AddDropdownSMdl5 procs  'Lite Model
     End If
+
+    '***Lite model block variables***
+    If procs.mdlBlockVars.Enabled Or AllEnabled Then
+        procs.curProcedure = procs.mdlBlockVars.name
+        ' test_RefreshSMdlBlockVars procs
+        ' test_RefreshSMdlBlockVars_Oversized procs
+        ' test_RefreshSMdlBlockVars_Undersized procs
+        test_ResetAllBlockVarsAPI procs
+    End If
     
     '*** mdl Refresh speedup (7/15/25)***
     If procs.mdlRefreshSpeed.Enabled Or AllEnabled Then
@@ -117,6 +127,145 @@ Sub TestDriver_mdlScenario()
     End If
 
     procs.EvalOverall procs
+End Sub
+'-----------------------------------------------------------------------------------------------
+'-----------------------------------------------------------------------------------------------
+' procs.mdlBlockVars functions
+'-----------------------------------------------------------------------------------------------
+'-----------------------------------------------------------------------------------------
+'Expand Lite model input and formula variable blocks from placeholder rows
+'JDL 6/24/26; Updated 6/24/26
+'
+Sub test_RefreshSMdlBlockVars(procs)
+    Dim tst As New Test: tst.Init tst, "test_RefreshSMdlBlockVars"
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
+    Dim wksht As Worksheet, aryVars As Variant, aryVals As Variant
+
+    With tst
+        Set wksht = .wkbkTest.Sheets(shtMdl)
+        PopulateSMdlBlockVars tst, wksht
+        .Assert tst, mdl.Provision(mdl, .wkbkTest, shtMdl, IsLiteModel:=True, _
+            IsSuppHeader:=True, cellHome:=wksht.Cells(10, 6))
+        .Assert tst, mdl.Refresh(mdl)
+
+        'Check placeholder rows expanded to indexed input and formula rows
+        .Assert tst, mdl.rngPopRows.Address = "$H$10,$H$12:$H$15,$H$17:$H$18"
+        aryVars = Array(wksht.Cells(12, 8), wksht.Cells(13, 8), wksht.Cells(14, 8), _
+            wksht.Cells(15, 8), wksht.Cells(17, 8), wksht.Cells(18, 8))
+        .TestAryVals tst, aryVars, Array("side_a_1", "side_a_2", "side_b_1", _
+            "side_b_2", "side_c_1", "side_c_2")
+
+        'Check formula expansion and ignored Input_VarBlock formula/list text
+        .Assert tst, mdl.dStepsFormulas.Item("side_c_1") = _
+            "=(@side_a_1^2 + @side_b_1^2)^0.5"
+        .Assert tst, Not mdl.dStepsFormulas.Exists("side_a_1")
+        .Assert tst, wksht.Cells(12, 11).NumberFormat = "0.000"
+
+        'Check exact-size refresh preserves inputs and calculates formulas
+        wksht.Cells(12, 11).Value2 = 3
+        wksht.Cells(13, 11).Value2 = 6
+        wksht.Cells(14, 11).Value2 = 4
+        wksht.Cells(15, 11).Value2 = 8
+        .Assert tst, mdl.Refresh(mdl)
+        aryVals = Array(wksht.Cells(17, 11), wksht.Cells(18, 11))
+        .TestAryVals tst, aryVals, Array(5, 10)
+        .CkStyleMatch tst, Range(wksht.Cells(17, 11), wksht.Cells(18, 11)), "Calculation"
+        .Update tst, procs
+    End With
+End Sub
+'-----------------------------------------------------------------------------------------
+'Delete oversized block rows from bottom up while preserving retained inputs
+'JDL 6/24/26; Updated 6/24/26
+'
+Sub test_RefreshSMdlBlockVars_Oversized(procs)
+    Dim tst As New Test: tst.Init tst, "test_RefreshSMdlBlockVars_Oversized"
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
+    Dim wksht As Worksheet, aryVars As Variant, aryVals As Variant
+
+    With tst
+        Set wksht = .wkbkTest.Sheets(shtMdl)
+        PopulateSMdlBlockVars tst, wksht, 3
+        .Assert tst, mdl.Provision(mdl, .wkbkTest, shtMdl, IsLiteModel:=True, _
+            IsSuppHeader:=True, cellHome:=wksht.Cells(10, 6))
+        .Assert tst, mdl.Refresh(mdl)
+
+        'Seed retained and overage input values before shrinking blocks
+        Range(wksht.Cells(12, 11), wksht.Cells(17, 11)).Value = _
+            WorksheetFunction.Transpose(Array(3, 6, 12, 4, 8, 16))
+        PopulateStepsSMdlBlockVars .wkbkTest, "SMdl", 2
+        .Assert tst, mdl.Refresh(mdl)
+
+        'Check bottom rows deleted and first two values preserved
+        aryVars = Array(wksht.Cells(12, 8), wksht.Cells(13, 8), wksht.Cells(14, 8), _
+            wksht.Cells(15, 8), wksht.Cells(17, 8), wksht.Cells(18, 8))
+        .TestAryVals tst, aryVars, Array("side_a_1", "side_a_2", "side_b_1", _
+            "side_b_2", "side_c_1", "side_c_2")
+        aryVals = Array(wksht.Cells(12, 11), wksht.Cells(13, 11), _
+            wksht.Cells(14, 11), wksht.Cells(15, 11))
+        .TestAryVals tst, aryVals, Array(3, 6, 4, 8)
+        .Update tst, procs
+    End With
+End Sub
+'-----------------------------------------------------------------------------------------
+'Recreate undersized blocks from the first existing row
+'JDL 6/24/26; Updated 6/24/26
+'
+Sub test_RefreshSMdlBlockVars_Undersized(procs)
+    Dim tst As New Test: tst.Init tst, "test_RefreshSMdlBlockVars_Undersized"
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
+    Dim wksht As Worksheet, aryVars As Variant, aryVals As Variant
+
+    With tst
+        Set wksht = .wkbkTest.Sheets(shtMdl)
+        PopulateSMdlBlockVars tst, wksht, 2
+        .Assert tst, mdl.Provision(mdl, .wkbkTest, shtMdl, IsLiteModel:=True, _
+            IsSuppHeader:=True, cellHome:=wksht.Cells(10, 6))
+        .Assert tst, mdl.Refresh(mdl)
+
+        'Seed inputs before growing from two to three block variables
+        Range(wksht.Cells(12, 11), wksht.Cells(15, 11)).Value = _
+            WorksheetFunction.Transpose(Array(3, 6, 4, 8))
+        PopulateStepsSMdlBlockVars .wkbkTest, "SMdl", 3
+        .Assert tst, mdl.Refresh(mdl)
+
+        'Check recreated rows and cleared input values
+        aryVars = Array(wksht.Cells(12, 8), wksht.Cells(13, 8), wksht.Cells(14, 8), _
+            wksht.Cells(15, 8), wksht.Cells(16, 8), wksht.Cells(17, 8), _
+            wksht.Cells(19, 8), wksht.Cells(20, 8), wksht.Cells(21, 8))
+        .TestAryVals tst, aryVars, Array("side_a_1", "side_a_2", "side_a_3", _
+            "side_b_1", "side_b_2", "side_b_3", "side_c_1", "side_c_2", "side_c_3")
+        aryVals = Array(wksht.Cells(12, 11), wksht.Cells(13, 11), wksht.Cells(14, 11))
+        .TestAryVals tst, aryVals, Array("", "", "")
+        .Update tst, procs
+    End With
+End Sub
+'-----------------------------------------------------------------------------------------
+'Collapse indexed blocks back to base _xx placeholder rows
+'JDL 6/24/26; Updated 6/24/26
+'
+Sub test_ResetAllBlockVarsAPI(procs)
+    Dim tst As New Test: tst.Init tst, "test_ResetAllBlockVarsAPI"
+    Dim mdl As Object: Set mdl = ExcelSteps.New_mdl
+    Dim wksht As Worksheet, aryVars As Variant
+
+    With tst
+        Set wksht = .wkbkTest.Sheets(shtMdl)
+        PopulateSMdlBlockVars tst, wksht
+        .Assert tst, mdl.Provision(mdl, .wkbkTest, shtMdl, IsLiteModel:=True, _
+            IsSuppHeader:=True, cellHome:=wksht.Cells(10, 6))
+        .Assert tst, mdl.Refresh(mdl)
+        set mdl = Nothing
+        .Assert tst, ExcelSteps.ResetAllBlockVarsAPI(.wkbkTest, shtMdl, _
+            cellHome:=wksht.Cells(10, 6), IsSuppHeader:=True)
+
+        'Check each block is collapsed to its original placeholder row
+        .Assert tst, wksht.Cells(12, 8).Value2 = "side_a_xx"
+        .Assert tst, wksht.Cells(13, 8).Value2 = "side_b_xx"
+        .Assert tst, wksht.Cells(15, 8).Value2 = "side_c_xx"
+        aryVars = Array(wksht.Cells(12, 11), wksht.Cells(13, 11), wksht.Cells(15, 11))
+        .TestAryVals tst, aryVars, Array("", "", "")
+        .Update tst, procs
+    End With
 End Sub
 '-----------------------------------------------------------------------------------------------
 '-----------------------------------------------------------------------------------------------

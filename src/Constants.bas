@@ -1,10 +1,10 @@
 Attribute VB_Name = "Constants"
-'Version 6/18/26
+'Version 6/24/26
 'This module is part of the ExcelSteps open source project posted at:
 'https://github.com/jlandgre/ExcelSteps/. It is licensed under the MIT open source license
 
 Option Explicit
-Public Const Version As String = "version 6/18/26"
+Public Const Version As String = "version 6/24/26"
 
 Public Const iMinRows As Integer = 10
 Public Const sRefreshSuffix As String = "_t"
@@ -27,7 +27,7 @@ Public Const sNumbers As String = "0123456789"
 'Steps (sStepFunctions is list by function --including comment, width etc.)
 Public Const sStepList As String = "Col_Format,Col_Insert,Col_Delete,Col_Rename,Col_AddGroup," _
     & "Col_CondFormat,Col_Dropdown,Tbl_FreezeRow1,Tbl_Sort,Tbl_SplitCols,Delete_FlagRows," _
-    & "Delete_RowsWithVal"
+    & "Delete_RowsWithVal,Input_VarBlock,Formula_VarBlock"
 
 'Public Const sStepFunctions As String = "Col_Delete,Col_Rename,Col_Insert,Col_AddGroup,Col_Comment," _
 '    & "Col_CondFormat,Col_Dropdown,Col_NumFormat,Col_Width,Tbl_FreezeRow1,Tbl_Sort,Tbl_SplitCols"
@@ -43,6 +43,8 @@ Public Const sADropdown As String = "Col_Dropdown"
 Public Const sANumFmt As String = "Col_NumFormat"
 Public Const sAWidth As String = "Col_Width"
 Public Const sAHorizAlign As String = "Col_HorizAlign"
+Public Const sAInputVarBlock As String = "Input_VarBlock"
+Public Const sAFormulaVarBlock As String = "Formula_VarBlock"
 'Public Const sANameRows As String = "Tbl_NameRowsBy"
 Public Const sASort As String = "Tbl_Sort"
 Public Const sAFreezeRow1 As String = "Tbl_FreezeRow1"

@@ -1,4 +1,5 @@
 Attribute VB_Name = "Populate_Mdl"
+'Version 6/24/26
 Option Explicit
 '-----------------------------------------------------------------------------------------------
 'This section Creates named list for validating dropdown feature
@@ -247,6 +248,48 @@ Sub PopulateSMdl6(Test, wksht)
     'Recreate and populate ExcelSteps
     PrepBlankStepsForTesting Test.wkbkTest, refr, tbls
     PopulateStepsSMdl Test.wkbkTest, "SMdl"
+End Sub
+'-----------------------------------------------------------------------------------------------
+'Populate non-homed Lite model with _xx variable block placeholders
+'JDL 6/24/26; Updated 6/24/26
+'
+Sub PopulateSMdlBlockVars(Test, wksht, Optional nBlockVars As Long = 2)
+    PopulateSMdl6 Test, wksht
+
+    With wksht
+        'Convert existing Lite model variables to block placeholder rows
+        .Cells(12, 8).Value2 = "side_a_xx"
+        .Cells(13, 8).Value2 = "side_b_xx"
+        .Cells(15, 8).Value2 = "side_c_xx"
+    End With
+    PopulateStepsSMdlBlockVars Test.wkbkTest, "SMdl", nBlockVars
+End Sub
+'-----------------------------------------------------------------------------------------------
+'Populate ExcelSteps recipe rows for input and formula block variables
+'JDL 6/24/26; Updated 6/24/26
+'
+Sub PopulateStepsSMdlBlockVars(wkbk, MdlName, Optional nBlockVars As Long = 2)
+    With wkbk.Sheets(shtSteps)
+        .Cells(2, 1) = MdlName
+        .Cells(2, 2) = "side_a_xx"
+        .Cells(2, 3) = "Input_VarBlock"
+        .Cells(2, 4) = "ignored text"
+        .Cells(2, 8) = "0.000"
+        .Cells(2, 10) = "{nBlockVars:" & nBlockVars & "}"
+
+        .Cells(3, 1) = MdlName
+        .Cells(3, 2) = "side_b_xx"
+        .Cells(3, 3) = "Input_VarBlock"
+        .Cells(3, 8) = "0"
+        .Cells(3, 10) = "{nBlockVars:" & nBlockVars & "}"
+
+        .Cells(4, 1) = MdlName
+        .Cells(4, 2) = "side_c_xx"
+        .Cells(4, 3) = "Formula_VarBlock"
+        .Cells(4, 4) = "=(@side_a_xx^2 + @side_b_xx^2)^0.5"
+        .Cells(4, 8) = "0.00"
+        .Cells(4, 10) = "{nBlockVars:" & nBlockVars & "}"
+    End With
 End Sub
 '-----------------------------------------------------------------------------------------------
 'Lite, calculator model with header suppressed - Non-homed

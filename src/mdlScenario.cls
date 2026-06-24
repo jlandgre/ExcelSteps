@@ -7,7 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'Version 1/29/26
+'Version 6/24/26
 '        11/17/25 Add IsCustomMdl attr to facilitate ParseMdl option detection
 Option Explicit
 Public cellHome As Range
@@ -55,6 +55,7 @@ Public dStepsNumFormats As Object
 Public dStepsColWidths As Object
 Public dStepsComments As Object
 Public dDropdownList As Object
+Public dBlockVars As Object
 
 'Range naming reference prefix for rows
 Public NameRefPrefix As String
@@ -177,7 +178,7 @@ Public Function Provision(ByRef mdl As mdlScenario, wkbk, Optional sht, _
         Else
             Set .rngRows = Range(.cellHome, .cellHome.Offset(.nRows - 1, 0)).EntireRow
         End If
-        
+
         'Set .nrows as gross number of rows (not just populated) 6/16/23
         If Not .rngRows Is Nothing Then .nRows = .rngRows.Rows.Count
         
@@ -490,12 +491,12 @@ End Function
 ' Set Class Attributes from specified, optional arguments
 '
 ' JDL 1/6/22; Modified 5/6/25 bug fix for when .colrngStrInput does not display as text
-'               Refactor to improve performance 10/29/25
+'               Refactor to improve performance 10/29/25; Updated 6/24/26
 '
 Sub SetRngFormulaRows(ByRef mdl)
     Dim w As Variant, rowsSteps As Range, IsFormula As Boolean, r As Range, r_formula As Range
     Dim sFormula As String, sNumFmt As String, sColWidth As String, sComment As String
-    Dim sDropdown As String, sStep As String
+    Dim sDropdown As String, sStep As String, rBlock As Object, idxBlock As Long
     
     With mdl
     
@@ -539,9 +540,21 @@ Sub SetRngFormulaRows(ByRef mdl)
             
             'If Lite, search mdl's rows in ExcelSteps and populate dictionaries
             Else
-            
+                If Not .dBlockVars Is Nothing Then
+                    If .dBlockVars.Exists(CStr(w.Value2)) Then
+                        Set rBlock = .dBlockVars.Item(CStr(w.Value2))
+                        idxBlock = .BlockVarIndex(mdl, rBlock, CStr(w.Value2))
+                        If rBlock.IsFormulaVarBlock Then
+                            IsFormula = True
+                            .dStepsFormulas.Add CStr(w.Value2), rBlock.IndexedFormula(rBlock, idxBlock)
+                        End If
+                        If rBlock.HasNumFmt Then .dStepsNumFormats.Add CStr(w.Value2), rBlock.NumFmt
+                        If Len(rBlock.sComment) > 0 Then .dStepsComments.Add CStr(w.Value2), rBlock.sComment
+                    End If
+                End If
+
                 Set r = .rngStepsVars.Find(w.value, LookAt:=xlWhole)
-                If Not r Is Nothing Then
+                If Not r Is Nothing And Not IsFormula Then
                     'Check for formula
                     Set r_formula = Intersect(r.EntireRow, .tblSteps.colrngStrInput)
                     sFormula = r_formula.Value2
@@ -578,6 +591,263 @@ Sub SetRngFormulaRows(ByRef mdl)
         Set .rngFormulaRows = Intersect(.rngFormulaRows, .rngRows)
     End With
 End Sub
+'---------------------------------------------------------------------------------------
+'Shape all Lite model block variables from ExcelSteps recipe rows
+'JDL 6/24/26; Updated 6/24/26
+'
+Function RefreshBlockVars(mdl) As Boolean
+    SetErrs RefreshBlockVars: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim rngRecipeVars As Range, rngRecipeVar As Range, rBlock As mdlRow, sStep As String
+    Dim IsRowsChanged As Boolean
+
+    With mdl
+        Set .dBlockVars = New Dictionary
+        If Not .IsLiteModel Then Exit Function
+        If .tblSteps Is Nothing Then Exit Function
+
+        Set rngRecipeVars = KeyColRng(.tblSteps, Array(.tblSteps.colrngSht), Array(.mdlName))
+        If rngRecipeVars Is Nothing Then Exit Function
+        Set rngRecipeVars = Intersect(rngRecipeVars, .tblSteps.colrngCol)
+
+        For Each rngRecipeVar In rngRecipeVars
+            sStep = Intersect(rngRecipeVar.EntireRow, .tblSteps.colrngStep).Value2
+            If sStep = sAInputVarBlock Or sStep = sAFormulaVarBlock Then
+                Set rBlock = New mdlRow
+                If Not rBlock.InitBlockVar(rBlock, mdl, rngRecipeVar.EntireRow) Then GoTo ErrorExit
+                If Not .ShapeBlockRows(mdl, rBlock, IsRowsChanged) Then GoTo ErrorExit
+                If IsRowsChanged Then If Not .RebuildMdlRanges(mdl) Then GoTo ErrorExit
+                If Not .FindBlockRows(mdl, rBlock) Then GoTo ErrorExit
+                If Not .AddBlockVarMap(mdl, rBlock) Then GoTo ErrorExit
+            End If
+        Next rngRecipeVar
+
+        If Not .rngPopRows Is Nothing Then .SetRngFormulaRows mdl
+    End With
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "RefreshBlockVars", RefreshBlockVars
+End Function
+'---------------------------------------------------------------------------------------
+'Locate placeholder or indexed rows for a block variable
+'JDL 6/24/26; Updated 6/24/26
+'
+Function FindBlockRows(mdl, rBlock) As Boolean
+    SetErrs FindBlockRows: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim rngVars As Range, rngPlaceholder As Range, rngFirst As Range, cell As Range
+    Dim rngBlock As Range, idx As Long
+
+    With mdl
+        Set rngVars = Intersect(.rngRows, .colrngVarNames)
+        Set rngPlaceholder = FindInRange(rngVars, rBlock.sBaseVar)
+        Set rngFirst = FindInRange(rngVars, rBlock.IndexedVarName(rBlock, 1))
+
+        If errs.IsFail((Not rngPlaceholder Is Nothing) And (Not rngFirst Is Nothing), _
+            1, rBlock.sBaseVar) Then GoTo ErrorExit
+        If errs.IsFail(rngPlaceholder Is Nothing And rngFirst Is Nothing, 2, rBlock.sBaseVar) _
+            Then GoTo ErrorExit
+
+        If Not rngPlaceholder Is Nothing Then
+            Set rBlock.rngBlockRows = rngPlaceholder
+            rBlock.nExistingBlockVars = 0
+            Exit Function
+        End If
+
+        idx = 1
+        Set cell = rngFirst
+        Do While Not Intersect(cell, rngVars) Is Nothing
+            If Not .IsIndexedBlockVar(mdl, rBlock, CStr(cell.Value2)) Then Exit Do
+            If errs.IsFail(CStr(cell.Value2) <> rBlock.IndexedVarName(rBlock, idx), _
+                3, rBlock.sBaseVar) Then GoTo ErrorExit
+            If rngBlock Is Nothing Then Set rngBlock = cell Else Set rngBlock = Union(rngBlock, cell)
+            idx = idx + 1
+            Set cell = cell.Offset(1, 0)
+        Loop
+
+        Set rBlock.rngBlockRows = rngBlock
+        rBlock.nExistingBlockVars = idx - 1
+        For Each cell In rngVars
+            If .IsIndexedBlockVar(mdl, rBlock, CStr(cell.Value2)) Then
+                If Intersect(cell, rngBlock) Is Nothing Then
+                    If errs.IsFail(True, 4, rBlock.sBaseVar) Then GoTo ErrorExit
+                End If
+            End If
+        Next cell
+    End With
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "FindBlockRows", FindBlockRows
+End Function
+'---------------------------------------------------------------------------------------
+'Apply placeholder, exact, oversized, and undersized row rules for a block
+'JDL 6/24/26; Updated 6/24/26
+'
+Function ShapeBlockRows(mdl, rBlock, ByRef IsRowsChanged As Boolean) As Boolean
+    SetErrs ShapeBlockRows: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim rngFirst As Range, idx As Long
+
+    IsRowsChanged = False
+    If Not FindBlockRows(mdl, rBlock) Then GoTo ErrorExit
+    Set rngFirst = rBlock.rngBlockRows.Cells(1)
+
+    'Expand a template placeholder row
+    If rBlock.nExistingBlockVars = 0 Then
+        If Not CreateIndexedBlockRows(mdl, rBlock, rngFirst, True) Then GoTo ErrorExit
+        IsRowsChanged = True
+        Exit Function
+    End If
+
+    'Preserve an exact-size block
+    If rBlock.nExistingBlockVars = rBlock.nBlockVars Then Exit Function
+
+    'Delete overage rows from bottom up
+    If rBlock.nExistingBlockVars > rBlock.nBlockVars Then
+        For idx = rBlock.nExistingBlockVars To rBlock.nBlockVars + 1 Step -1
+            rngFirst.Offset(idx - 1, 0).EntireRow.Delete
+        Next idx
+        IsRowsChanged = True
+        Exit Function
+    End If
+
+    'Recreate undersized blocks from the first existing row as template
+    For idx = rBlock.nExistingBlockVars To 2 Step -1
+        rngFirst.Offset(idx - 1, 0).EntireRow.Delete
+    Next idx
+    If Not CreateIndexedBlockRows(mdl, rBlock, rngFirst, True) Then GoTo ErrorExit
+    IsRowsChanged = True
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "ShapeBlockRows", ShapeBlockRows
+End Function
+'---------------------------------------------------------------------------------------
+'Create indexed rows by copying a block template row
+'JDL 6/24/26; Updated 6/24/26
+'
+Function CreateIndexedBlockRows(mdl, rBlock, rngFirst As Range, IsClearVals As Boolean) As Boolean
+    SetErrs CreateIndexedBlockRows: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim idx As Long, rngBlock As Range
+
+    For idx = 2 To rBlock.nBlockVars
+        rngFirst.Offset(idx - 1, 0).EntireRow.Insert Shift:=xlDown
+        rngFirst.EntireRow.Copy Destination:=rngFirst.Offset(idx - 1, 0).EntireRow
+    Next idx
+    Application.CutCopyMode = False
+
+    Set rngBlock = Range(rngFirst, rngFirst.Offset(rBlock.nBlockVars - 1, 0))
+    For idx = 1 To rBlock.nBlockVars
+        rngFirst.Offset(idx - 1, 0).Value2 = rBlock.IndexedVarName(rBlock, idx)
+    Next idx
+    If IsClearVals Then Intersect(rngBlock.EntireRow, mdl.colrngModel).ClearContents
+    Set rBlock.rngBlockRows = rngBlock
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "CreateIndexedBlockRows", CreateIndexedBlockRows
+End Function
+'---------------------------------------------------------------------------------------
+'Refresh model ranges after block row insertion or deletion
+'JDL 6/24/26; Updated 6/24/26
+'
+Function RebuildMdlRanges(mdl) As Boolean
+    SetErrs RebuildMdlRanges: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim rng As Range
+
+    With mdl
+        Set rng = Intersect(.cellHome.EntireRow, .colrngVarNames)
+        Set .rngRows = rngToExtent(rng, IsRows:=True)
+        If Not .rngRows Is Nothing Then .nRows = .rngRows.Rows.Count
+        Set .rngPopRows = BuildMultiCellRange(.rngRows, .colrngVarNames)
+        Set .rngMdl = .colrngModel.Columns(.colrngModel.Columns.Count)
+        Set .rngMdl = Intersect(Range(.cellHome.EntireColumn, .rngMdl), .rngRows)
+    End With
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "RebuildMdlRanges", RebuildMdlRanges
+End Function
+'---------------------------------------------------------------------------------------
+'Map every indexed block variable to its block wrapper
+'JDL 6/24/26; Updated 6/24/26
+'
+Function AddBlockVarMap(mdl, rBlock) As Boolean
+    SetErrs AddBlockVarMap: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim idx As Long
+
+    For idx = 1 To rBlock.nBlockVars
+        mdl.dBlockVars.Add rBlock.IndexedVarName(rBlock, idx), rBlock
+    Next idx
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "AddBlockVarMap", AddBlockVarMap
+End Function
+'---------------------------------------------------------------------------------------
+'Return true when a variable belongs to a block stem
+'JDL 6/24/26; Updated 6/24/26
+'
+Function IsIndexedBlockVar(mdl, rBlock, sVar As String) As Boolean
+    Dim suffix As String
+
+    If Left(sVar, Len(rBlock.sVarStem) + 1) <> rBlock.sVarStem & "_" Then Exit Function
+    suffix = Mid(sVar, Len(rBlock.sVarStem) + 2)
+    If Len(suffix) = 0 Then Exit Function
+    If Not IsNumeric(suffix) Then Exit Function
+    If InStr(suffix, ".") > 0 Then Exit Function
+    If InStr(suffix, ",") > 0 Then Exit Function
+    IsIndexedBlockVar = CLng(suffix) > 0
+End Function
+'---------------------------------------------------------------------------------------
+'Return numeric suffix for an indexed block variable
+'JDL 6/24/26; Updated 6/24/26
+'
+Function BlockVarIndex(mdl, rBlock, sVar As String) As Long
+    SetErrs "non-bool": If errs.IsHandle Then On Error GoTo ErrorExit
+
+    BlockVarIndex = CLng(Mid(sVar, Len(rBlock.sVarStem) + 2))
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "BlockVarIndex"
+End Function
+'---------------------------------------------------------------------------------------
+'Collapse all Lite model block variables back to _xx placeholder rows
+'JDL 6/24/26; Updated 6/24/26
+'
+Function ResetAllBlockVars(mdl) As Boolean
+    SetErrs ResetAllBlockVars: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim rngRecipeVars As Range, rngRecipeVar As Range, rBlock As mdlRow, sStep As String
+    Dim rngFirst As Range, idx As Long
+
+    With mdl
+        If errs.IsFail(Not .IsLiteModel, 1, .mdlName) Then GoTo ErrorExit
+        Set rngRecipeVars = KeyColRng(.tblSteps, Array(.tblSteps.colrngSht), Array(.mdlName))
+        If rngRecipeVars Is Nothing Then Exit Function
+        Set rngRecipeVars = Intersect(rngRecipeVars, .tblSteps.colrngCol)
+
+        For Each rngRecipeVar In rngRecipeVars
+            sStep = Intersect(rngRecipeVar.EntireRow, .tblSteps.colrngStep).Value2
+            If sStep = sAInputVarBlock Or sStep = sAFormulaVarBlock Then
+                Set rBlock = New mdlRow
+                If Not rBlock.InitBlockVar(rBlock, mdl, rngRecipeVar.EntireRow) Then GoTo ErrorExit
+                If Not .FindBlockRows(mdl, rBlock) Then GoTo ErrorExit
+                Set rngFirst = rBlock.rngBlockRows.Cells(1)
+                For idx = rBlock.nExistingBlockVars To 2 Step -1
+                    rngFirst.Offset(idx - 1, 0).EntireRow.Delete
+                Next idx
+                rngFirst.Value2 = rBlock.sBaseVar
+                Intersect(rngFirst.EntireRow, .colrngModel).ClearContents
+                If Not .RebuildMdlRanges(mdl) Then GoTo ErrorExit
+            End If
+        Next rngRecipeVar
+        If Not .rngPopRows Is Nothing Then .SetRngFormulaRows mdl
+    End With
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "ResetAllBlockVars", ResetAllBlockVars
+End Function
 '---------------------------------------------------------------------------------------
 ' Apply border around model
 '
@@ -931,12 +1201,15 @@ End Sub
 '                          6/30/22 - refactor mdlRow Class
 '                          10/25/25 - fix SetHeaderStyle range issue
 '                          11/6/25 - Refactor for performance; use mdl.tblSteps attribute
+'                          Updated 6/24/26
 '
 Function Refresh(mdl) As Boolean
     SetErrs Refresh: If errs.IsHandle Then On Error GoTo ErrorExit
-    Dim r As Object, rngRow As Variant, nm As Variant, i As Long, rowCur As Range
+    Dim r As Object, rBlock As Object, rngRow As Variant, nm As Variant, i As Long, rowCur As Range
+    Dim IsBlockRow As Boolean, IsBlockFirstRow As Boolean
             
     With mdl
+        If .IsLiteModel Then If Not .RefreshBlockVars(mdl) Then GoTo ErrorExit
         If Not CkVarAndScenNames(mdl) Then GoTo ErrorExit
         
         'Delete previous range names if using model name prefix
@@ -953,23 +1226,34 @@ Function Refresh(mdl) As Boolean
         'Dim timeStart As Double, timeEnd As Double
         'timeStart = Timer
         For Each rngRow In mdl.rngPopRows
-        
-            'Instance/initialize mdlRow Class to hold row attributes
-            Set r = New mdlRow
-            With r
-                .Init r, mdl, rngRow
-                
-                'Name cell/row
-                If mdl.IsRngNames Then .NameRow r, mdl
-                
-                'Set Number Format and formula
-                If Not .rngMdlCells Is Nothing Then
-                    If .HasLstValidation Then .AddListValidation r
-                    If .HasFormula Then _
-                        If Not .WriteRowFormula(r, mdl) Then GoTo ErrorExit
-                    .FormatRow r
+            IsBlockRow = False
+            IsBlockFirstRow = False
+            If Not mdl.dBlockVars Is Nothing Then
+                If mdl.dBlockVars.Exists(CStr(rngRow.Value2)) Then
+                    IsBlockRow = True
+                    Set rBlock = mdl.dBlockVars.Item(CStr(rngRow.Value2))
+                    IsBlockFirstRow = (rngRow.Row = rBlock.rngBlockRows.Cells(1).Row)
                 End If
-            End With
+            End If
+        
+            'Block rows are refreshed by the first row's wrapper
+            If IsBlockRow Then
+                If IsBlockFirstRow Then If Not rBlock.RefreshVarBlock(rBlock, mdl) Then GoTo ErrorExit
+
+            'Non-block rows use the standard mdlRow workflow
+            Else
+                Set r = New mdlRow
+                With r
+                    .Init r, mdl, rngRow
+                    If mdl.IsRngNames Then .NameRow r, mdl
+                    If Not .rngMdlCells Is Nothing Then
+                        If .HasLstValidation Then .AddListValidation r
+                        If .HasFormula Then _
+                            If Not .WriteRowFormula(r, mdl) Then GoTo ErrorExit
+                        .FormatRow r
+                    End If
+                End With
+            End If
             
             'Format template columns
             With mdl

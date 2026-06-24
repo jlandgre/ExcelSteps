@@ -7,7 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'Version 1/29/26
+'Version 6/24/26
 Option Explicit
 
 Public rngVar As Range
@@ -24,6 +24,19 @@ Public NumFmt As String
 
 Public HasLstValidation As Boolean
 Public DropdownLstName As String
+
+Public IsBlockVar As Boolean
+Public IsInputVarBlock As Boolean
+Public IsFormulaVarBlock As Boolean
+Public nBlockVars As Long
+Public sBaseVar As String
+Public sVarStem As String
+Public sFormulaBase As String
+Public sStep As String
+Public sComment As String
+Public rngBlockRows As Range
+Public rngRecipeRow As Range
+Public nExistingBlockVars As Long
 '-----------------------------------------------------------------------------------------------------
 'Purpose: Initialize the class instance by reading all attributes
 '
@@ -38,6 +51,106 @@ Sub Init(r, mdl, rngVar)
         r.ReadPropsNonLite r, mdl
     End If
 End Sub
+'-----------------------------------------------------------------------------------------------------
+'Initialize block variable attributes from an ExcelSteps recipe row
+'JDL 6/24/26; Updated 6/24/26
+'
+Function InitBlockVar(r, mdl, rngRecipeRow) As Boolean
+    SetErrs InitBlockVar: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim paramsDict As Object, sParams As String
+
+    With r
+        Set .rngRecipeRow = rngRecipeRow
+        .IsBlockVar = True
+        .sBaseVar = Intersect(rngRecipeRow, mdl.tblSteps.colrngCol).Value2
+        .sStep = Intersect(rngRecipeRow, mdl.tblSteps.colrngStep).Value2
+        .sFormulaBase = Intersect(rngRecipeRow, mdl.tblSteps.colrngStrInput).Formula
+        .NumFmt = Intersect(rngRecipeRow, mdl.tblSteps.colrngNumFmt).Value2
+        .sComment = Intersect(rngRecipeRow, mdl.tblSteps.colrngComment).Value2
+        .IsInputVarBlock = (.sStep = sAInputVarBlock)
+        .IsFormulaVarBlock = (.sStep = sAFormulaVarBlock)
+
+        If errs.IsFail(Not .IsInputVarBlock And Not .IsFormulaVarBlock, 1) Then GoTo ErrorExit
+        If errs.IsFail(Right(.sBaseVar, 3) <> "_xx", 2, .sBaseVar) Then GoTo ErrorExit
+
+        sParams = Intersect(rngRecipeRow, mdl.tblSteps.colrngParams).Value2
+        If errs.IsFail(Len(sParams) = 0, 3, .sBaseVar) Then GoTo ErrorExit
+        Set paramsDict = New Dictionary
+        If Not paramsDict.ParseStringToDictProcedure(sParams) Then GoTo ErrorExit
+        If errs.IsFail(Not paramsDict.Exists("nBlockVars"), 4, sParams) Then GoTo ErrorExit
+        If errs.IsFail(paramsDict.Item("nBlockVars") <> CLng(paramsDict.Item("nBlockVars")), _
+            5, sParams) Then GoTo ErrorExit
+        .nBlockVars = CLng(paramsDict.Item("nBlockVars"))
+        If errs.IsFail(.nBlockVars < 1, 6, sParams) Then GoTo ErrorExit
+        If errs.IsFail(.IsFormulaVarBlock And Len(.sFormulaBase) = 0, 7, .sBaseVar) Then _
+            GoTo ErrorExit
+
+        .sVarStem = Left(.sBaseVar, Len(.sBaseVar) - 3)
+        .HasNumFmt = Len(.NumFmt) > 0
+        .HasFormula = .IsFormulaVarBlock
+    End With
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "InitBlockVar", InitBlockVar
+End Function
+'-----------------------------------------------------------------------------------------------------
+'Return indexed block variable name from a base _xx variable
+'JDL 6/24/26; Updated 6/24/26
+'
+Function IndexedVarName(r, idx As Long) As String
+    SetErrs "non-bool": If errs.IsHandle Then On Error GoTo ErrorExit
+
+    IndexedVarName = r.sVarStem & "_" & idx
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "IndexedVarName"
+End Function
+'-----------------------------------------------------------------------------------------------------
+'Return indexed block formula from a _xx formula template
+'JDL 6/24/26; Updated 6/24/26
+'
+Function IndexedFormula(r, idx As Long) As String
+    SetErrs "non-bool": If errs.IsHandle Then On Error GoTo ErrorExit
+
+    IndexedFormula = Replace(r.sFormulaBase, "_xx", "_" & idx)
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "IndexedFormula"
+End Function
+'-----------------------------------------------------------------------------------------------------
+'Apply existing mdlRow refresh behavior to every row in an indexed block
+'JDL 6/24/26; Updated 6/24/26
+'
+Function RefreshVarBlock(r, mdl) As Boolean
+    SetErrs RefreshVarBlock: If errs.IsHandle Then On Error GoTo ErrorExit
+    Dim rngVar As Range, rIdx As mdlRow, idx As Long
+
+    idx = 1
+    For Each rngVar In r.rngBlockRows
+        Set rIdx = New mdlRow
+        rIdx.Init rIdx, mdl, rngVar
+        rIdx.sVar = r.IndexedVarName(r, idx)
+        rIdx.HasFormula = r.IsFormulaVarBlock
+        If rIdx.HasFormula Then rIdx.sFormula = r.IndexedFormula(r, idx)
+        If r.HasNumFmt Then
+            rIdx.HasNumFmt = True
+            rIdx.NumFmt = r.NumFmt
+        End If
+        If mdl.IsRngNames Then rIdx.NameRow rIdx, mdl
+        If Not rIdx.rngMdlCells Is Nothing Then
+            If rIdx.HasFormula Then If Not rIdx.WriteRowFormula(rIdx, mdl) Then GoTo ErrorExit
+            rIdx.FormatRow rIdx
+        End If
+        idx = idx + 1
+    Next rngVar
+    Exit Function
+
+ErrorExit:
+    errs.RecordErr "RefreshVarBlock", RefreshVarBlock
+End Function
 '-----------------------------------------------------------------------------------------------------
 'Purpose: Set properties related to locations within variable's row
 '

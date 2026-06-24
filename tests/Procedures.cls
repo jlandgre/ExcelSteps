@@ -7,7 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'Version 5/1/26
+'Version 6/24/26
 Option Explicit
 'This class defines project specific groups of tests to run in a tests_xxxx module
 'Build it from an Excel code plan by declaring an object for each procedure in the plan
@@ -27,6 +27,7 @@ Public mdlInit As Object
 Public mdlRow As Object
 Public mdlVariations As Object
 Public mdlDropdowns As Object
+Public mdlBlockVars As Object
 Public mdlRefreshSpeed As Object '7/15/25
 
 Public Utilities As Object '10/23/25
@@ -58,7 +59,7 @@ Public colrngTestResult As Range
 Public rngHeader As Range
 '---------------------------------------------------------------------------------------
 ' Instance Procedure objects for each TestGroup
-' JDL 5/2/25; Updated 1/28/26
+' JDL 5/2/25; Updated 1/28/26; Updated 6/24/26
 Sub Init(procs, ByVal wkbk, ByVal shtT, test_suite_name)
     With procs
         ' TestDriver_TblRowsCols
@@ -86,6 +87,8 @@ Sub Init(procs, ByVal wkbk, ByVal shtT, test_suite_name)
         .mdlVariations.name = "mdl Variations"
         Set .mdlDropdowns = New Procedure
         .mdlDropdowns.name = "Dropdown list capability"
+        Set .mdlBlockVars = New Procedure
+        .mdlBlockVars.name = "Mdl block variables"
         Set .mdlRefreshSpeed = New Procedure
         .mdlRefreshSpeed.name = "Refresh speedup"
         
