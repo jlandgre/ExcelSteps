@@ -7,8 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-'Version 6/24/26
-'        11/17/25 Add IsCustomMdl attr to facilitate ParseMdl option detection
+'Version 7/1/26
 Option Explicit
 Public cellHome As Range
 Public rngRows As Range
@@ -25,6 +24,7 @@ Public IsMdlNmPrefix As Boolean
 Public IsRngNames As Boolean
 Public mdlName As String
 Public nRows As Integer
+Public IsRowsFixed As Boolean
 Public NamePrefix As String
 Public rngPopRows As Range
 Public rngFormulaRows As Range
@@ -435,6 +435,7 @@ Function ParseMdlScenDefn(mdl, Defn) As Boolean
     
         'nrows = 0 --> not specified: use extent of var names to set nrows and rngRows)
         .nRows = CInt(aryRaw(2))
+        .IsRowsFixed = .nRows > 0
 
         'Booleans: IsCalc, IsSuppHeader, IsRngNames, IsMdlNmPrefix, IsLiteModel
         aryParams = Array(False, False, False, False, False)
@@ -474,7 +475,11 @@ Public Function SetAttsFromArgs(ByRef mdl, IsLiteModel, IsSuppHeader, IsRngNames
         If Not IsMissing(IsCalc) Then .IsCalc = IsCalc
         If Not IsMissing(IsMdlNmPrefix) Then .IsMdlNmPrefix = IsMdlNmPrefix
         .nRows = 0
-        If Not IsMissing(nRows) Then .nRows = nRows
+        .IsRowsFixed = False
+        If Not IsMissing(nRows) Then
+            .nRows = nRows
+            .IsRowsFixed = .nRows > 0
+        End If
         
         'If/Endif to allow for possibility of adding sheet post-init
         If SheetExists(.wkbk, .sht) Then
@@ -687,6 +692,7 @@ Function ShapeBlockRows(mdl, rBlock, ByRef IsRowsChanged As Boolean) As Boolean
     SetErrs ShapeBlockRows: If errs.IsHandle Then On Error GoTo ErrorExit
     Dim rngFirst As Range, idx As Long
 
+    'Locate the current placeholder or indexed block rows.
     IsRowsChanged = False
     If Not FindBlockRows(mdl, rBlock) Then GoTo ErrorExit
     Set rngFirst = rBlock.rngBlockRows.Cells(1)
@@ -706,6 +712,9 @@ Function ShapeBlockRows(mdl, rBlock, ByRef IsRowsChanged As Boolean) As Boolean
         For idx = rBlock.nExistingBlockVars To rBlock.nBlockVars + 1 Step -1
             rngFirst.Offset(idx - 1, 0).EntireRow.Delete
         Next idx
+
+        'Keep fixed-row model metadata aligned with deleted worksheet rows.
+        mdl.nRows = mdl.nRows - (rBlock.nExistingBlockVars - rBlock.nBlockVars)
         IsRowsChanged = True
         Exit Function
     End If
@@ -714,6 +723,10 @@ Function ShapeBlockRows(mdl, rBlock, ByRef IsRowsChanged As Boolean) As Boolean
     For idx = rBlock.nExistingBlockVars To 2 Step -1
         rngFirst.Offset(idx - 1, 0).EntireRow.Delete
     Next idx
+
+    'Remove undersized extras before rebuilding the full indexed block.
+    If rBlock.nExistingBlockVars > 1 Then _
+        mdl.nRows = mdl.nRows - (rBlock.nExistingBlockVars - 1)
     If Not CreateIndexedBlockRows(mdl, rBlock, rngFirst, True) Then GoTo ErrorExit
     IsRowsChanged = True
     Exit Function
@@ -723,22 +736,28 @@ ErrorExit:
 End Function
 '---------------------------------------------------------------------------------------
 'Create indexed rows by copying a block template row
-'JDL 6/24/26; Updated 6/24/26
-'
+'JDL 6/24/26; Updated 7/1/26
+
 Function CreateIndexedBlockRows(mdl, rBlock, rngFirst As Range, IsClearVals As Boolean) As Boolean
     SetErrs CreateIndexedBlockRows: If errs.IsHandle Then On Error GoTo ErrorExit
     Dim idx As Long, rngBlock As Range
 
+    'Insert copied template rows below the first block row.
     For idx = 2 To rBlock.nBlockVars
         rngFirst.Offset(idx - 1, 0).EntireRow.Insert Shift:=xlDown
         rngFirst.EntireRow.Copy Destination:=rngFirst.Offset(idx - 1, 0).EntireRow
     Next idx
+
+    'Keep fixed-row model metadata aligned with inserted worksheet rows.
+    If rBlock.nBlockVars > 1 Then mdl.nRows = mdl.nRows + rBlock.nBlockVars - 1
     Application.CutCopyMode = False
 
+    'Write indexed variable names and clear copied model values when requested.
     Set rngBlock = Range(rngFirst, rngFirst.Offset(rBlock.nBlockVars - 1, 0))
     For idx = 1 To rBlock.nBlockVars
         rngFirst.Offset(idx - 1, 0).Value2 = rBlock.IndexedVarName(rBlock, idx)
     Next idx
+
     If IsClearVals Then Intersect(rngBlock.EntireRow, mdl.colrngModel).ClearContents
     Set rBlock.rngBlockRows = rngBlock
     Exit Function
@@ -748,7 +767,7 @@ ErrorExit:
 End Function
 '---------------------------------------------------------------------------------------
 'Refresh model ranges after block row insertion or deletion
-'JDL 6/24/26; Updated 6/24/26
+'JDL 6/24/26; Updated 7/1/26
 '
 Function RebuildMdlRanges(mdl) As Boolean
     SetErrs RebuildMdlRanges: If errs.IsHandle Then On Error GoTo ErrorExit
@@ -756,8 +775,17 @@ Function RebuildMdlRanges(mdl) As Boolean
 
     With mdl
         Set rng = Intersect(.cellHome.EntireRow, .colrngVarNames)
-        Set .rngRows = rngToExtent(rng, IsRows:=True)
-        If Not .rngRows Is Nothing Then .nRows = .rngRows.Rows.Count
+        If errs.IsFail(.rngRows Is Nothing, 1, .mdlName) Then GoTo ErrorExit
+
+        ' Reset .rngRows based on .nRows
+        If .IsRowsFixed Then
+            Set .rngRows = Range(.cellHome, .cellHome.Offset(.nRows - 1, 0)).EntireRow
+        Else
+            Set .rngRows = rngToExtent(rng, IsRows:=True)
+        End If
+        If errs.IsFail(.rngRows Is Nothing, 2, .mdlName) Then GoTo ErrorExit
+
+        ' Rebuild .rngPopRows and .rngMdl based on updated .rngRows
         Set .rngPopRows = BuildMultiCellRange(.rngRows, .colrngVarNames)
         Set .rngMdl = .colrngModel.Columns(.colrngModel.Columns.Count)
         Set .rngMdl = Intersect(Range(.cellHome.EntireColumn, .rngMdl), .rngRows)
@@ -813,7 +841,7 @@ ErrorExit:
 End Function
 '---------------------------------------------------------------------------------------
 'Collapse all Lite model block variables back to _xx placeholder rows
-'JDL 6/24/26; Updated 6/24/26
+'JDL 6/24/26; Updated 6/30/26
 '
 Function ResetAllBlockVars(mdl) As Boolean
     SetErrs ResetAllBlockVars: If errs.IsHandle Then On Error GoTo ErrorExit
@@ -821,7 +849,11 @@ Function ResetAllBlockVars(mdl) As Boolean
     Dim rngFirst As Range, idx As Long
 
     With mdl
+
+        ' Only Lite models have block variables to reset
         If errs.IsFail(Not .IsLiteModel, 1, .mdlName) Then GoTo ErrorExit
+
+        ' Set multirange for ExcelSteps recipe rows for this model
         Set rngRecipeVars = KeyColRng(.tblSteps, Array(.tblSteps.colrngSht), Array(.mdlName))
         If rngRecipeVars Is Nothing Then Exit Function
         Set rngRecipeVars = Intersect(rngRecipeVars, .tblSteps.colrngCol)
@@ -832,12 +864,20 @@ Function ResetAllBlockVars(mdl) As Boolean
                 Set rBlock = New mdlRow
                 If Not rBlock.InitBlockVar(rBlock, mdl, rngRecipeVar.EntireRow) Then GoTo ErrorExit
                 If Not .FindBlockRows(mdl, rBlock) Then GoTo ErrorExit
+
+                ' Delete all but the _1 row for the block variable
                 Set rngFirst = rBlock.rngBlockRows.Cells(1)
                 For idx = rBlock.nExistingBlockVars To 2 Step -1
                     rngFirst.Offset(idx - 1, 0).EntireRow.Delete
                 Next idx
+                If rBlock.nExistingBlockVars > 1 Then _
+                    .nRows = .nRows - (rBlock.nExistingBlockVars - 1)
+
+                ' Reset the name to _xx placeholder and clear column contents
                 rngFirst.Value2 = rBlock.sBaseVar
                 Intersect(rngFirst.EntireRow, .colrngModel).ClearContents
+
+                ' Rebuild model ranges after row deletion
                 If Not .RebuildMdlRanges(mdl) Then GoTo ErrorExit
             End If
         Next rngRecipeVar
